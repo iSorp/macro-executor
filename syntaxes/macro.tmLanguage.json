@@ -1,0 +1,451 @@
+{
+	"name": "Macro",
+	"scopeName": "source.macro",
+	"fileTypes": [
+		"src",
+		"def",
+		"lnk"
+	],
+	"patterns": [
+		{
+			"include": "#line_comments"
+		},
+		{
+			"include": "#line_include"
+		},
+		{
+			"include": "#line_sub"
+		},
+		{
+			"include": "#line_def"
+		},
+		{
+			"include": "#line_label_def"
+		}
+	],
+
+	"repository": {
+  	"line_ops": {
+			"patterns": [
+				{
+					"include": "#line_comments"
+				},
+				{
+					"include": "#line_string_a"
+				},
+				{
+					"include": "#line_string_b"
+				},
+				{
+					"include": "#line_string_c"
+				},
+				{
+					"match": "(?<=[^\\w]|\\d|^)(?=[^GMNO])([A-Z]\\s*)(?=\\-|\\#|\\[|[0-9])",
+					"name": "support.parameter.macro"
+				},
+				{
+					"name": "constant.language.macro",
+					"match": "(?<=\\W|\\d)(TRUE|FALSE|VALUE_NULL)(?=\\d*\\W)"
+				},
+				{
+					"name": "keyword.operator.arithmetic.macro",
+					"match": "(?<=\\W|\\d)(OR|XOR|AND|MOD|SIN|COS|TAN|ASIN|ACOS|ATAN|SQRT|ABS|BIN|BCD|ROUND|FIX|FUP|LN|EXP|POW|ADP|PRM)(?=\\d*\\W)"
+				},
+				{
+					"name": "keyword.command.macro",
+					"match": "(?<=^|\\d|\\s)(REVERSE|BLINK|NOBLINK|NORMAL|CLEARCRT|CLEAR|PRINT|WRITE|READ|DELAY|CALLP|CALL|RETURN|JUMP)"
+				},
+				{
+					"name": "keyword.command.m-code.macro",
+					"match": "(?<=^|\\d|\\s)(M[0-9]+)"
+				},
+				{
+					"name": "keyword.command.g-code.macro",
+					"match": "(?<=^|\\d|\\s)G[0-9]+"
+				},
+				{
+					"name": "constant.other.macro",
+					"match": "^\\s*N[0-9]+"
+				}
+			]
+		},
+		"line_sub": {
+    "begin": "^\\s*(O)",
+    "beginCaptures": {
+      "1": {
+				"name": "variable.parameter"
+			}
+		},
+    "end": "(RETURN)(?=\\n*.*\\n*\\s*O\\s*\\w{1,})",
+    "endCaptures": {
+      "1": {
+				"name": ""
+			}
+		},
+    "patterns": [
+      {
+        "match": "(?<=^O)(.*)",
+        "name": "entity.name.function.macro"
+      },
+      {
+        "include": "#line_parameter"
+      },
+      {
+        "include": "#line_variable_value"
+      },
+      {
+        "include": "#line_brackets"
+      },
+      {
+        "include": "#line_if_then_endif"
+      },
+      {
+        "include": "#line_if_then"
+      },
+      {
+        "include": "#line_if_goto"
+      },
+      {
+        "include": "#line_while"
+      },
+      {
+        "include": "#line_conditional_constant"
+      },
+      {
+        "include": "#line_ops"
+      },
+      {
+        "include": "#line_sub"
+      }
+		]
+	},
+  "line_if_then_endif": {
+    "begin": "(\\d*\\s*IF)(?=\\s*\\[.*\\]\\s*THEN(?:(?!\\w*)|(?=\\s*(?:(?:(?:\\/\\*.*)|(?:\\;.*)|(?:\\n))))))",
+    "beginCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "end": "(ENDIF)",
+    "endCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "patterns": [
+      {
+        "match": "(ELSE)",
+        "name": "keyword.control.conditional.macro"
+      },
+      {
+        "match": "(THEN)((?!\\s*\\w)|(\\s*\\n{1,}))",
+        "name": "keyword.control.conditional.macro"
+      },
+      {
+        "include": "#line_if_then_endif"
+      },
+      {
+        "include": "#line_if_then"
+      },
+      {
+        "include": "#line_if_goto"
+      },
+      {
+        "include": "#line_while"
+      },
+      {
+        "include": "#line_brackets"
+      },
+      {
+        "include": "#line_variable_value"
+      },
+      {
+        "include": "#line_conditional_constant"
+      },
+      {
+        "include": "#line_ops"
+      }
+    ]
+	},
+  "line_if_then": {
+    "begin": "(\\d*\\s*IF)(?=\\s*\\[.*\\]\\s*THEN[^\\n*]*\\#*\\w{1,})",
+    "beginCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "end": "(THEN)(?=\\s*\\#*\\w*)",
+    "endCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "patterns": [
+      {
+        "include": "#line_brackets"
+      },
+      {
+        "include": "#line_variable_value"
+      }
+		]
+	},
+  "line_if_goto": {
+    "begin": "(\\d*\\s*IF)(?=\\s*\\[.*\\]\\s*GOTO[^\\n*]*\\#*\\w{1,})",
+    "beginCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "end": "(GOTO)(\\s*\\#*\\w*)",
+    "endCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			},
+      "2": {
+				"name": "constant.language.macro"
+			}
+		},
+    "patterns": [
+      {
+        "include": "#line_brackets"
+      },
+      {
+        "include": "#line_variable_value"
+      }
+    ]
+	},
+  "line_conditional_constant": {
+    "begin": "(GOTO)",
+    "beginCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "end": "(?<=GOTO)([^\\S\\n]*\\#*\\w{1,})",
+    "endCaptures": {
+      "1": {
+				"name": "constant.language.macro"
+			}
+		},
+    "patterns": [
+      {
+        "include": "#line_variable_value"
+      }
+		]
+	},
+  "line_while": {
+    "begin": "^\\s*(WHILE)",
+    "beginCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			}
+		},
+    "end": "^\\s*(END)\\s*(\\w{1,})",
+    "endCaptures": {
+      "1": {
+				"name": "keyword.control.conditional.macro"
+			},
+      "2": {
+				"name": "constant.language.macro"
+			}
+		},
+    "patterns": [
+      {
+        "include": "#line_while"
+      },
+      {
+        "include": "#line_if_then_endif"
+      },
+      {
+        "include": "#line_if_then"
+      },
+      {
+        "include": "#line_if_goto"
+      },
+      {
+        "include": "#line_brackets"
+      },
+      {
+        "include": "#line_variable_value"
+      },
+      {
+        "include": "#line_ops"
+      },
+      {
+        "begin": "(?<=WHILE)",
+        "end": "(DO)(.*)",
+        "endCaptures": {
+          "1": {
+						"name": "keyword.control.conditional.macro"
+					},
+          "2": {
+						"name": "constant.language.macro"
+					}
+				},
+        "patterns": [
+          {
+            "include": "#line_brackets"
+          },
+          {
+            "include": "#line_variable_value"
+          },
+          {
+            "include": "#line_ops"
+          },
+          {
+            "include": "#line_while"
+          }
+        ]
+      }
+    ]
+	},
+  "line_brackets": {
+    "begin": "\\[",
+    "beginCaptures": {
+      "1": {
+				"name": "keyword.operator.macro"
+			}
+		},
+    "end": "\\]",
+    "patterns": [
+      {
+        "include": "#line_brackets"
+      },
+      {
+        "include": "#line_brackets_operator"
+      },
+      {
+        "include": "#line_variable_value"
+      },
+      {
+        "include": "#line_ops"
+      }
+		]
+	},
+  "line_brackets_operator": {
+    "patterns": [
+      {
+        "match": "(?<=\\W|\\d)(EQ|NE|LT|LE|GE|GT)(?=\\d*\\W)",
+        "name": "keyword.operator.macro"
+      }
+    ]
+	},
+  "line_variable_value": {
+    "patterns": [
+      {
+        "match": "(#[a-zA-Z0-9_]+\\b|#)",
+        "name": "variable.parameter.macro"
+      }
+		]
+	},
+  "line_string_a": {
+    "patterns": [
+       {
+         "name": "string.a.macro",
+         "match": "(\\(\")(.*)(\"\\))"
+       }
+		]
+	},
+  "line_string_b": {
+    "patterns": [
+       {
+         "name": "string.b.macro",
+         "match": "(\\(\")(.*)(\"\\))"
+       }
+		]
+	},
+	"line_string_c": {
+    "patterns": [
+    	{
+         "name": "string.c.code.macro",
+         "match": "(\\(\\*)(.*)(\\*\\))"
+       }
+			]
+		},
+		"line_include": {
+			"begin": "((?<=\\$)\\s*(INCLUDE))\\b\\s*",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.include.macro"
+				}
+			},
+			"end": "\\Z",
+			"patterns": [
+				{
+					"match": "(?i)([\\w]+.def)(?-i)",
+					"name": "file.macro"
+				}
+			]
+		},
+		"line_comments": {
+			"begin": "(^[ \\t]+)?(?=\\/|\\;)",
+			"beginCaptures" : {
+				"1": {
+					"name": "comment.macro"
+				}
+			},
+			"end": "(?!\\G)",
+			"patterns": [
+				{
+					"begin": "(\\/\\*)|(\\;)",
+					"beginCaptures": {
+						"1": {
+							"name": "comment.begin.macro"
+						}
+					},
+					"end": "\\n",
+					"name": "comment.end.macro"
+				}
+			]
+		},
+		"line_label_def": {
+       "match": "(?<=\\>)[a-zA-Z0-9_]+\\b",
+       "name": "constant.other.n-number.macro"
+    },
+
+		"line_def": {
+			"begin": "(\\$NOLIST)",
+			"beginCaptures": {
+				"1": {
+					"name": "variable.language"
+				}
+			},
+			"end": "(\\$LIST)",
+			"endCaptures": {
+				"1": {
+					"name": "variable.language"
+				}
+			},
+			"patterns": [
+				{
+					"begin": "(?=\\@|\\>)",
+					"end": "(\\Z)",
+					"patterns": [
+						{
+							"match": "(?<=\\>)[a-zA-Z0-9_]+\\b",
+							"name": "constant.other.n-number.macro"
+						},
+						{
+							"match": "(?<=\\@)[a-zA-Z0-9_]+\\b",
+							"name": "constant.other.n-number.macro"
+						},
+						{
+							"match": "(\\#[a-zA-Z0-9_]+)",
+							"name": "variable.parameter.macro"
+						},
+						{
+							"match": "([0-9_]+)",
+							"name": "constant.numeric.macro"
+						},
+            {
+              "include": "#line_comments"
+            }
+					]
+        },
+        {
+          "include": "#line_comments"
+        }
+			]
+		}
+	}
+}

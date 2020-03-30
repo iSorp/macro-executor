@@ -1,0 +1,26 @@
+$INCLUDE def/Test.def
+
+>L_Label 10
+
+O Sub1
+  L_Label
+  #VAR = 1234
+
+  IF [#VAR GT 2000] THEN
+    GOTO L_Label
+  ENDIF
+
+  WHILE [#VAR LT CONST] DO LOOP_I
+    GOTO L_Label
+  END LOOP_I
+
+  N1000 G00 G90 X1000 F 1000
+  CALL Sub2
+RETURN
+
+
+
+
+O Sub2
+
+RETURN

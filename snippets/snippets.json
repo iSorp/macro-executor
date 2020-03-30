@@ -1,0 +1,32 @@
+{
+	"func": {
+		"prefix": "func",
+		"body": "\nO ${1:name} \n\t$4\nRETURN\n",
+		"description": "",
+		"scope": "source.macro"
+	},
+	"ifelse": {
+		"prefix": "ifelse",
+		"body": "\nIF [ ${1:condition}] THEN\n\t$2\nELSE \n\t$3\nENDIF\n",
+		"description": "if ... else ...",
+		"scope": "source.macro"
+	},
+	"if": {
+		"prefix": "if",
+		"body": "\nIF [${1:condition}] THEN\n\t$2\nENDIF\n",
+		"description": "if ...",
+		"scope": "source.macro"
+	},
+	"else": {
+		"prefix": "else",
+		"body": "\nELSE \n\t$2\nENDIF\n",
+		"description": "else ...",
+		"scope": "source.macro"
+	},
+	"while": {
+		"prefix": "while",
+		"body": "\nWHILE [${1:condition}] DO LOOP_${2:I}\n\t$3\nEND LOOP_${4:I}",
+		"description": "WHILE ... DO ... LOOP_I ... END ... LOOP_I",
+		"scope": "source.macro"
+	}
+}

@@ -1,0 +1,195 @@
+{
+	"name": "macro-executor",
+	"displayName": "Macro Executor Language",
+	"description": "Fanuc Macro-Executor Programming Language",
+	"version": "0.0.3",
+	"publisher": "iSorp",
+	"engines": {
+	  "vscode": "^1.43.0"
+	},
+	"categories": [
+	  "Programming Languages"
+	],
+	"homepage": "https://github.com/iSorp/macro-executor",
+	"repository": {
+	  "type": "git",
+	  "url": "https://github.com/iSorp/macro-executor.git"
+	},
+	"bugs": {
+	  "url": "https://github.com/iSorp/macro-executor/issues"
+	},
+	"activationEvents": [
+		"onLanguage:macro",
+		"onCommand:macro.compile",
+		"onCommand:macro.build",
+		"onCommand:macro.clean",
+		"onCommand:macro.setCompiler",
+		"onCommand:macro.setExportPath"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"languages": [
+			{
+			  "id": "macro",
+			  "aliases": [
+				"Macro Executor",
+				"Fanuc Macro Executor",
+				"Fanuc CNC"
+			  ],
+			  "extensions": [
+				".src",
+				".def",
+				".lnk"
+			  ],
+			  "configuration": "./syntaxes/macro.configuration.json"
+			}
+		  ],
+		  "grammars": [
+			{
+			  "language": "macro",
+			  "scopeName": "source.macro",
+			  "path": "./syntaxes/macro.tmLanguage.json"
+			}
+		  ],    
+		  "snippets": [
+			{
+			  "language": "macro",
+			  "path": "./snippets/snippets.json"
+			}
+		  ],
+		  "commands": [
+			{
+			  "command": "macro.compile",
+			  "title": "Compile File",
+			  "category": "Macro"
+			},
+			{
+			  "command": "macro.build",
+			  "title": "Compile and Link Project",
+			  "category": "Macro"
+			},
+			{
+			  "command": "macro.clean",
+			  "title": "Clean Project",
+			  "category": "Macro"
+			},
+			{
+			  "command": "macro.setCompiler",
+			  "title": "Select Macro Compiler",
+			  "category": "Macro"
+			},
+			{
+			  "command": "macro.setExportPath",
+			  "title": "Select Export Path",
+			  "category": "Macro"
+			},
+			{
+			  "command": "macro.setControlType",
+			  "title": "Select Control Type",
+			  "category": "Macro"
+			}
+		  ],
+		  "keybindings": [
+			{
+			  "command": "macro.build",
+			  "key": "shift+ctrl+l",
+			  "when": "editorFocus"
+			},
+			{
+			  "command": "macro.compile",
+			  "key": "shift+ctrl+b",
+			  "when": "editorFocus"
+			},
+			{
+			  "command": "macro.clean",
+			  "key": "shift+ctrl+c",
+			  "when": "editorFocus"
+			}
+		  ],
+		  "configuration": {
+			"type": "object",
+			"title": "MacroExecutor Configuration",
+			"properties": {
+			  "macro.build.compiler": {
+				"type": "string",
+				"default": "MCOMPI",
+				"description": "Macro Compiler Path",
+				"$id": "1"
+			  },
+			  "macro.build.controlType": {
+				"type": "string",
+				"default": "0",
+				"description": "MCOMPI Compiler Argument ",
+				"$id": "2"
+			  },
+			  "macro.build.makeFile": {
+				"type": "string",
+				"default": "Make.bat",
+				"description": "Make file. Args = [export path, 'make / clean', compiler, cpmpiler arg]. If no Clean.bat is found, 'clean' is used as argument. If property is empty, internal build system is used",
+				"$id": "3"
+			  },
+			  "macro.project.exportPath": {
+				"type": "string",
+				"default": "I:\\",
+				"description": "Memoryfile Export Path",
+				"$id": "4"
+			  },
+			  "macro.project.sourcePath": {
+				"type": "string",
+				"default": "",
+				"description": "Source Path Contains All .src Files",
+				"$id": "5"
+			  },
+			  "macro.project.buildPath": {
+				"type": "string",
+				"default": "",
+				"description": "Build Files Path",
+				"$id": "6"
+			  },
+			  "macro.project.linkPath": {
+				"type": "string",
+				"default": "",
+				"description": "Link Path Contains All .lnk Files Inclusive Library",
+				"$id": "7"
+			  }
+			}
+		  },
+		  "problemMatchers": [
+			{
+			  "name": "macro",
+			  "owner": "macro",
+			  "fileLocation": [
+				"relative",
+				"${workspaceFolder}/src"
+			  ],
+			  "pattern": {
+				"regexp": "([0-9a-zA-Z\\._]+.LST).([0-9]+).(.*)",
+				"file": 1,
+				"line": 2,
+				"message": 3
+			  }
+			}
+		  ]
+		},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint src --ext ts",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^7.0.1",
+		"@types/node": "^12.11.7",
+		"@types/vscode": "^1.43.0",
+		"eslint": "^6.8.0",
+		"@typescript-eslint/parser": "^2.18.0",
+		"@typescript-eslint/eslint-plugin": "^2.18.0",
+		"glob": "^7.1.6",
+		"mocha": "^7.0.1",
+		"typescript": "^3.7.5",
+		"vscode-test": "^1.3.0"
+	}
+}
