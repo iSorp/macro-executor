@@ -18,7 +18,7 @@
 	"bugs": {
 	  "url": "https://github.com/iSorp/macro-executor/issues"
 	},
-	"icon": "./resources/icon.png",
+	"icon": "resources/icon.png",
 	"activationEvents": [
 		"onLanguage:macro",
 		"onCommand:macro.compile",
