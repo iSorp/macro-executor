@@ -1,5 +1,7 @@
 # Fanuc Macro Executor
 
+<img src="./resources/icon.png" alt="drawing" width="100"/>
+
 Fanuc Macro Executor syntax highlighting and project building 
 
 ## Features
@@ -10,10 +12,10 @@ Fanuc Macro Executor syntax highlighting and project building
 
 
 ### Compile
-![Compile definitions](./resources/compile.gif)
+![Compile](./resources/compile.gif)
 
 ### Parameter definition
-![Compile definitions](./resources/definition.gif)
+![Definition](./resources/definition.gif)
 
 
 ## Default Commands
