@@ -1,7 +1,8 @@
-
-
-## 0.0.4 (Not yet released)
+## 0.0.5 (Not yet released)
 - Custom language keywords
+
+## 0.0.4 (March 31, 2020)
+- Probem matcher file search path is now "${fileDirname}"
 
 ## 0.0.3 (March 30, 2020)
 - While Snippet
