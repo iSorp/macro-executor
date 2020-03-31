@@ -93,7 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.languages.registerHoverProvider([
-			{ language: 'macro', scheme: 'file', pattern: '**/*src*' },
+			{ language: 'macro', scheme: 'file', pattern: '**/*.{src,SRC}' },
 		], 
 		new HoverProvider(()=> {
 			return defFileList;
