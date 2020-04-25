@@ -1,0 +1,20 @@
+{
+	"name": "lsp-macro-server",
+	"description": "Fanuc Macro-Executor Programming Language",
+	"version": "0.0.1",
+	"author": "iSorp",
+	"publisher": "iSorp",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/iSorp/macro-executor.git"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^6.1.1",
+		"vscode-languageserver-textdocument": "^1.0.1"
+	},
+	"scripts": {}
+}
