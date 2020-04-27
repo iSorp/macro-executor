@@ -1,44 +1,8 @@
 /*---------------------------------------------------------------------------------------------
- *	Copyright (c) 2020 Simon Waelti
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 'use strict';
-
-export enum NodeType {
-	Undefined,
-	DefFile,
-	MacroFile,
-	Include,
-	StringLiteral,
-	Declarations,
-	Function,
-	VariableDef,
-	labelDef,
-	Symbol,
-	Ffunc,
-	NumericValue,
-	If,
-	ThenEndif,
-	ThenTerm,
-	Goto,
-	Else,
-	While,
-	label,
-	Variable,
-	Address,
-	Term,
-	Assignment,
-	Condition,
-	Expression,
-	BinaryExpression,
-	Operator,
-	Identifier,
-	IdentifierAddress,
-	Statement,
-	Parameter,
-	Code,
-	SequenceNumber,
-}
 
 export enum ReferenceType {
 	Function,
@@ -271,7 +235,8 @@ export class Node {
 			for (let i = this.children.length - 1; i >= 0; i--) {
 				// iterate until we find a child that has a start offset smaller than the input offset
 				current = this.children[i];
-				if (current.offset <= offset) {
+				//if (current.offset <= offset) {
+				if (current.offset < offset) {
 					return current;
 				}
 			}
@@ -351,15 +316,141 @@ export class Nodelist extends Node {
 	}
 }
 
-export class DefFile extends Node {
+export interface IRule {
+	id: string;
+	message: string;
+}
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+export enum Level {
+	Ignore = 1,
+	Warning = 2,
+	Error = 4
+}
+
+export interface IMarker {
+	getNode(): Node;
+	getMessage(): string;
+	getOffset(): number;
+	getLength(): number;
+	getRule(): IRule;
+	getLevel(): Level;
+}
+
+export class Marker implements IMarker {
+
+	private node: Node;
+	private rule: IRule;
+	private level: Level;
+	private message: string;
+	private offset: number;
+	private length: number;
+
+	constructor(node: Node, rule: IRule, level: Level, message?: string, offset: number = node.offset, length: number = node.length) {
+		this.node = node;
+		this.rule = rule;
+		this.level = level;
+		this.message = message || rule.message;
+		this.offset = offset;
+		this.length = length;
 	}
 
-	public get type(): NodeType {
-		return NodeType.DefFile;
+	public getRule(): IRule {
+		return this.rule;
 	}
+
+	public getLevel(): Level {
+		return this.level;
+	}
+
+	public getOffset(): number {
+		return this.offset;
+	}
+
+	public getLength(): number {
+		return this.length;
+	}
+
+	public getNode(): Node {
+		return this.node;
+	}
+
+	public getMessage(): string {
+		return this.message;
+	}
+}
+
+export interface IVisitor {
+	visitNode: (node: Node) => boolean;
+}
+
+export interface IVisitorFunction {
+	(node: Node): boolean;
+}
+
+export class ParseErrorCollector implements IVisitor {
+
+	static entries(node: Node): IMarker[] {
+		const visitor = new ParseErrorCollector();
+		node.acceptVisitor(visitor);
+		return visitor.entries;
+	}
+
+	public entries: IMarker[];
+
+	constructor() {
+		this.entries = [];
+	}
+
+	public visitNode(node: Node): boolean {
+
+		if (node.isErroneous()) {
+			node.collectIssues(this.entries);
+		}
+		return true;
+	}
+}
+
+
+
+/*---------------------------------------------------------------------------------------------
+ *	Copyright (c) 2020 Simon Waelti
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+export enum NodeType {
+	Undefined,
+	MacroFile,
+	DefFile,
+	Include,
+	StringLiteral,
+	Declarations,
+	Function,
+	VariableDef,
+	labelDef,
+	Symbol,
+	Ffunc,
+	NumericValue,
+	If,
+	ThenEndif,
+	ThenTerm,
+	Goto,
+	Else,
+	While,
+	label,
+	Variable,
+	Address,
+	String,
+	Term,
+	Assignment,
+	Condition,
+	BinaryExpression,
+	Operator,
+	Identifier,
+	DeclarationValue,
+	Statement,
+	Parameter,
+	Code,
+	SequenceNumber,
 }
 
 export class MacroFile extends Node {
@@ -381,28 +472,6 @@ export class Include extends Node {
 
 	public get type(): NodeType {
 		return NodeType.Include;
-	}
-
-	public setMedialist(node: Node | null): node is Node {
-		if (node) {
-			node.attachTo(this);
-			return true;
-		}
-		return false;
-	}
-}
-
-export class IdentAddress extends Node {
-
-	address?: string;
-	addressType?: string | number | 'pmc' | 'cnc'; 
-
-	constructor(offset: number, length: number) {
-		super(offset, length);
-	}
-
-	public get type(): NodeType {
-		return NodeType.IdentifierAddress;
 	}
 }
 
@@ -508,7 +577,7 @@ export class Symbol extends Node {
 	}
 }
 
-export class Label extends Symbol {
+export class Label extends Node {
 
 	public symbol?: Symbol;
 
@@ -533,9 +602,9 @@ export class Label extends Symbol {
 	}
 }
 
-export class Variable extends Symbol {
+export class Variable extends Node {
 
-	public expression?: Expression;
+	public expression?: BinaryExpression;
 	public symbol?: Symbol;
 
 	constructor(offset: number, length: number) {
@@ -546,11 +615,11 @@ export class Variable extends Symbol {
 		return NodeType.Variable;
 	}
 
-	public setExpression(node: Expression | null): node is Expression {
+	public setExpression(node: BinaryExpression | null): node is BinaryExpression {
 		return this.setNode('expression', node, 0);
 	}
 
-	public getExpression(): Expression | undefined {
+	public getExpression(): BinaryExpression | undefined {
 		return this.expression;
 	}
 	
@@ -567,7 +636,7 @@ export class Variable extends Symbol {
 	}
 }
 
-export class Address extends Symbol {
+export class Address extends Node {
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -662,6 +731,7 @@ export class ElseTermStatement extends ElseStatement {
 
 export class IfStatement extends BodyDeclaration {
 	public contitional?: Conditional;
+	public elseClause?: BodyDeclaration;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -673,6 +743,11 @@ export class IfStatement extends BodyDeclaration {
 
 	public setConditional(node: Conditional | null): node is Conditional {
 		return this.setNode('contitional', node, 0);
+	}
+
+
+	public setElseClause(elseClause: BodyDeclaration | null): elseClause is BodyDeclaration {
+		return this.setNode('elseClause', elseClause);
 	}
 }
 
@@ -739,19 +814,6 @@ export class Conditional extends Node {
 
 	public getOperator(): Node | undefined {
 		return this.condition;
-	}
-}
-
-export class Expression extends Node {
-
-	private _expression: void; 
-
-	constructor(offset: number, length: number) {
-		super(offset, length);
-	}
-
-	public get type(): NodeType {
-		return NodeType.Expression;
 	}
 }
 
@@ -854,15 +916,23 @@ export class Assignment extends Node {
 	}
 }
 
+export enum ValueType {
+	String = 'string',
+	Numeric = 'numeric',
+	MacroValue = 'value',
+	Address = 'address',
+	MFunc= 'm-function',
+}
+
 export class AbstractDeclaration extends Node {
 
 	public symbol?: Symbol;
-	public address?: IdentAddress;
+	public value?: Node;
+	public valueType?: ValueType; 
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
 	}
-
 
 	public setSymbol(node: Symbol | null): node is Symbol {
 		return this.setNode('symbol', node, 0);
@@ -872,16 +942,16 @@ export class AbstractDeclaration extends Node {
 		return this.symbol;
 	}
 
-	public setAddress(node: IdentAddress | null): node is IdentAddress {
-		return this.setNode('address', node, 0);
-	}
-
-	public getAddress(): IdentAddress | undefined {
-		return this.address;
-	}
-
 	public getName(): string {
 		return this.symbol ? this.symbol.getName() : '';
+	}
+	
+	public setValue(node: Node | null): node is Node {
+		return this.setNode('value', node, 0);
+	}
+
+	public getValue(): Node | undefined {
+		return this.value;
 	}
 }
 
@@ -904,99 +974,5 @@ export class VariableDeclaration extends AbstractDeclaration {
 
 	public get type(): NodeType {
 		return NodeType.VariableDef;
-	}
-}
-
-export interface IRule {
-	id: string;
-	message: string;
-}
-
-export enum Level {
-	Ignore = 1,
-	Warning = 2,
-	Error = 4
-}
-
-export interface IMarker {
-	getNode(): Node;
-	getMessage(): string;
-	getOffset(): number;
-	getLength(): number;
-	getRule(): IRule;
-	getLevel(): Level;
-}
-
-export class Marker implements IMarker {
-
-	private node: Node;
-	private rule: IRule;
-	private level: Level;
-	private message: string;
-	private offset: number;
-	private length: number;
-
-	constructor(node: Node, rule: IRule, level: Level, message?: string, offset: number = node.offset, length: number = node.length) {
-		this.node = node;
-		this.rule = rule;
-		this.level = level;
-		this.message = message || rule.message;
-		this.offset = offset;
-		this.length = length;
-	}
-
-	public getRule(): IRule {
-		return this.rule;
-	}
-
-	public getLevel(): Level {
-		return this.level;
-	}
-
-	public getOffset(): number {
-		return this.offset;
-	}
-
-	public getLength(): number {
-		return this.length;
-	}
-
-	public getNode(): Node {
-		return this.node;
-	}
-
-	public getMessage(): string {
-		return this.message;
-	}
-}
-
-export interface IVisitor {
-	visitNode: (node: Node) => boolean;
-}
-
-export interface IVisitorFunction {
-	(node: Node): boolean;
-}
-
-export class ParseErrorCollector implements IVisitor {
-
-	static entries(node: Node): IMarker[] {
-		const visitor = new ParseErrorCollector();
-		node.acceptVisitor(visitor);
-		return visitor.entries;
-	}
-
-	public entries: IMarker[];
-
-	constructor() {
-		this.entries = [];
-	}
-
-	public visitNode(node: Node): boolean {
-
-		if (node.isErroneous()) {
-			node.collectIssues(this.entries);
-		}
-		return true;
 	}
 }

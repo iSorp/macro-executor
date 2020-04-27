@@ -7,8 +7,11 @@ Fanuc Macro Executor syntax highlighting and project building
 ## Features
 
 * Compiling and linking of fanuc macro executor projects.
-* Syntax highlighting
 * Problem matcher
+* Syntax highlighting
+* Syntax validation
+* Symbol provider
+
 
 
 ### Compile

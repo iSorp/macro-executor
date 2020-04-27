@@ -62,15 +62,12 @@ export class MacroNavigation {
 
 		let symbols = new Symbols(<nodes.Node>macroFile);
 		let symbol = symbols.findSymbolFromNode(node);
-		if (symbol) {
+		if (symbol && !node.findAParent(nodes.NodeType.DefFile)) {
 			return this.findLocalReferences(symbol, symbols, document, macroFile);
 		}
 		else{
 			return this.findGlobalReferences(include, position, node ,document, macroFile);
 		}
-	
-
-		return locations;
 	}
 
 	private findInclude(document: TextDocument, position: Position, macroFile: nodes.Node): string | null {
@@ -102,7 +99,6 @@ export class MacroNavigation {
 	private findLocalReferences(symbol:Symbol, symbols:Symbols, document: TextDocument, macroFile: nodes.MacroFile) : Location[] {
 	
 		const highlights: DocumentHighlight[] = [];
-		let locations:Location[] = [];
 
 		macroFile.accept(candidate => {
 			if (symbol) {
@@ -244,35 +240,41 @@ export class MacroNavigation {
 			};
 			let locationNode: nodes.Node | null = node;
 
-			if (node instanceof nodes.VariableDeclaration) {
+			if (node.type === nodes.NodeType.VariableDef) {
 				entry.name = (<nodes.VariableDeclaration>node).getName();
 				entry.kind = SymbolKind.Variable;
 			} 
-			else if (node instanceof nodes.LabelDeclaration) {
+			else if (node.type === nodes.NodeType.labelDef) {
 				entry.name = (<nodes.LabelDeclaration>node).getName();
 				entry.kind = SymbolKind.Constant;
 			} 
-			else if (node instanceof nodes.Function) {
+			else if (node.type === nodes.NodeType.Function) {
 				entry.name = (<nodes.Function>node).getName();
 				entry.kind = SymbolKind.Function;
 			} 
-			else if (node instanceof nodes.Label) {
+			else if (node.type === nodes.NodeType.label) {
 				entry.name = (<nodes.Label>node).getName();
 				entry.kind = SymbolKind.Constant;
 			} 
-			else if (node instanceof nodes.NcCode) {
+			else if (node.type === nodes.NodeType.SequenceNumber) {
+				entry.name = node.getText();
+				entry.kind = SymbolKind.Field;
+			} 
+			else if (node.type === nodes.NodeType.Statement) {
+				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber){
+					entry.name = node.getText();
+					entry.kind = SymbolKind.Field;
+				}
+			}
+			else if (node.type === nodes.NodeType.Code) {
 				entry.name = (<nodes.NcCode>node).getText();
 				entry.kind = SymbolKind.Event;
 			}
-			else if (node instanceof nodes.NcParameter) {
+			else if (node.type === nodes.NodeType.Parameter) {
 				entry.name = (<nodes.NcParameter>node).getText();
 				entry.kind = SymbolKind.Property;
 			} 
-			else if (node instanceof nodes.SequenceNumber) {
-				entry.name = (<nodes.SequenceNumber>node).getText();
-				entry.kind = SymbolKind.Field;
-			} 
-
+		
 			if (entry.name) {
 				entry.location = Location.create(document.uri, this.getRange(locationNode, document));
 				result.push(entry);

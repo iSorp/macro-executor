@@ -8,12 +8,11 @@ import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
 import { MultiLineStream } from '../parser/macroScanner';
 import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupContent, 
-	ClientCapabilities, MacroFileProvider } from '../MacroLanguageTypes';
+	MacroFileProvider } from '../MacroLanguageTypes';
 
 export class MacroHover {
 
-	constructor(private clientCapabilities: ClientCapabilities | undefined, 
-		private fileProvider?: MacroFileProvider | undefined) { }
+	constructor(private fileProvider?: MacroFileProvider | undefined) { }
 
 	public doHover(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Hover | null {
 		function getRange(node: nodes.Node) {
@@ -92,13 +91,14 @@ export class MacroHover {
 		let node = <nodes.AbstractDeclaration>nodes.getNodeAtOffset(macroFile, document.offsetAt(location.range.start));		
 		let comment = this.getComment(document, location).trim();
 		let name = node.getName();
-		let address = node.getAddress()?.getText();
+		let address = node.getValue()?.getText();
+		let valueType = node.valueType?.toString();
 
 		let text = '';
 		if (comment){
 			text += `${comment}`+'\n';
 		}
-		text += `(${type}) ` + `@${name} `+` ${address}`;
+		text += `(${type}:${valueType}) ` + `@${name} `+` ${address}`;
 
 		return {
 			language: 'macro',

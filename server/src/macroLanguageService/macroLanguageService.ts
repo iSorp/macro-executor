@@ -47,7 +47,7 @@ export function getMacroLanguageService(options?: LanguageServiceOptions): Langu
 
 	return createFacade(
 		new Parser(options && options.fileProvider),
-		new MacroHover(options && options.clientCapabilities, options && options.fileProvider),
+		new MacroHover(options && options.fileProvider),
 		new MacroNavigation(options && options.fileProvider),
 		new MacroValidation(options && options.fileProvider)
 	);

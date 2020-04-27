@@ -35,27 +35,24 @@ import {
 	TextDocument,
 } from 'vscode-languageserver-textdocument';
 
-import { getMacroLanguageService, Macrofile, LanguageService, MacroFileType } from './macroLanguageService/macroLanguageService';
-import { FileSystem } from 'vscode-languageserver/lib/files';
+import { getMacroLanguageService, Macrofile, MacroFileType } from './macroLanguageService/macroLanguageService';
 import { URI } from 'vscode-uri';
+
+
+const maxNumberOfProblems = 100;
 
 let connection = createConnection(ProposedFeatures.all);
 let workspaceFolder: string | null;
 let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>();
-let languageSettings:LanguageSettings;
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
-const defaultSettings: ServerSettings = { lint: true };
-let globalSettings: ServerSettings = defaultSettings;
-let documentSettings: Map<string, Thenable<ServerSettings>> = new Map();
+const defaultSettings: LanguageSettings = { validate: true };
+let globalSettings: LanguageSettings = defaultSettings;
+let documentSettings: Map<string, Thenable<LanguageSettings>> = new Map();
 
-
-interface ServerSettings {
-	lint: boolean;
-}
 
 class FileProvider implements MacroFileProvider {
 
@@ -84,6 +81,7 @@ class FileProvider implements MacroFileProvider {
 				let document = TextDocument.create(uri!, 'macro', 1, file.toString());
 				try {
 					let macrofile = new Parser(this).parseMacroFile(document);
+					
 					doc = {
 						macrofile: macrofile,
 						document: document,
@@ -136,17 +134,15 @@ class Links implements FindDocumentLinks {
 	}
 }
 
-function createMacroLanguageService() : LanguageService {
-	return getMacroLanguageService({
-		fileProvider: new FileProvider()
-	});
-}
+const macroLanguageService = getMacroLanguageService({
+	fileProvider: new FileProvider(),
 
-
-const macroLanguageService = createMacroLanguageService();
+});
 
 
 connection.onInitialize((params: InitializeParams) => {
+
+	connection.console.log('dfgsdfhg');
 
 	let capabilities = params.capabilities;
 	workspaceFolder = params.rootUri;
@@ -188,30 +184,8 @@ connection.onInitialize((params: InitializeParams) => {
 		};
 	}
 
-	/*(async function(){
-		if (workspaceFolder) {	
-			for await (const f of getFiles(Files.uriToFilePath(workspaceFolder)!, /\.(def)|(src)/i)) {
-				const file = readFileSync(f, 'utf-8');
-				let textDocument = TextDocument.create(f, 'macro', 1, file.toString());
-				validateTextDocument(textDocument);
-			}
-		}
-	})();
-*/
 	return result;
 });
-
-/*async function readDeclarations() {
-	declarations.clear();
-	if (workspaceFolder) {	
-		for await (const f of getFiles(Files.uriToFilePath(workspaceFolder)!, /\.(def)/i)) {
-			const file = readFileSync(f, 'utf-8');
-			let textDocument = TextDocument.create(f, 'macro', 1, file.toString());
-			const macroFile = macroLanguageService.parseMacroFile(textDocument!);
-			declarations.set(f, macroFile);
-		}
-	}
-}*/
 
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
@@ -224,22 +198,7 @@ connection.onInitialized(() => {
 		});
 	}
 
-
-	// Scann all definitions
-	/*let filePath = workspaceFolder+'/def/Macro.def';
-	let p = Files.uriToFilePath(filePath);
-	const file = readFileSync(p!, 'utf-8');
-	let t = TextDocument.create('def/Macro.def', 'macro', 1, file.toString());
-	
-	let macroFile:MacroFile = macroLanguageService.parseMacroFile(t!);
-	definitions.set(t.uri, macroFile);
-
-	const latestTextDocument = documents.get(t.uri);
-
-	
-
-	let a = hasWorkspaceFolderCapability;*/
-
+	validateWorkspace();
 });
 
 connection.onDidChangeWatchedFiles(_change => {});
@@ -251,30 +210,31 @@ connection.onDocumentLinks(documentLinks);
 //connection.onRenameRequest(renameRequest);
 connection.onHover(hower);
 
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent(async change => {
 	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
 });
+
+documents.onDidClose(e => {
+	documentSettings.delete(e.document.uri);
+});
+
 documents.listen(connection);
 connection.listen();
 
-function configuration(params: DidChangeConfigurationParams) {
+async function configuration(params: DidChangeConfigurationParams) {
 	if (hasConfigurationCapability) {
 		// Reset all cached document settings
 		documentSettings.clear();
 	} else {
-		globalSettings = <ServerSettings>(
-			(params.settings.macroLanguageServer || defaultSettings)
-		);
+		globalSettings = <LanguageSettings>((params.settings.macroLanguageServer || defaultSettings));
 	}
-	Promise.resolve(async () => {
-		for (const document of documents.all()){
-			await getDocumentSettings(document.uri);
-			validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile));
-		}
-	});
+
+	for (const document of documents.all()){
+		validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile));
+	}
 }
 
-function getDocumentSettings(resource: string): Thenable<ServerSettings> {
+function getDocumentSettings(resource: string): Thenable<LanguageSettings> {
 	if (!hasConfigurationCapability) {
 		return Promise.resolve(globalSettings);
 	}
@@ -326,21 +286,29 @@ function renameRequest(params: RenameParams) {
 	return macroLanguageService.doRename(repo.document, params.position, params.newName,repo.macrofile);
 }
 
-function validateTextDocument(doc: MacroFileType | undefined) {
+async function validateTextDocument(doc: MacroFileType | undefined) {
 
 	if (!doc) {return;}
 
 	try {
-		
+
+		let settings = await getDocumentSettings(doc.document.uri);
+
 		const version = doc.document.version;
 		const diagnostics: Diagnostic[] = [];
 		if (doc.document.languageId === 'macro') {
 
 			if (doc.document && doc.document.version === version) {
 				if (macroLanguageService.doValidation && doc.macrofile) {
-					macroLanguageService.doValidation(doc.document, doc.macrofile, languageSettings).forEach(d => {
-						diagnostics.push(d);
-					});
+					let entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
+					let index = 0;
+					for (const entry of entries) {
+						if (maxNumberOfProblems < index){
+							break;
+						}
+						diagnostics.push(entry);
+						++index;
+					}
 					connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
 				}
 			}
@@ -348,6 +316,14 @@ function validateTextDocument(doc: MacroFileType | undefined) {
 	} catch (e) {
 		connection.console.error(`Error while validating ${doc.document.uri}`);
 		connection.console.error(e);
+	}
+}
+
+async function validateWorkspace() {
+	let fp = new FileProvider();
+	let types = fp.getAll();
+	for (const element of types){
+		validateTextDocument(element);
 	}
 }
 

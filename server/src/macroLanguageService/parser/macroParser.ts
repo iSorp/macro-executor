@@ -22,6 +22,7 @@ export interface IMark {
 }
 
 export class Parser {
+	
 
 	private scanner: Scanner = new Scanner();
 	private textProvider?: nodes.ITextProvider;
@@ -35,6 +36,13 @@ export class Parser {
 	constructor(private fileProvider?: MacroFileProvider) {
 		this.token = { type: TokenType.EOF, offset: -1, len: 0, text: '' };
 		this.prevToken = undefined;
+	}
+
+	private isNcCode(ch:number): boolean {
+		if (ch >= 'a'.charCodeAt(0) && ch <= 'z'.charCodeAt(0) || ch >= 'A'.charCodeAt(0) && ch <= 'Z'.charCodeAt(0)) { 
+			return true;
+		}
+		return false;
 	}
 
 	public peekSymbol(text: string): boolean {
@@ -194,14 +202,6 @@ export class Parser {
 		}
 	}
 
-	public _processWhiteSpaces() {
-		while (this.acceptRegexp(/(\s)+/i)) {
-			if (this.token.type === TokenType.EOF) {
-				break;
-			}
-		}
-	}
-
 	public resync(resyncTokens: TokenType[] | undefined, resyncStopTokens: TokenType[] | undefined): boolean {
 		while (true) {
 			if (resyncTokens && resyncTokens.indexOf(this.token.type) !== -1) {
@@ -328,7 +328,7 @@ export class Parser {
 		this.accept(TokenType.AT);
 
 
-		const symbol = <nodes.Symbol>this.create(nodes.Symbol);
+		const symbol = this.create(nodes.Symbol);
 		symbol.referenceTypes = [nodes.ReferenceType.Variable];
 
 		if (!this.accept(TokenType.Symbol)){
@@ -336,11 +336,37 @@ export class Parser {
 		}
 		node.setSymbol(symbol);
 
-		const nr = <nodes.IdentAddress>this.create(nodes.IdentAddress);
-		if (!this.acceptUnquotedString()){
-			return this.finish(node, ParseError.AddressExpected);
+		const value = this.createNode(nodes.NodeType.DeclarationValue);
+		if (node.setValue(this.parseNumeric())){
+			node.valueType = nodes.ValueType.Numeric;
 		}
-		node.setAddress(nr);
+		else if (this.accept(TokenType.Hash)){
+			if (node.setValue(this.parseNumeric())){
+				node.valueType = nodes.ValueType.MacroValue;
+			}
+			else{
+				return this.finish(node, ParseError.AddressExpected);
+			}
+		}
+		else if (this.token.text.toLocaleLowerCase().charAt(0) === 'm'){
+			node.valueType = nodes.ValueType.MFunc; 
+			if (!this.acceptUnquotedString()){
+				return this.finish(node, ParseError.AddressExpected);
+			}
+		}
+		else if (this.isNcCode(this.token.text.charCodeAt(0))){
+			node.valueType = nodes.ValueType.Address; 
+			if (!this.acceptUnquotedString()){
+				return this.finish(node, ParseError.AddressExpected);
+			}
+		}
+		else{
+			if (!this.acceptUnquotedString()){
+				return this.finish(node, ParseError.AddressExpected);
+			}
+		}
+		this.finish(value);
+		node.setValue(value);
 
 		return this.finish(node);
 	}
@@ -350,24 +376,61 @@ export class Parser {
 		if (!this.peek(TokenType.GTS)) {
 			return null;
 		}
-		const node = <nodes.LabelDeclaration>this.create(nodes.LabelDeclaration);		
+		const node = this.create(nodes.LabelDeclaration);		
 		this.scanner.goBackTo(this.token.offset +1 ); // Separate >
 		this.accept(TokenType.GTS);
 
-		const symbol = <nodes.Symbol>this.create(nodes.Symbol);
+		const symbol = this.create(nodes.Symbol);
 		symbol.referenceTypes = [nodes.ReferenceType.Label];
 
-		if (!this.accept(TokenType.Symbol) || isNaN(Number(this.token.text))) {
+		if (!this.accept(TokenType.Symbol)) {
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
 		node.setSymbol(symbol);
 
-		const nr = <nodes.IdentAddress>this.create(nodes.IdentAddress);
-		if (!this.acceptUnquotedString()){
+		if (node.setValue(this.parseString())){
+			node.valueType = nodes.ValueType.String;
+		}
+		else if (node.setValue(this.parseNumeric())){
+			node.valueType = nodes.ValueType.Numeric;
+		} 
+		else {
 			return this.finish(node, ParseError.AddressExpected);
 		}
-		node.setAddress(nr);
+		return this.finish(node);
+	}
 
+	private parseString() : nodes.Node | null{
+
+		
+		if (!this.peek(TokenType.String) && !this.peek(TokenType.BadString)) {
+			return null;
+		}
+		
+		const node = this.createNode(nodes.NodeType.String);
+		if (this.accept(TokenType.BadString)){
+			return this.finish(node, ParseError.RightParenthesisExpected);
+		}
+		
+		this.consumeToken();
+
+		if (this.accept(TokenType.BadString)){
+			return this.finish(node, ParseError.InvalidStatement);
+		}
+
+		return this.finish(node);
+	}
+
+	private parseNumeric() : nodes.Node | null{
+		if (!this.peek(TokenType.Symbol) || isNaN(Number(this.token.text))) {
+			return null;
+		}
+		
+		let node = this.createNode(nodes.NodeType.NumericValue);
+		if (!this.acceptUnquotedString()) {
+			return this.finish(node, ParseError.AddressExpected);
+		}
+		
 		return this.finish(node);
 	}
 
@@ -385,17 +448,6 @@ export class Parser {
 	//#endregion
 
 	// #region Global scope 
-	/*
-					child = this._parseIncludes() 
-				|| this._parseDefFile() 
-				|| this._parseVariableDefinition() 
-				|| this._parseLabelDefinition() 
-				|| this._parseFunction()
-				|| this._parseSymbol();
-
-				*/
-
-
 	public _parseMacroFile(): nodes.MacroFile {
 		
 		const node = this.create(nodes.MacroFile);
@@ -444,7 +496,7 @@ export class Parser {
 	
 		this.acceptKeyword('$nolist');
 
-		const node = <nodes.Node>this.create(nodes.Node);
+		const node = this.createNode(nodes.NodeType.DefFile);
 
 		while (true){
 			this._processNewLines();
@@ -523,16 +575,20 @@ export class Parser {
 
 	public _parseFunctionBody(): nodes.Node | null {
 
-		if (this._isFunction()) {
+		if (this._isFunction() || this.peek(TokenType.Dollar) || this.peek(TokenType.AT) || this.peek(TokenType.GTS)) {
 			return null;
 		}
-
-		let node = this._parseControlStatement(this._parseFunctionBody.bind(this))
+		let sequence = this._parseSequenceNumber();
+		let statement = this._parseControlStatement(this._parseFunctionBody.bind(this))
 			|| this._parseMacroStatement()
 			|| this._parseNcStatement()
 			|| this.parseUnexpected();
 
-		return node;
+		if (sequence && statement){
+			sequence.addChild(statement);
+			return sequence;
+		}
+		return sequence || statement;
 	}
 
 	private parseUnexpected() : nodes.Node | null{
@@ -541,9 +597,10 @@ export class Parser {
 		if (this.peekOneOf([TokenType.Delim, TokenType.BracketL, 
 			TokenType.BracketR, TokenType.Hash,
 			TokenType.AT, TokenType.GTS, 
-			TokenType.LogigOr, TokenType.LogigAnd, TokenType.Ffunc])) {
+			TokenType.Ffunc])) {
+			this.finish(node, ParseError.UnexpectedToken);	
 			this.consumeToken();
-			return this.finish(node, ParseError.UnexpectedToken);
+			return node;
 		}
 
 		return null;
@@ -579,124 +636,152 @@ export class Parser {
 
 		return this.finish(node);
 	}
+	
  	//#endregion
 	
 	//#region Statements
+	public _parseSequenceNumber() : nodes.NcStatement | null {
+
+		if (!this.peekRegExp(TokenType.Symbol, /n\d+/i) || this.declarations.has(this.token.text)) {
+			return null;
+		}
+		let node = this.create(nodes.SequenceNumber);
+		this.consumeToken();
+		return this.finish(node);
+	}
+
 	public _parseNcStatement() : nodes.NcStatement | null {
 		
 		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Address) && !this.peek(TokenType.AddressPartial)){
 			return null;
 		}
-		const node = <nodes.NcStatement>this.create(nodes.NcStatement);
-		node.addChild(this._parseNcStatementInternal());
-		while (node.hasChildren) {
-			let child = this._parseNcStatementInternal();
+
+		const node = this.create(nodes.NcStatement);
+		while (true) {
+			let child = this.parseString() || this._parseNcStatementInternal();
 			if (child){
-				node.getChild(node.getChildren().length-1)?.addChild(child);
+				node.addChild(child);
 			}
 			else {break;}
 		}
-		return this.finish(node);
+		this.finish(node);
+
+		return node;
 	}
 
 	public _parseNcStatementInternal() : nodes.Node | null {
 		
-		function isNcCode(ch:number): boolean {
-			if (ch >= 'a'.charCodeAt(0) && ch <= 'z'.charCodeAt(0) || ch >= 'A'.charCodeAt(0) && ch <= 'Z'.charCodeAt(0)) { 
-				return true;
-			}
-			return false;
+		if (this.peek(TokenType.NewLine) || this.peek(TokenType.EOF)) {
+			return null;
 		}
-
-		if (this.peek(TokenType.NewLine)) {
-			return null;//this._parseNcStatementInternal(node);
-		}
-
-		// Symbol declaration found
+		
+		// Symbol declaration found eg. CALL
 		if (this.declarations.has(this.token.text)) {
 			return this._parseDeclarationType();
 		}
-		
+
 		// Expression
+		// TODO expression only after a parameter
 		if (this.peek(TokenType.Hash) || this.peek(TokenType.BracketL) || this.peekDelim('+') || this.peekDelim('-')) {
-			return this._parseBinaryExpr();
+			let node = this._parseBinaryExpr();
+			if (!node){
+				let error = this.createNode(nodes.NodeType.Undefined);
+				return this.finish(error, ParseError.InvalidStatement);
+			}
+			else{
+				return node;
+			}
 		}
-	
-		let stream = new MultiLineStream(this.token.text);
 
-		// NC-Code or undefined Symbol
-		if (isNcCode(stream.peekChar())) {
+		let mark = this.mark();
+		let hasNumber = false;
+		let isComplete = false;
+		this.scanner.stream.goBackTo(this.scanner.pos()-this.token.text.length);
+		let start = this.scanner.stream.pos();
+		let isNcParam = this.isNcCode(this.scanner.stream.peekChar(0));
+		let isNcCode = this.token.text.toLocaleLowerCase().charAt(0) === 'g' || this.token.text.toLocaleLowerCase().charAt(0) === 'm';
 
-			stream.advance(1);
+		// A-Z
+		if (isNcParam) {
+			if (this.token.len > 1) {
+				this.scanner.stream.advance(1);
+				// Check NC-Code number
+				hasNumber = 0 < this.scanner.stream.advanceWhileChar((ch) =>  ch >= scanner._0 && ch <= scanner._9 || ch === scanner._DOT);
+				// Check NC-Code Address e.g G04.1
+				isComplete = !(this.scanner.stream.peekChar(-1) === '.'.charCodeAt(0));
+			}
+		}
 
-			// Check NC-Code number
-			let isNumber = 0 < stream.advanceWhileChar((ch) =>  ch >= scanner._0 && ch <= scanner._9 || ch === scanner._DOT);
+		//  NC-Code/Parameter e.g: G01, P01
+		if (isNcParam && hasNumber) {	
+			let code:nodes.Node;
+			if (isNcCode){
+				code = this.create(nodes.NcCode);
+			}
+			else{
+				code = this.create(nodes.NcParameter);
+			}
+			let len = this.scanner.pos() - start;
+			this.token = { type: this.token.type, offset: start, len: this.scanner.pos() - start, text: this.scanner.substring(start, len)};
+			this.consumeToken();
+			return this.finish(code);		
+		}
 
-			// Check NC-Code Address e.g G04.1
-			let isIncomplete = stream.peekChar(-1) === '.'.charCodeAt(0);
+		this.restoreAtMark(mark);
 
-			// NC Code with decimal point
-			if (isNumber && isIncomplete) {
-				let code = this.create(nodes.NcCode);
-				this.consumeToken();
-					
-				stream = new MultiLineStream(this.token.text);
-				if (stream.peekChar(0) >= scanner._0 && stream.peekChar(0) <= scanner._9){
-					this.consumeToken();
-					return this.finish(code);	
-				}
-				else{
-					return this.finish(code, ParseError.NumberExpected);
-				}
+
+		//  NC-Code/Parameter e.g:  e.g: G[1], P[1], P#1
+		if (isNcParam && !hasNumber && this.token.len === 1) {
+			let code:nodes.Node;
+			if (isNcCode){
+				code = this.create(nodes.NcCode);
+			}
+			else{
+				code = this.create(nodes.NcParameter);
 			}
 
-			// Sequence number e.g N1000 or G-Code
-			else if (isNumber && !isIncomplete) {
-					
-				stream.goBackTo(0);
-				if (stream.peekChar(0) === 'n'.charCodeAt(0) || stream.peekChar(0) === 'N'.charCodeAt(0)) {
-					let sequence = this.create(nodes.SequenceNumber);
-					this.consumeToken();
-					return this.finish(sequence);	
-				}
-				else {
-					let code = this.create(nodes.NcCode);
-					this.consumeToken();
-					return this.finish(code);
-				}				
+			this.consumeToken();
+
+			// NC-Code/Parameter Value e.g: #[1]
+			if (this.peek(TokenType.Hash) || this.peek(TokenType.BracketL) || this.peekDelim('+') || this.peekDelim('-')) {
+				let expression = this._parseBinaryExpr();
+				code.addChild(expression);
+				return this.finish(code);
 			}
-
-			// Parameter e.g P[1]
-			if (!isNumber && this.token.len === 1) {
-				let parameter = this.create(nodes.NcParameter);
-				this.consumeToken();
-
-				if (this.peek(TokenType.Hash) || this.peek(TokenType.BracketL) || this.peekDelim('+') || this.peekDelim('-')) {
-					let expression = this._parseBinaryExpr();
-					parameter.addChild(expression);
-					return this.finish(parameter);
-				}
-				else {
-					// error no prameter
-					return this.finish(parameter, ParseError.ParameterExpected);
-				}
-			}
-
-			// Symbol which was not declarated
-			if (!isNumber && this.token.len > 1) {
+			// NC-Code/Parameter Value e.g: some symbol
+			else if (this.peek(TokenType.Symbol)){
 				let symbol = this.create(nodes.Symbol);
 				this.consumeToken();
-				return this.finish(symbol);
+				code.addChild(this.finish(symbol));
+				return this.finish(code);
+			}
+			else {
+				// error no prameter
+				return this.finish(code, ParseError.ParameterExpected);
 			}
 		}
-		// Symbol was not declarated
-		else if (this.peek(TokenType.Symbol)) {
+
+		// Symbol which was not declarated
+		if (this.peek(TokenType.Symbol)) {
 			let symbol = this.create(nodes.Symbol);
 			this.consumeToken();
 			return this.finish(symbol);
 		}
-		
-		return null;
+
+
+
+		G01 C-365.F#v01
+
+		IF [ypos LE 1] THEN
+			IF [ypos EQ 0] THEN ypos = 6
+			IF [ypos EQ 1] THEN ypos = 7
+		ENDIF
+	 	ELSE                   ypos = 2
+
+		let node = this.create(nodes.Node);
+		this.finish(node, ParseError.UnexpectedToken);
+		this.consumeToken();
+		return node;
 	}
 
 	public _parseControlStatement(parseStatement: () => nodes.Node | null): nodes.Node | null {
@@ -711,11 +796,14 @@ export class Parser {
 			return null;
 		}
 
-		if (!this._isMacroStatement()){
-			return null;
+		if (this.peek(TokenType.Symbol)) {
+			let declaration = this.declarations.get(this.token.text);
+			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue){
+				return null;
+			}
 		}
-		const node = <nodes.Assignment>this.create(nodes.Assignment);	
 
+		const node = <nodes.Assignment>this.create(nodes.Assignment);	
 		this.accept(TokenType.Hash);
 
 		if (this.peek(TokenType.BracketL)) {
@@ -744,22 +832,6 @@ export class Parser {
 
 		return this.finish(node); 
 	}
-
-	public _isMacroStatement() : boolean {
-		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
-			return false;
-		}
-		let mark = this.mark();
-		this.scanner.stream.goBackTo(this.token.offset);
-		this.scanner.stream.advanceWhileChar((a) => a !== _EQS && a !== _NWL);
-		if (this.scanner.stream.peekChar() === _SPC){
-			this.scanner.stream.advanceWhileChar((a) => a === _SPC);
-		}
-		let ret = this.scanner.stream.peekChar() === _EQS;
-		this.restoreAtMark(mark);
-		return ret;
-	}
-
 	//#endregion
 
 	//#region Conditionals
@@ -774,7 +846,7 @@ export class Parser {
 			return null;
 		}
 
-		const node = <nodes.IfStatement>this.create(nodes.IfStatement);
+		const node = this.create(nodes.IfStatement);
 		this.consumeToken(); // if
 
 		if (!this.accept(TokenType.BracketL)) {
@@ -801,7 +873,7 @@ export class Parser {
 	}
 
 	public parseIfThenSingleLineStatement(): nodes.Node | null {
-		return this._parseMacroStatement();	
+		return this._parseMacroStatement();		
 	}
 
 	public _parseThenStatement(parseStatement: () => nodes.Node | null): nodes.Node | null {
@@ -816,18 +888,19 @@ export class Parser {
 		// IF [] THEN term
 		if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
 			this.restoreAtMark(pos);
-			const node = <nodes.ThenTermStatement>this.create(nodes.ThenTermStatement);
+			const node = this.create(nodes.ThenTermStatement);
 			this.consumeToken(); // then
 			this._parseBody(node, this.parseIfThenSingleLineStatement.bind(this), false);
+			
 			if (this.acceptKeyword('else')) {
 				// ELSE term
-				if (this.peek(TokenType.Symbol)) {
-					const elseNode = <nodes.BodyDeclaration>this.create(nodes.ElseStatement);
+				if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
+					const elseNode = this.create(nodes.ElseStatement);
 					this._parseBody(elseNode, this.parseIfThenSingleLineStatement.bind(this), false);
 					node.setElseClause(elseNode);
 				} 
 				else {
-					const elseNode = <nodes.BodyDeclaration>this.create(nodes.ElseStatement);
+					const elseNode = this.create(nodes.ElseStatement);
 					this._parseBody(node, parseStatement);
 					node.setElseClause(elseNode);
 					
@@ -836,17 +909,28 @@ export class Parser {
 					}
 				}
 			}
-
+			else{
+				this.acceptKeyword('endif');
+			}
+			
 			return this.finish(node);
 		} 
 		else {
 			this.restoreAtMark(pos);
-			const node = <nodes.ThenEndifStatement>this.create(nodes.ThenEndifStatement);
+			const node = this.create(nodes.ThenEndifStatement);
 			this.consumeToken(); // then
 
 			this._parseBody(node, parseStatement);
+
+			let lastChild = node.getChild(node.getChildren().length-1);
+			if (lastChild?.type === nodes.NodeType.ThenTerm){
+				if (!this.acceptKeyword('endif')) {
+					return this.finish(node, ParseError.EndifExpected);
+				}
+			}
+
 			if (this.acceptKeyword('else')) {
-				const elseNode = <nodes.BodyDeclaration>this.create(nodes.ElseStatement);
+				const elseNode = this.create(nodes.ElseStatement);
 				this._parseBody(node, parseStatement);
 				node.setElseClause(elseNode);
 			}
@@ -925,7 +1009,6 @@ export class Parser {
 	//#endregion
 
 	//#region Expressions
-
 	public _parseConditionalExpression(): nodes.Conditional | null {
 		let node = <nodes.Conditional>this.create(nodes.Conditional);	
 
@@ -948,7 +1031,26 @@ export class Parser {
 
 		return this.finish(node);
 	}
+	public _parseAddressExpression(): nodes.BinaryExpression | null {
+		let node = <nodes.BinaryExpression>this.create(nodes.BinaryExpression);	
 
+		let expression = this._parseBinaryExpr();
+		if (expression){
+			node = this.finish(expression);
+		}
+
+		if (this.acceptDelim('.')) {
+			expression = this._parseBinaryExpr();
+			if (expression){
+				node = this.finish(expression);
+			}
+			else{
+				return this.finish(node, ParseError.TermExpected);
+			}
+		}
+
+		return this.finish(node);
+	}
 	public _parseBinaryExpr(preparsedLeft?: nodes.BinaryExpression, preparsedOper?: nodes.Node): nodes.BinaryExpression | null {
 
 		let node = <nodes.BinaryExpression>this.create(nodes.BinaryExpression);
@@ -958,7 +1060,7 @@ export class Parser {
 
 		if (!this.peek(TokenType.BracketL)){
 			if (!node.setLeft((<nodes.Node>preparsedLeft || this._parseTerm()))) {
-				//return this.finish(node);
+				//return this.finish(node, ParseError.TermExpected);
 				return null;
 			}
 
@@ -966,7 +1068,8 @@ export class Parser {
 				return this.finish(node);
 			}
 
-			if (!this.peek(TokenType.BracketL)){
+			this.accept(TokenType.Hash);
+			if (!this.peek(TokenType.BracketL)){			
 				if (!node.setRight(this._parseTerm())) {
 					return this.finish(node, ParseError.TermExpected);
 				}
@@ -998,7 +1101,7 @@ export class Parser {
 
 		node.setOperator(this._parseUnaryOperator());
 
-		if (node.setExpression(this._parseDeclarationType() || this._parseFfunc() || this._parseAddress() || this._parseSymbol([nodes.ReferenceType.Undefined]))) {
+		if (node.setExpression(this._parseDeclarationType() || this._parseFfunc() || this._parseAddress() || this._parseSymbol())) {
 			return <nodes.Term>this.finish(node);
 		}
 		return null;
@@ -1006,12 +1109,12 @@ export class Parser {
 
 	public _parseDeclarationType(): nodes.Node | null {
 
-		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)){
+		if (!this.peek(TokenType.Symbol)) {
 			return null;
 		}
 
 		let declaration = this.declarations.get(this.token.text);
-		if (declaration instanceof nodes.VariableDeclaration || this.peek(TokenType.Hash)){
+		if (declaration instanceof nodes.VariableDeclaration){
 			return this._parseVariable();
 		}
 		else if (declaration instanceof nodes.LabelDeclaration){
@@ -1025,13 +1128,12 @@ export class Parser {
 	 */
 	public _parseVariable(): nodes.Variable | null {
 
-		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)){
+		if (!this.peek(TokenType.Symbol)){
 			return null;
 		}
 
 		const node = <nodes.Variable>this.create(nodes.Variable);
-		this.accept(TokenType.Hash);
-
+	
 		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Variable]))){
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
@@ -1061,11 +1163,20 @@ export class Parser {
 		if (!this.peek(TokenType.Symbol)){
 			return null;
 		}
-
+		
 		const node = <nodes.Symbol>this.create(nodes.Symbol);
 		if (referenceTypes) {
 			node.referenceTypes = referenceTypes;
 		}
+
+		/*		else if (this.isNcCode(this.token.text.charCodeAt(0))){
+	node.valueType = nodes.ValueType.Address; 
+	if (!this.acceptUnquotedString()){
+		return this.finish(node, ParseError.AddressExpected);
+	}
+}*/
+
+
 
 		this.consumeToken();
 
@@ -1101,12 +1212,16 @@ export class Parser {
 			let mark = this.mark();
 			this.consumeToken();
 			if (this.peek(TokenType.BracketL) || this.peek(TokenType.Hash)){
-				let expression = this._parseBinaryExpr();
+				let expression = this._parseAddressExpression();
 				if (node.addChild(expression)){
 					return this.finish(node);
 				}
 			}
 			this.restoreAtMark(mark); 
+		}
+		else if (this.peekRegExp(TokenType.Symbol, /(^[a-z]\d+$)/i)){
+			this.consumeToken();
+			return this.finish(node);
 		}
 		return null;
 	}
@@ -1143,8 +1258,8 @@ export class Parser {
 	}
 
 	public _parseBinaryOperator(): nodes.Node | null {
-		if (this.peekSymbol('and') || this.peekSymbol('or')
-			|| this.peekSymbol('xor') || this.peekSymbol('mod')
+		if (this.peekKeyword('and') || this.peekKeyword('or')
+			|| this.peekKeyword('xor') || this.peekKeyword('mod')
 			|| this.peekDelim('/') || this.peekDelim('*')
 			|| this.peekDelim('+') || this.peekDelim('-')
 		) {
@@ -1172,7 +1287,7 @@ export class Parser {
 	}
 
 	public _parseLogicalOperator(): nodes.Node | null {
-		if (this.peek(TokenType.LogigOr) || this.peek(TokenType.LogigAnd)
+		if (this.peekKeyword('||') || this.peekKeyword('&&')
 		) {
 			const node = this.createNode(nodes.NodeType.Operator);
 			this.consumeToken();

@@ -12,16 +12,17 @@ export enum TokenType {
 	Hash,
 	AT,
 	GTS,
+	LogigOr,
+	LogigAnd,
 	Address,
 	AddressPartial,
+	Number,
 	String,
+	BadString,
 	UnquotedString,
 	BracketL,
 	BracketR,
-	LogigOr,
-	LogigAnd,
 	Whitespace,
-	Includes,
 	Symbol,
 	Ffunc,
 	KeyWord,
@@ -148,6 +149,8 @@ export const _SQO = '\''.charCodeAt(0);
 export const _WSP = ' '.charCodeAt(0);
 export const _TAB = '\t'.charCodeAt(0);
 export const _SEM = ';'.charCodeAt(0);
+export const _LPA = '('.charCodeAt(0);
+export const _RPA = ')'.charCodeAt(0);
 export const _BRL = '['.charCodeAt(0);
 export const _BRR = ']'.charCodeAt(0);
 export const _DOT = '.'.charCodeAt(0);
@@ -176,6 +179,10 @@ staticKeywordTable['le'] = TokenType.KeyWord;
 staticKeywordTable['ge'] = TokenType.KeyWord;
 staticKeywordTable['lt'] = TokenType.KeyWord;
 staticKeywordTable['gt'] = TokenType.KeyWord;
+staticKeywordTable['and'] = TokenType.KeyWord;
+staticKeywordTable['or'] = TokenType.KeyWord;
+staticKeywordTable['xor'] = TokenType.KeyWord;
+staticKeywordTable['mod'] = TokenType.KeyWord;
 
 const staticFunctionTable: { [key: string]: TokenType; } = {};
 staticFunctionTable['sin'] = TokenType.Ffunc;
@@ -204,7 +211,7 @@ export class Scanner {
 	public stream: MultiLineStream = new MultiLineStream('');
 	public ignoreComment = true;
 	public ignoreWhitespace = true;
-	public inURL = false;
+
 
 	public setSource(input: string): void {
 		this.stream = new MultiLineStream(input);
@@ -302,7 +309,7 @@ export class Scanner {
 		if (this.stream.advanceIfChars([_PIP, _PIP])) {
 			return this.finishToken(offset, TokenType.LogigOr);
 		}
-
+		
 		// ??-keyword
 		if (this.stream.advanceIfChars([_AMD, _AMD])) {
 			return this.finishToken(offset, TokenType.LogigAnd);
@@ -330,7 +337,6 @@ export class Scanner {
 		}
 		this.goBackTo(pos);
 		
-
 		// symbol / Static
 		content = [];
 		if (this.symbol(content)) {
@@ -347,6 +353,14 @@ export class Scanner {
 				return this.finishToken(offset, TokenType.Symbol);
 			}
 		}	
+
+		// String, BadString
+		content = [];
+		let tokenType = this._string(content);
+		if (tokenType !== null) {
+			return this.finishToken(offset, tokenType, content.join(''));
+		}
+		
 
 		// Delim
 		this.stream.nextChar();
@@ -371,7 +385,7 @@ export class Scanner {
 	}
 
 	protected comment(): boolean {
-		if (this.stream.advanceIfChars([_FSL, _MUL])) {
+		if (this.stream.advanceIfChars([_FSL, _MUL]) || this.stream.advanceIfChar(_SEM)) {
 			let success = false;
 			this.stream.advanceWhileChar((ch) => {
 				if (ch === _NWL) {
@@ -438,10 +452,23 @@ export class Scanner {
 		return false;
 	}
 
-	private _stringChar(closeQuote: number, result: string[]) {
+	private _stringCloseQuotes(closeQuotes: number[]) : boolean{
+		for (let i = 0; i < closeQuotes.length; i++){
+			if (this.stream.peekChar(i) !== closeQuotes[i]){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private _stringChar(closeQuotes: number[], result: string[]) {
 		// not closeQuote, not backslash, not newline
+		if (this._stringCloseQuotes(closeQuotes)){
+			return false; 
+		}
 		const ch = this.stream.peekChar();
-		if (ch !== 0 && ch !== closeQuote && ch !== _BSL && ch !== _CAR && ch !== _LFD && ch !== _NWL) {
+
+		if (ch !== 0 && ch !== _BSL && ch !== _CAR && ch !== _LFD && ch !== _NWL) {
 			this.stream.advance(1);
 			result.push(String.fromCharCode(ch));
 			return true;
@@ -449,11 +476,9 @@ export class Scanner {
 		return false;
 	}
 
-	/*private _string(result: string[]): TokenType | null {
-		if (this.stream.peekChar() === _SQO || this.stream.peekChar() === _DQO) {
-			const closeQuote = this.stream.nextChar();
-			result.push(String.fromCharCode(closeQuote));
-
+	/*
+			if (this.stream.peekChar() === _LPA) {
+			const closeQuote = _RPA;
 			while (this._stringChar(closeQuote, result)) {
 				// loop
 			}
@@ -466,8 +491,35 @@ export class Scanner {
 				return TokenType.BadString;
 			}
 		}
+	*/
+
+	private _string(result: string[]): TokenType | null {
+		
+		if (this.stream.peekChar() === _LPA) {
+			this.stream.nextChar();
+			if (this.stream.peekChar() === _SQO || this.stream.peekChar() === _DQO || this.stream.peekChar() === _MUL) {
+				const closeQuote = this.stream.nextChar();
+				result.push(String.fromCharCode(_LPA));
+				result.push(String.fromCharCode(closeQuote));
+	
+				while (this._stringChar([closeQuote, _RPA], result)) {
+					// loop
+				}
+	
+				if (this.stream.peekChar() === closeQuote) {
+					this.stream.advance(2);
+					result.push(String.fromCharCode(closeQuote));
+					result.push(String.fromCharCode(_RPA));
+					return TokenType.String;
+				} else {
+					return TokenType.BadString;
+				}
+			}
+		}
+
+
 		return null;
-	}*/
+	}
 
 	private _unquotedChar(result: string[]): boolean {
 		// not closeQuote, not backslash, not newline

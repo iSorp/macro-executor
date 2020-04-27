@@ -149,7 +149,7 @@ export class LintVisitor implements nodes.IVisitor {
 			}
 			
 			for (const element of this.declarations.values()){
-				if (element.getAddress()?.getText() === def.getAddress()?.getText()){
+				if (element.getValue()?.getText() === def.getValue()?.getText()){
 					//this.addEntry(def, Rules.DuplicateAddress);
 				}
 			}

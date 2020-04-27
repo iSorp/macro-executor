@@ -30,6 +30,7 @@ export const ParseError = {
 	NewLineExpected: new MacroIssueType('macro-newlineexpected', localize('expected.endif', 'newline expected')),
 	LeftSquareBracketExpected: new MacroIssueType('macro-lbracketexpected', localize('expected.lsquare', '[ expected')),
 	RightSquareBracketExpected: new MacroIssueType('macro-rbracketexpected', localize('expected.rsquare', '] expected')),
+	RightParenthesisExpected: new MacroIssueType('macro-rparentexpected', localize('expected.rparent', ') expected')),
 	OperatorExpected: new MacroIssueType('macro-operatorexpected', localize('expected.operator', 'operator expected')),
 	IdentifierExpected: new MacroIssueType('macro-identifierexpected', localize('expected.ident', 'identifier expected')),
 	AddressExpected: new MacroIssueType('macro-addressexpected', localize('expected.address', 'address expected')),
@@ -42,4 +43,5 @@ export const ParseError = {
 	InvalidStatement: new MacroIssueType('macro-invalidstatement', localize('expected.invalidstatement', 'Invalid statement')),
 	ExpressionExpected: new MacroIssueType('macro-expressionexpected', localize('expected.expression', 'expression expected')),
 	UnexpectedToken: new MacroIssueType('macro-unexpectedToken', localize('expected.unexpectedToken', 'unexpected token')),
+
 };

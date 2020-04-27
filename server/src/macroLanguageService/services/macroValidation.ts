@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
- *	Copyright (c) 2020 Simon Waelti
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -20,11 +19,13 @@ export class MacroValidation {
 	}
 
 	public doValidation(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings | undefined = this.settings): Diagnostic[] {
-		const entries: nodes.IMarker[] = [];
+		if (settings && settings.validate === false) {
+			return [];
+		}
 
+		const entries: nodes.IMarker[] = [];
 		entries.push.apply(entries, nodes.ParseErrorCollector.entries(macroFile));
 		entries.push.apply(entries, LintVisitor.entries(macroFile, document, this.fileProvider));
-
 
 		function toDiagnostic(marker: nodes.IMarker): Diagnostic {
 			const range = Range.create(document.positionAt(marker.getOffset()), document.positionAt(marker.getOffset() + marker.getLength()));
