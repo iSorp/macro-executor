@@ -5,7 +5,6 @@
 'use strict';
 
 export enum ReferenceType {
-	Function,
 	Label,
 	Variable,
 	Undefined
@@ -529,7 +528,7 @@ export class BodyDeclaration extends Node {
 }
 
 export class Function extends BodyDeclaration {
-	public identifier?: Symbol;
+	public identifier?: Node;
 	public parameters?: Nodelist;
 
 	constructor(offset: number, length: number) {
@@ -540,11 +539,11 @@ export class Function extends BodyDeclaration {
 		return NodeType.Function;
 	}
 
-	public setIdentifier(node: Symbol | null): node is Symbol {
+	public setIdentifier(node: Node | null): node is Node {
 		return this.setNode('identifier', node, 0);
 	}
 
-	public getIdentifier(): Symbol | undefined {
+	public getIdentifier(): Node | undefined {
 		return this.identifier;
 	}
 

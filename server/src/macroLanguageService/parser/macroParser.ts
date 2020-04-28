@@ -39,7 +39,7 @@ export class Parser {
 	}
 
 	private isNcCode(ch:number): boolean {
-		if (ch >= 'a'.charCodeAt(0) && ch <= 'z'.charCodeAt(0) || ch >= 'A'.charCodeAt(0) && ch <= 'Z'.charCodeAt(0)) { 
+		if (ch >= scanner._A && ch <= scanner._Z || ch >= scanner._a && ch <= scanner._Z) { 
 			return true;
 		}
 		return false;
@@ -254,31 +254,54 @@ export class Parser {
 		}
 	}
 
-	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
-		const versionId = textDocument.version;
-		const text = textDocument.getText();
-		this.textProvider = (offset: number, length: number) => {
-			if (textDocument.version !== versionId) {
-				throw new Error('Underlying model has changed, AST is no longer valid');
-			}
-			return text.substr(offset, length);
-		};
-		return this.internalParse(text, this._parseMacroFile, this.textProvider);
+
+	//#region utils
+	private parseString() : nodes.Node | null{
+
+		
+		if (!this.peek(TokenType.String) && !this.peek(TokenType.BadString)) {
+			return null;
+		}
+		
+		const node = this.createNode(nodes.NodeType.String);
+		if (this.accept(TokenType.BadString)){
+			return this.finish(node, ParseError.RightParenthesisExpected);
+		}
+		
+		this.consumeToken();
+
+		if (this.accept(TokenType.BadString)){
+			return this.finish(node, ParseError.InvalidStatement);
+		}
+
+		return this.finish(node);
 	}
 
-	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {
-		this.scanner.setSource(input);
-		this.token = this.scanner.scan();
-		const node: U = parseFunc.bind(this)();
-		if (node) {
-			if (textProvider) {
-				node.textProvider = textProvider;
-			} else {
-				node.textProvider = (offset: number, length: number) => { return input.substr(offset, length); };
-			}
-		}
-		return node;
+	private parsePart(startIndex:number, condition: (ch: number) => boolean) : scanner.IToken {
+		this.scanner.goBackTo(this.scanner.pos() - this.token.text.length);
+		this.scanner.stream.advance(startIndex);
+		let start = this.scanner.stream.pos();
+
+		let has = 0 < this.scanner.stream.advanceWhileChar(condition);
+		let len = this.scanner.pos() - start;
+
+		let part = { type: this.token.type, offset: start, len: this.scanner.pos() - start, text: this.scanner.substring(start, len)};
+		return part;
 	}
+
+	private parseNumeric() : nodes.Node | null{
+		if (!this.peek(TokenType.Symbol) || isNaN(Number(this.token.text))) {
+			return null;
+		}
+		
+		let node = this.createNode(nodes.NodeType.NumericValue);
+		if (!this.acceptUnquotedString()) {
+			return this.finish(node, ParseError.AddressExpected);
+		}
+		
+		return this.finish(node);
+	}
+	//#endregion
 
 	//#region handle declaraions	
 	private resolveIncludes(node:nodes.Include) {
@@ -400,40 +423,6 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	private parseString() : nodes.Node | null{
-
-		
-		if (!this.peek(TokenType.String) && !this.peek(TokenType.BadString)) {
-			return null;
-		}
-		
-		const node = this.createNode(nodes.NodeType.String);
-		if (this.accept(TokenType.BadString)){
-			return this.finish(node, ParseError.RightParenthesisExpected);
-		}
-		
-		this.consumeToken();
-
-		if (this.accept(TokenType.BadString)){
-			return this.finish(node, ParseError.InvalidStatement);
-		}
-
-		return this.finish(node);
-	}
-
-	private parseNumeric() : nodes.Node | null{
-		if (!this.peek(TokenType.Symbol) || isNaN(Number(this.token.text))) {
-			return null;
-		}
-		
-		let node = this.createNode(nodes.NodeType.NumericValue);
-		if (!this.acceptUnquotedString()) {
-			return this.finish(node, ParseError.AddressExpected);
-		}
-		
-		return this.finish(node);
-	}
-
 	private setLocalDeclaration(node:nodes.VariableDeclaration | null) {
 		if (node){
 			let text:string;
@@ -448,6 +437,33 @@ export class Parser {
 	//#endregion
 
 	// #region Global scope 
+	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
+		const versionId = textDocument.version;
+		const text = textDocument.getText();
+		this.textProvider = (offset: number, length: number) => {
+			if (textDocument.version !== versionId) {
+				throw new Error('Underlying model has changed, AST is no longer valid');
+			}
+			return text.substr(offset, length);
+		};
+		return this.internalParse(text, this._parseMacroFile, this.textProvider);
+	}
+
+	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {
+		this.scanner.setSource(input);
+		this.token = this.scanner.scan();
+		const node: U = parseFunc.bind(this)();
+		if (node) {
+			if (textProvider) {
+				node.textProvider = textProvider;
+			} else {
+				node.textProvider = (offset: number, length: number) => { return input.substr(offset, length); };
+			}
+		}
+		return node;
+	}
+
+
 	public _parseMacroFile(): nodes.MacroFile {
 		
 		const node = this.create(nodes.MacroFile);
@@ -550,18 +566,27 @@ export class Parser {
 	// #region Function
 	public _parseFunction(): nodes.Function | null {
 
-		if (!this.peekKeyword('o')) {
+		if (!this.token.text.toLocaleLowerCase().startsWith('o')) {
 			return null;
 		}
 
 		const node = <nodes.Function>this.create(nodes.Function);
-		this.consumeToken();
+		if (!this.acceptKeyword('o')){
+			this.token = this.parsePart(0, (ch) =>  ch >= scanner._A && ch <= scanner._Z || ch >= scanner._a && ch <= scanner._Z);
+			this.consumeToken();
+		}
 
 		if (!this.peek(TokenType.Symbol)) {
 			this.markError(node, ParseError.IdentifierExpected);
 		}
-		node.setIdentifier(this._parseSymbol([nodes.ReferenceType.Variable, nodes.ReferenceType.Function]));
-
+		let declaration = this.declarations.get(this.token.text);
+		if (declaration) {
+			node.setIdentifier(this._parseVariable(declaration));
+		}
+		else {
+			node.setIdentifier(this._parseSymbol([nodes.ReferenceType.Variable]));
+		}
+	
 		return this._parseBody(node, this._parseFunctionBody.bind(this));
 	}
 
@@ -771,12 +796,8 @@ export class Parser {
 			// e.g: 360.F
 			else if (this.peek(TokenType.Symbol)){
 				let symbol = this.create(nodes.Symbol);
-				this.scanner.stream.goBackTo(this.scanner.pos()-this.token.text.length);
-				start = this.scanner.stream.pos();
-				// parse numeric part
-				hasNumber = 0 < this.scanner.stream.advanceWhileChar((ch) =>  ch >= scanner._0 && ch <= scanner._9 || ch === scanner._DOT);
-				let len = this.scanner.pos() - start;
-				this.token = { type: this.token.type, offset: start, len: this.scanner.pos() - start, text: this.scanner.substring(start, len)};
+				// Parse numeric part
+				this.token = this.parsePart(0, (ch) =>  ch >= scanner._0 && ch <= scanner._9 || ch === scanner._DOT);
 				this.consumeToken();
 				code.addChild(this.finish(symbol));
 				return this.finish(code);

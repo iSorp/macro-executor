@@ -115,7 +115,28 @@ export class LintVisitor implements nodes.IVisitor {
 		}
 	}
 
+	private functionList = new Array<string>();
 	private visitFunction(node: nodes.Function): boolean {
+
+		let ident = node.getIdentifier();
+		let number:string | undefined;
+		if (ident) {
+			if (ident instanceof nodes.Variable){
+				let nr = (<nodes.Variable>ident).declaration?.value?.getText();
+				if (nr){
+					number = nr;
+				}
+			}
+			else {
+				number = ident?.getText();
+			}
+			if (number && this.functionList.indexOf(number) === -1) {
+				this.functionList.push(number);
+			}
+			else{
+				this.addEntry(ident, Rules.DuplicateAddress);
+			}
+		}
 		return true;
 	}	
 
@@ -134,7 +155,24 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
+	private labelList:FunctionMap = new FunctionMap();
 	private visitLabels(node: nodes.Label) : boolean {
+		if (node.getParent()?.type !== nodes.NodeType.Statement){
+			return true;
+		}
+
+		let value = node.declaration?.value?.getText();
+		if (value){
+			let func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			let a = this.labelList.get(func);
+			let index = a?.indexOf(value);
+			if (index !== undefined && index > -1){
+				this.addEntry(node, Rules.DuplicateAddress);
+			} 
+			else {
+				this.labelList.add(func, value);
+			}
+		}
 		return true;
 	}
 
@@ -168,7 +206,7 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private sequenceNumbers:SequenceNumberMap = new SequenceNumberMap();
+	private sequenceNumbers:FunctionMap = new FunctionMap();
 	private visitSequenceNumber(node: nodes.SequenceNumber): boolean {
 
 		let sequence = node.getText();
@@ -201,16 +239,16 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 }
 
-class SequenceNumberMap {
-	private numbers:Map<nodes.Function, string[]> = new Map<nodes.Function,string[]>();
+class FunctionMap {
+	private elements:Map<nodes.Function, string[]> = new Map<nodes.Function,string[]>();
 	public add(key:nodes.Function, value:string){
-		if (!this.numbers.has(key)){
-			this.numbers.set(key, new Array<string>());
+		if (!this.elements.has(key)){
+			this.elements.set(key, new Array<string>());
 		}
-		this.numbers.get(key)?.push(value);
+		this.elements.get(key)?.push(value);
 	}
 
 	public get(key:nodes.Function) : string[] | undefined {
-		return this.numbers.get(key);
+		return this.elements.get(key);
 	}
 }
