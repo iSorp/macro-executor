@@ -13,6 +13,8 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 * Symbol provider
 
 
+**The syntax validation is not yet fully supported. There are cases where mistakes are not appropriate or not detected.**
+
 
 ### Validation
 ![Compile](./resources/validation.gif)
@@ -25,8 +27,8 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 
 
 ## Required file extension
-.src for macro files
-.def for include files
+* Macro files `.src`
+* Include files `.def` 
 
 
 ## Default Commands
@@ -69,5 +71,25 @@ The following arguments are passed to the Make.bat:
 If no Make.bat is used the internal building process is used.
 >- The compiler must be available over the system path
 >- The library (mex) must be located in `macro.project.linkPath` path 
+
+Currently only a flat folder tree is supported e.g.:
+
+```
+project 
+│
+└───src
+│      file1.src
+│      file2.src
+│   
+└───def
+│       file1.def
+│       file1.def
+│ 
+└───lnk
+       file1.lnk
+       file1.lnk
+	   F30iA_01.MEX
+
+```
 
 -----------------------------------------------------------------------------------------------------------

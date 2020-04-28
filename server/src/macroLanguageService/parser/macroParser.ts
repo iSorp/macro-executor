@@ -684,7 +684,10 @@ export class Parser {
 			return null;
 		}
 		let node = this.create(nodes.SequenceNumber);
+		let number = this.create(nodes.Node);
 		this.consumeToken();
+		this.finish(number);
+		node.setNumber(number);
 		return this.finish(node);
 	}
 

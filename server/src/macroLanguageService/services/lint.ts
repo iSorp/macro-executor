@@ -209,16 +209,16 @@ export class LintVisitor implements nodes.IVisitor {
 	private sequenceNumbers:FunctionMap = new FunctionMap();
 	private visitSequenceNumber(node: nodes.SequenceNumber): boolean {
 
-		let sequence = node.getText();
-		if (sequence) {
+		let number = node.getNumber();
+		if (number) {
 			let func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
 			let a = this.sequenceNumbers.get(func);
-			let index = a?.indexOf(sequence);
+			let index = a?.indexOf(number.getText());
 			if (index !== undefined && index > -1){
-				this.addEntry(node, Rules.DuplicateSequence);
+				this.addEntry(number, Rules.DuplicateSequence);
 			} 
 			else {
-				this.sequenceNumbers.add(func, sequence);
+				this.sequenceNumbers.add(func, number.getText());
 			}
 		}
 		return true;

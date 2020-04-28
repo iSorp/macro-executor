@@ -509,7 +509,7 @@ export class NcParameter extends Node {
 
 export class SequenceNumber extends Node {
 
-	number?: Number;
+	number?: Node;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -517,6 +517,14 @@ export class SequenceNumber extends Node {
 
 	public get type(): NodeType {
 		return NodeType.SequenceNumber;
+	}
+
+	public setNumber(node: Node | null): node is Node {
+		return this.setNode('number', node, 0);
+	}
+
+	public getNumber(): Node | undefined {
+		return this.number;
 	}
 }
 
