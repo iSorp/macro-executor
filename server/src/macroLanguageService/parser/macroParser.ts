@@ -609,10 +609,21 @@ export class Parser {
 		if (this._isFunction() || this.peek(TokenType.Dollar) || this.peek(TokenType.AT) || this.peek(TokenType.GTS)) {
 			return null;
 		}
-		let sequence = this._parseSequenceNumber();
+
+		// Sequence number and Label may leading a statement
+		let sequence:nodes.Node | null = null;
+		let declaration = this.declarations.get(this.token.text);
+		if (!declaration){
+			sequence = this._parseSequenceNumber();
+		} 
+		else if (declaration.type === nodes.NodeType.labelDef){
+			sequence = this._parseLabel(declaration);
+		}
+
 		let statement = this._parseControlStatement(this._parseFunctionBody.bind(this))
 			|| this._parseMacroStatement()
-			|| this._parseNcStatement();
+			|| this._parseNcStatement()
+			|| this.parseString();
 
 		if (sequence && statement){
 			sequence.addChild(statement);
@@ -625,7 +636,7 @@ export class Parser {
 
 		let node = this.create(nodes.Node);
 		this.acceptDelim('%');
-		if (!this.peekOneOf([TokenType.NewLine, TokenType.Whitespace, TokenType.EOF])) {
+		if (!this.peekOneOf([TokenType.NewLine, TokenType.Whitespace, TokenType.EOF, TokenType.String])) {
 			this.finish(node, ParseError.UnexpectedToken);	
 			this.consumeToken();
 			return node;
@@ -639,7 +650,7 @@ export class Parser {
 	public _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildes=true): T {
 
 		// check new line before statement
-		if (this._needsLineBreakBefore(node) && !this.acceptRegexp(/(\n)+/i)) {
+		if (this._needsLineBreakBefore(node) && !this.peek(TokenType.String) && !this.acceptRegexp(/(\n)+/i)) {
 			this.markError(node, ParseError.NewLineExpected);
 			this._parseRegexp(/./);
 		}	
@@ -649,7 +660,7 @@ export class Parser {
 		while (node.addChild(statement)) {
 
 			// check new line after statement
-			if (this._needsLineBreakBefore(statement) && !this.acceptRegexp(/(\n)+/i)) {
+			if (this._needsLineBreakBefore(statement) && !this.peek(TokenType.String) && !this.acceptRegexp(/(\n)+/i)) {
 				this.markError(node, ParseError.NewLineExpected);
 				this.consumeToken();
 			}	
@@ -669,7 +680,7 @@ export class Parser {
 	//#region Statements
 	public _parseSequenceNumber() : nodes.NcStatement | null {
 
-		if (!this.peekRegExp(TokenType.Symbol, /n\d+/i) || this.declarations.has(this.token.text)) {
+		if (!this.peekRegExp(TokenType.Symbol, /n\d+/i)) {
 			return null;
 		}
 		let node = this.create(nodes.SequenceNumber);
@@ -1007,13 +1018,19 @@ export class Parser {
 		const node = <nodes.GotoStatement>this.create(nodes.GotoStatement);
 		this.consumeToken(); // goto
 
-		const label = <nodes.Label>this.create(nodes.Label);
-	
-		if (!this.peek(TokenType.Symbol)){
-			this.markError(node, ParseError.LabelExpected);
+		if (this.peek(TokenType.BracketL) || this.peek(TokenType.Hash) ){
+			let expression = this._parseBinaryExpr();
+			if (!node.setLabel(expression)) {
+				this.markError(node, ParseError.ExpressionExpected);
+			}
 		}
-
-		if (!node.setLabel(this._parseDeclarationType()) && !node.setLabel(this._parseSymbol())) {
+		else if (this.peek(TokenType.Symbol)){
+			let symbol = this._parseDeclarationType() || this._parseSymbol();
+			if (!node.setLabel(symbol)) {
+				this.markError(node, ParseError.LabelExpected);
+			}
+		}
+		else {
 			this.markError(node, ParseError.LabelExpected);
 		}
 
@@ -1186,7 +1203,7 @@ export class Parser {
 	/**
 	 * Variable: #symbol; #[symbol]
 	 */
-	public _parseVariable(declaration:nodes.VariableDeclaration | undefined): nodes.Variable | null {
+	public _parseVariable(declaration:nodes.VariableDeclaration | undefined = undefined): nodes.Variable | null {
 
 		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
@@ -1205,7 +1222,11 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public _parseLabel(declaration:nodes.LabelDeclaration | undefined): nodes.Label | null {
+	public _parseLabel(declaration:nodes.LabelDeclaration | undefined = undefined): nodes.Label | null {
+
+		if (!this.peek(TokenType.Symbol)) {
+			return null;
+		}
 
 		const node = this.create(nodes.Label);
 		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Label]))){

@@ -125,6 +125,7 @@ export const _A = 'A'.charCodeAt(0);
 export const _F = 'F'.charCodeAt(0);
 export const _Z = 'Z'.charCodeAt(0);
 export const _0 = '0'.charCodeAt(0);
+export const _1 = '1'.charCodeAt(0);
 export const _9 = '9'.charCodeAt(0);
 
 export const _N = 'n'.charCodeAt(0);
@@ -476,48 +477,46 @@ export class Scanner {
 		return false;
 	}
 
-	/*
-			if (this.stream.peekChar() === _LPA) {
-			const closeQuote = _RPA;
-			while (this._stringChar(closeQuote, result)) {
+	private _string(result: string[]): TokenType | null {
+		
+		if (this.stream.peekChar() === _LPA) {
+			this.stream.nextChar();
+			result.push(String.fromCharCode(_LPA));
+			// &1
+			if (this.stream.peekChar() === _AMD){
+				this.stream.nextChar();
+			}
+			if (this.stream.peekChar() === _1){
+				this.stream.nextChar();
+			}
+			let closeQuote:number = 0;
+			let closeQuotes:number[] = [];
+			if (this.stream.peekChar() === _SQO || this.stream.peekChar() === _DQO || this.stream.peekChar() === _MUL) {
+				closeQuote = this.stream.nextChar();
+				closeQuotes = [closeQuote, _RPA];
+				result.push(String.fromCharCode(closeQuote));
+			}
+			else{
+				closeQuotes = [_RPA];
+				closeQuote = _RPA;
+			}		
+
+			while (this._stringChar(closeQuotes, result)) {
 				// loop
 			}
-
+	
 			if (this.stream.peekChar() === closeQuote) {
-				this.stream.nextChar();
-				result.push(String.fromCharCode(closeQuote));
+				
+				for (const quote of closeQuotes){
+					this.stream.advance(1);
+					result.push(String.fromCharCode(quote));
+				}
 				return TokenType.String;
 			} else {
 				return TokenType.BadString;
 			}
 		}
-	*/
-
-	private _string(result: string[]): TokenType | null {
 		
-		if (this.stream.peekChar() === _LPA) {
-			this.stream.nextChar();
-			if (this.stream.peekChar() === _SQO || this.stream.peekChar() === _DQO || this.stream.peekChar() === _MUL) {
-				const closeQuote = this.stream.nextChar();
-				result.push(String.fromCharCode(_LPA));
-				result.push(String.fromCharCode(closeQuote));
-	
-				while (this._stringChar([closeQuote, _RPA], result)) {
-					// loop
-				}
-	
-				if (this.stream.peekChar() === closeQuote) {
-					this.stream.advance(2);
-					result.push(String.fromCharCode(closeQuote));
-					result.push(String.fromCharCode(_RPA));
-					return TokenType.String;
-				} else {
-					return TokenType.BadString;
-				}
-			}
-		}
-
-
 		return null;
 	}
 
