@@ -256,6 +256,13 @@ export class MacroNavigation {
 				entry.name = (<nodes.Label>node).getName();
 				entry.kind = SymbolKind.Constant;
 			} 
+			else if (node.type === nodes.NodeType.Variable) {
+				let variable = <nodes.Variable>node;
+				if (variable.declaration?.valueType === nodes.ValueType.MFunc){
+					entry.name = variable.getName();
+					entry.kind = SymbolKind.Event;
+				}
+			} 
 			else if (node.type === nodes.NodeType.SequenceNumber) {
 				entry.name = node.getText();
 				entry.kind = SymbolKind.Field;

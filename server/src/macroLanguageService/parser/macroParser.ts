@@ -813,9 +813,9 @@ export class Parser {
 		}
 
 		const node = <nodes.Assignment>this.create(nodes.Assignment);	
-
-		if (this.peek(TokenType.Symbol)) {
-			let declaration = this.declarations.get(this.token.text);
+		let declaration:nodes.VariableDeclaration | undefined;
+		if (this.peek(TokenType.Symbol)) {		
+			declaration = this.declarations.get(this.token.text);
 			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue) {
 				return null;
 			}
@@ -823,6 +823,7 @@ export class Parser {
 
 
 		this.accept(TokenType.Hash);
+		declaration = this.declarations.get(this.token.text);
 
 		if (this.peek(TokenType.BracketL)) {
 			let expression = this._parseBinaryExpr();
@@ -830,7 +831,7 @@ export class Parser {
 				return this.finish(node, ParseError.IdentifierExpected);
 			}
 		} 
-		else if (!node.setVariable(this._parseVariable())) {
+		else if (!node.setVariable(this._parseVariable(declaration))) {
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
 
@@ -1153,10 +1154,10 @@ export class Parser {
 
 		let declaration = this.declarations.get(this.token.text);
 		if (declaration instanceof nodes.VariableDeclaration || this.peek(TokenType.Hash)){
-			return this._parseVariable();
+			return this._parseVariable(declaration);
 		}
 		else if (declaration instanceof nodes.LabelDeclaration) {
-			return this._parseLabel();
+			return this._parseLabel(declaration);
 		}
 		return null;
 	}
@@ -1164,7 +1165,7 @@ export class Parser {
 	/**
 	 * Variable: #symbol; #[symbol]
 	 */
-	public _parseVariable(): nodes.Variable | null {
+	public _parseVariable(declaration:nodes.VariableDeclaration | undefined): nodes.Variable | null {
 
 		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
@@ -1176,16 +1177,23 @@ export class Parser {
 		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Variable]))){
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
-		
+		if (declaration){
+			node.declaration = declaration;
+		}
+
 		return this.finish(node);
 	}
 
-	public _parseLabel(): nodes.Label | null {
+	public _parseLabel(declaration:nodes.LabelDeclaration | undefined): nodes.Label | null {
 
 		const node = this.create(nodes.Label);
 		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Label]))){
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
+		if (declaration){
+			node.declaration = declaration;
+		}
+
 		return this.finish(node);
 	}
 

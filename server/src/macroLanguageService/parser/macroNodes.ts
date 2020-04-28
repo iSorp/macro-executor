@@ -577,17 +577,10 @@ export class Symbol extends Node {
 	}
 }
 
-export class Label extends Node {
+export class DeclarationType<T extends AbstractDeclaration> extends Node {
 
+	public declaration: T | undefined;
 	public symbol?: Symbol;
-
-	constructor(offset: number, length: number) {
-		super(offset, length);
-	}
-
-	public get type(): NodeType {
-		return NodeType.label;
-	}
 
 	public setSymbol(node: Symbol | null): node is Symbol {
 		return this.setNode('symbol', node, 0);
@@ -602,10 +595,21 @@ export class Label extends Node {
 	}
 }
 
-export class Variable extends Node {
+export class Label extends DeclarationType<LabelDeclaration> {
+
+	constructor(offset: number, length: number) {
+		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.label;
+	}
+}
+
+export class Variable extends DeclarationType<VariableDeclaration> {
 
 	public expression?: BinaryExpression;
-	public symbol?: Symbol;
+
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -621,18 +625,6 @@ export class Variable extends Node {
 
 	public getExpression(): BinaryExpression | undefined {
 		return this.expression;
-	}
-	
-	public setSymbol(node: Symbol | null): node is Symbol {
-		return this.setNode('symbol', node, 0);
-	}
-
-	public getSymbol(): Symbol | undefined {
-		return this.symbol;
-	}
-
-	public getName(): string {
-		return this.symbol ? this.symbol.getName() : '';
 	}
 }
 
