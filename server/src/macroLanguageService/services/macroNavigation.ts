@@ -253,8 +253,14 @@ export class MacroNavigation {
 				entry.kind = SymbolKind.Function;
 			} 
 			else if (node.type === nodes.NodeType.label) {
-				entry.name = (<nodes.Label>node).getName();
-				entry.kind = SymbolKind.Constant;
+				if (node.getParent()?.type === nodes.NodeType.Function){
+					entry.name = (<nodes.Label>node).getName();
+					entry.kind = SymbolKind.Constant;
+				}
+			} 
+			else if (node.type === nodes.NodeType.Goto) {
+				entry.name = node.getText();
+				entry.kind = SymbolKind.Event;
 			} 
 			else if (node.type === nodes.NodeType.Variable) {
 				let variable = <nodes.Variable>node;

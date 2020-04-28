@@ -674,6 +674,10 @@ export class GotoStatement extends BodyDeclaration {
 	public setLabel(label: Node | null): label is Label {
 		return this.setNode('label', label);
 	}
+
+	public getLabel(): Node | undefined {
+		return this.label;
+	}
 }
 
 export class IfEndifStatement extends BodyDeclaration {
