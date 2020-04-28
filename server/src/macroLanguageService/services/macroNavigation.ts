@@ -260,7 +260,7 @@ export class MacroNavigation {
 				entry.name = node.getText();
 				entry.kind = SymbolKind.Field;
 			} 
-			else if (node.type === nodes.NodeType.Statement) {
+			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
 				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber){
 					entry.name = node.getText();
 					entry.kind = SymbolKind.Field;
