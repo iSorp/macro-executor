@@ -59,14 +59,14 @@ function compile() : Promise<void> {
 			args = args +' -Fl'+ source;
 		}
 		
-		let def = { type: 'shell', id: 'shell'};
+		let def = { 
+			type: 'shell', 
+			id: 'shell',
+		};
 		let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Compile','Macro', 
 			new vscode.ShellExecution(compiler + ' ' + currentFile + args), '$macro');
 		
-		vscode.tasks.executeTask(t).then((a)=> {
-			reject();
-			//resolve();
-		});
+		vscode.tasks.executeTask(t);
 	});
 }
 

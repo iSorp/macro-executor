@@ -29,6 +29,7 @@ import {
 	DocumentLinkParams,
 	RenameParams,
 	DidChangeConfigurationParams,
+	WorkspaceFoldersChangeEvent,
 } from 'vscode-languageserver';
 
 import {
@@ -49,7 +50,7 @@ let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
-const defaultSettings: LanguageSettings = { validate: true };
+const defaultSettings: LanguageSettings = { validate: true, validateWorkspace: false };
 let globalSettings: LanguageSettings = defaultSettings;
 let documentSettings: Map<string, Thenable<LanguageSettings>> = new Map();
 
@@ -87,13 +88,12 @@ class FileProvider implements MacroFileProvider {
 						document: document,
 						version: 1
 					};
+					// add new parsed document to the repository
+					// parsedDocuments.set(uri, doc);
 				}
 				catch (e){
 					console.log();
 				}
-				
-				// add new parsed document to the repository
-				// parsedDocuments.set(uri, doc);
 			}
 			catch (err) {
 				return undefined;
@@ -139,16 +139,11 @@ const macroLanguageService = getMacroLanguageService({
 
 });
 
-
 connection.onInitialize((params: InitializeParams) => {
-
-	connection.console.log('dfgsdfhg');
 
 	let capabilities = params.capabilities;
 	workspaceFolder = params.rootUri;
 
-	// Does the client support the `workspace/configuration` request?
-	// If not, we will fall back using global settings
 	hasConfigurationCapability = !!(
 		capabilities.workspace && !!capabilities.workspace.configuration
 	);
@@ -176,29 +171,19 @@ connection.onInitialize((params: InitializeParams) => {
 		}
 
 	};
-	if (hasWorkspaceFolderCapability) {
-		result.capabilities.workspace = {
-			workspaceFolders: {
-				supported: true
-			}
-		};
-	}
-
 	return result;
 });
 
-connection.onInitialized(() => {
+connection.onInitialized(async () => {
 	if (hasConfigurationCapability) {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
-	if (hasWorkspaceFolderCapability) {
-		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			connection.console.log('Workspace folder change event received.');
-		});
-	}
 
-	validateWorkspace();
+	let settings = await getSettings();
+	if (settings && settings.validateWorkspace){
+		validateWorkspace();
+	}
 });
 
 connection.onDidChangeWatchedFiles(_change => {});
@@ -234,19 +219,17 @@ async function configuration(params: DidChangeConfigurationParams) {
 	}
 }
 
-function getDocumentSettings(resource: string): Thenable<LanguageSettings> {
+function getSettings(): Thenable<LanguageSettings> {
 	if (!hasConfigurationCapability) {
 		return Promise.resolve(globalSettings);
 	}
-	let result = documentSettings.get(resource);
-	if (!result) {
-		result = connection.workspace.getConfiguration({
-			scopeUri: resource,
-			section: 'macroLanguageServer'
-		});
-		documentSettings.set(resource, result);
-	}
+	let result = connection.workspace.getConfiguration({
+		section: 'macroLanguageServer'
+	});
 	return result;
+}
+
+function workspace(event:WorkspaceFoldersChangeEvent) {
 }
 
 function hower(params: TextDocumentPositionParams) {
@@ -292,7 +275,7 @@ async function validateTextDocument(doc: MacroFileType | undefined) {
 
 	try {
 
-		let settings = await getDocumentSettings(doc.document.uri);
+		let settings = await getSettings();
 
 		const version = doc.document.version;
 		const diagnostics: Diagnostic[] = [];
@@ -303,7 +286,7 @@ async function validateTextDocument(doc: MacroFileType | undefined) {
 					let entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
 					let index = 0;
 					for (const entry of entries) {
-						if (maxNumberOfProblems < index){
+						if (maxNumberOfProblems <= index){
 							break;
 						}
 						diagnostics.push(entry);
@@ -330,10 +313,10 @@ async function validateWorkspace() {
 function getParsedDocument(uri: string, cb:((document:TextDocument) => Macrofile)) : MacroFileType | undefined {
 	let document = documents.get(uri);
 	if (document) {
-		let doc = parsedDocuments.get(document.uri);
-		if (doc){
-			if (document.version !== doc.version){
-				parsedDocuments.set(document.uri , {
+		let parsed = parsedDocuments.get(uri);
+		if (parsed) {
+			if (document.version !== parsed.version){
+				parsedDocuments.set(uri , {
 					macrofile: cb(document),
 					document: document,
 					version: document.version
@@ -341,13 +324,12 @@ function getParsedDocument(uri: string, cb:((document:TextDocument) => Macrofile
 			}
 		}
 		else {
-			parsedDocuments.set(document.uri, {
+			parsedDocuments.set(uri, {
 				macrofile: cb(document),
 				document: document,
 				version: document.version
 			});
 		}	
-		return parsedDocuments.get(document.uri); 
 	}
-	return undefined;
+	return parsedDocuments.get(uri);
 }

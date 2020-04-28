@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *	Copyright (c) 2020 Simon Waelti
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as path from 'path';
 import { ExtensionContext, workspace } from 'vscode';
 import { 
@@ -19,8 +14,6 @@ let client: LanguageClient;
 
 
 export function activate(context: ExtensionContext) {
-
-	console.log('adsgsdg');
 
 	// The server is implemented in node
 	let serverModule = context.asAbsolutePath(
@@ -49,9 +42,10 @@ export function activate(context: ExtensionContext) {
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for plain text documents
 		documentSelector: [selector],
+
 		synchronize: {
-			// Notify the server about file changes to '.clientrc files contained in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/*.{src,def}')
+			// Notify the server about file changes 
+			fileEvents: workspace.createFileSystemWatcher('*.{src,def}')
 		},		
 		diagnosticCollectionName: 'macro',
 		progressOnInitialization: true,

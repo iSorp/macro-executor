@@ -14,6 +14,7 @@ export * from 'vscode-languageserver-types';
 
 export interface LanguageSettings {
 	validate?: boolean;
+	validateWorkspace?: boolean;
 }
 
 export interface DocumentContext {

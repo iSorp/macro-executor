@@ -2,7 +2,7 @@
 
 <img src="./resources/icon.png" alt="drawing" width="100"/>
 
-Fanuc Macro Executor syntax highlighting and project building 
+Fanuc Macro Executor syntax highlighting/validating and project building 
 
 ## Features
 
@@ -14,11 +14,19 @@ Fanuc Macro Executor syntax highlighting and project building
 
 
 
-### Compile
-![Compile](./resources/compile.gif)
+### Validation
+![Compile](./resources/validation.gif)
 
-### Parameter definition
-![Definition](./resources/definition.gif)
+### Navigation
+![Definition](./resources/navigation.gif)
+
+### References
+![Definition](./resources/references.gif)
+
+
+## Required file extension
+.src for macro files
+.def for include files
 
 
 ## Default Commands
@@ -34,6 +42,8 @@ Fanuc Macro Executor syntax highlighting and project building
 
 This extension contributes the following settings:
 
+
+* `macroLanguageServer.validate`: Syntax validation activation
 * `macro.build.compiler`: Compiler Selection {MCOMPI, MCOMP0}
 * `macro.build.controlType`: Control Type Selection {0, 30}
 * `macro.build.makeFile`: Makefile
@@ -46,7 +56,7 @@ This extension contributes the following settings:
 ## Building
 
 ### External build system
-The building process can be performed by using an external Make.bat or the internal system. If an external Make.bat is used,
+The building process can be performed by using an external script or the internal system. If an external script is used,
 just set the path in `macro.build.makeFile`. If a Clean.bat in the same directory exists, it is used for the cleaning process.
 The following arguments are passed to the Make.bat: 
 

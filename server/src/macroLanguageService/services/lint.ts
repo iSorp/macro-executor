@@ -157,7 +157,7 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private labelList:FunctionMap = new FunctionMap();
 	private visitLabels(node: nodes.Label) : boolean {
-		if (node.getParent()?.type !== nodes.NodeType.Statement){
+	/*	if (node.getParent()?.type !== nodes.NodeType.Statement){
 			return true;
 		}
 
@@ -172,7 +172,7 @@ export class LintVisitor implements nodes.IVisitor {
 			else {
 				this.labelList.add(func, value);
 			}
-		}
+		}*/
 		return true;
 	}
 

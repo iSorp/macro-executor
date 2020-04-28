@@ -1,5 +1,8 @@
-## 0.0.5 (Not yet released)
-- Custom language keywords
+## 0.1.0 (April 28, 2020)
+- Macro language server
+- Symbol provider
+- Navigation provider
+- Syntax validation
 
 ## 0.0.4 (March 31, 2020)
 - Probem matcher file search path is now "${fileDirname}"
