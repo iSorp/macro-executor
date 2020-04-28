@@ -685,7 +685,7 @@ export class GotoStatement extends BodyDeclaration {
 	}
 }
 
-export class ThenEndifStatement extends BodyDeclaration {
+export class IfEndifStatement extends BodyDeclaration {
 
 	public elseClause?: BodyDeclaration;
 
@@ -702,7 +702,7 @@ export class ThenEndifStatement extends BodyDeclaration {
 	}
 }
 
-export class ThenTermStatement extends ThenEndifStatement {
+export class ThenTermStatement extends IfEndifStatement {
 
 	constructor(offset: number, length: number) {
 		super(offset, length);

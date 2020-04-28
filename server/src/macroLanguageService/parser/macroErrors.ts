@@ -43,5 +43,5 @@ export const ParseError = {
 	InvalidStatement: new MacroIssueType('macro-invalidstatement', localize('expected.invalidstatement', 'Invalid statement')),
 	ExpressionExpected: new MacroIssueType('macro-expressionexpected', localize('expected.expression', 'expression expected')),
 	UnexpectedToken: new MacroIssueType('macro-unexpectedToken', localize('expected.unexpectedToken', 'unexpected token')),
-
+	EqualExpected: new MacroIssueType('macro-equalExpected', localize('expected.equalExpected', ' = expected')),
 };

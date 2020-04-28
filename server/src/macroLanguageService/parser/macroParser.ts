@@ -482,6 +482,12 @@ export class Parser {
 			if (this.peek(TokenType.EOF)) {
 				break;
 			}
+
+			let child = this.parseUnexpected();
+			if (child){
+				node.addChild(child);
+				hasMatch = true;
+			}
 	
 			this.consumeToken();
 	
@@ -581,8 +587,7 @@ export class Parser {
 		let sequence = this._parseSequenceNumber();
 		let statement = this._parseControlStatement(this._parseFunctionBody.bind(this))
 			|| this._parseMacroStatement()
-			|| this._parseNcStatement()
-			|| this.parseUnexpected();
+			|| this._parseNcStatement();
 
 		if (sequence && statement){
 			sequence.addChild(statement);
@@ -594,15 +599,12 @@ export class Parser {
 	private parseUnexpected() : nodes.Node | null{
 
 		let node = this.create(nodes.Node);
-		if (this.peekOneOf([TokenType.Delim, TokenType.BracketL, 
-			TokenType.BracketR, TokenType.Hash,
-			TokenType.AT, TokenType.GTS, 
-			TokenType.Ffunc])) {
+		this.acceptDelim('%');
+		if (!this.peekOneOf([TokenType.NewLine, TokenType.Whitespace, TokenType.EOF])) {
 			this.finish(node, ParseError.UnexpectedToken);	
 			this.consumeToken();
 			return node;
 		}
-
 		return null;
 	}
 
@@ -669,19 +671,29 @@ export class Parser {
 		return node;
 	}
 
+	/**
+	 * 
+	 * 1. is Symbol (found in declarations)
+	 * 2. is NC char
+	 * 3. is NC parameter or G-Code
+	 * 4. has NC parameter or G-Code numeric values or additional parameter 
+	 * 
+	 * e.g: 
+	 * - G01 G[#symbol] X1 Y-#[symbol]
+	 * - CALL SUB_PROGRAM
+	 */
 	public _parseNcStatementInternal() : nodes.Node | null {
 		
 		if (this.peek(TokenType.NewLine) || this.peek(TokenType.EOF)) {
 			return null;
 		}
 		
-		// Symbol declaration found eg. CALL
+		// Symbol declaration e.g. CALL
 		if (this.declarations.has(this.token.text)) {
 			return this._parseDeclarationType();
 		}
 
 		// Expression
-		// TODO expression only after a parameter
 		if (this.peek(TokenType.Hash) || this.peek(TokenType.BracketL) || this.peekDelim('+') || this.peekDelim('-')) {
 			let node = this._parseBinaryExpr();
 			if (!node){
@@ -692,28 +704,28 @@ export class Parser {
 				return node;
 			}
 		}
-
+		
 		let mark = this.mark();
-		let hasNumber = false;
-		let isComplete = false;
+		
 		this.scanner.stream.goBackTo(this.scanner.pos()-this.token.text.length);
+
+		let hasNumber = false;
 		let start = this.scanner.stream.pos();
-		let isNcParam = this.isNcCode(this.scanner.stream.peekChar(0));
+		let isNcChar = this.isNcCode(this.scanner.stream.peekChar(0));
 		let isNcCode = this.token.text.toLocaleLowerCase().charAt(0) === 'g' || this.token.text.toLocaleLowerCase().charAt(0) === 'm';
 
-		// A-Z
-		if (isNcParam) {
+		// NC-Parameter character A-Z
+		if (isNcChar) {
 			if (this.token.len > 1) {
 				this.scanner.stream.advance(1);
+				this.scanner.stream.advanceWhileChar((ch) =>  ch === scanner._WSP);
 				// Check NC-Code number
 				hasNumber = 0 < this.scanner.stream.advanceWhileChar((ch) =>  ch >= scanner._0 && ch <= scanner._9 || ch === scanner._DOT);
-				// Check NC-Code Address e.g G04.1
-				isComplete = !(this.scanner.stream.peekChar(-1) === '.'.charCodeAt(0));
 			}
 		}
 
 		//  NC-Code/Parameter e.g: G01, P01
-		if (isNcParam && hasNumber) {	
+		if (isNcChar && hasNumber) {	
 			let code:nodes.Node;
 			if (isNcCode){
 				code = this.create(nodes.NcCode);
@@ -731,7 +743,7 @@ export class Parser {
 
 
 		//  NC-Code/Parameter e.g:  e.g: G[1], P[1], P#1
-		if (isNcParam && !hasNumber && this.token.len === 1) {
+		if (isNcChar && !hasNumber && this.token.len === 1) {
 			let code:nodes.Node;
 			if (isNcCode){
 				code = this.create(nodes.NcCode);
@@ -742,41 +754,45 @@ export class Parser {
 
 			this.consumeToken();
 
-			// NC-Code/Parameter Value e.g: #[1]
-			if (this.peek(TokenType.Hash) || this.peek(TokenType.BracketL) || this.peekDelim('+') || this.peekDelim('-')) {
+			// G01 v01 F 11    
+			//-365.F    
+			// check if parameter or numeric
+			mark = this.mark();	
+			this.acceptDelim('+') || this.acceptDelim('-'); 
+
+			// NC-Code/Parameter Value e.g: #[1], #symbol
+			if (this.peek(TokenType.Hash) || this.peek(TokenType.BracketL) || this.declarations.has(this.token.text)) {
+				this.restoreAtMark(mark);
 				let expression = this._parseBinaryExpr();
 				code.addChild(expression);
 				return this.finish(code);
 			}
-			// NC-Code/Parameter Value e.g: some symbol
+			// NC-Code/Parameter numeric or partly numeric 
+			// e.g: 360.F
 			else if (this.peek(TokenType.Symbol)){
 				let symbol = this.create(nodes.Symbol);
+				this.scanner.stream.goBackTo(this.scanner.pos()-this.token.text.length);
+				start = this.scanner.stream.pos();
+				// parse numeric part
+				hasNumber = 0 < this.scanner.stream.advanceWhileChar((ch) =>  ch >= scanner._0 && ch <= scanner._9 || ch === scanner._DOT);
+				let len = this.scanner.pos() - start;
+				this.token = { type: this.token.type, offset: start, len: this.scanner.pos() - start, text: this.scanner.substring(start, len)};
 				this.consumeToken();
 				code.addChild(this.finish(symbol));
 				return this.finish(code);
-			}
+			}			
 			else {
 				// error no prameter
 				return this.finish(code, ParseError.ParameterExpected);
 			}
 		}
 
-		// Symbol which was not declarated
+		// undeclarated symbol
 		if (this.peek(TokenType.Symbol)) {
 			let symbol = this.create(nodes.Symbol);
 			this.consumeToken();
 			return this.finish(symbol);
 		}
-
-
-
-		G01 C-365.F#v01
-
-		IF [ypos LE 1] THEN
-			IF [ypos EQ 0] THEN ypos = 6
-			IF [ypos EQ 1] THEN ypos = 7
-		ENDIF
-	 	ELSE                   ypos = 2
 
 		let node = this.create(nodes.Node);
 		this.finish(node, ParseError.UnexpectedToken);
@@ -796,14 +812,16 @@ export class Parser {
 			return null;
 		}
 
+		const node = <nodes.Assignment>this.create(nodes.Assignment);	
+
 		if (this.peek(TokenType.Symbol)) {
 			let declaration = this.declarations.get(this.token.text);
-			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue){
+			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue) {
 				return null;
 			}
 		}
 
-		const node = <nodes.Assignment>this.create(nodes.Assignment);	
+
 		this.accept(TokenType.Hash);
 
 		if (this.peek(TokenType.BracketL)) {
@@ -827,7 +845,7 @@ export class Parser {
 			node.setExpression(expression);
 		}
 		else {
-			return this.finish(node, ParseError.InvalidStatement, [TokenType.Symbol, TokenType.Delim]);
+			return this.finish(node, ParseError.EqualExpected, [TokenType.Delim]);
 		}
 
 		return this.finish(node); 
@@ -872,7 +890,7 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public parseIfThenSingleLineStatement(): nodes.Node | null {
+	public parseThenTermStatement(): nodes.Node | null {
 		return this._parseMacroStatement();		
 	}
 
@@ -890,13 +908,13 @@ export class Parser {
 			this.restoreAtMark(pos);
 			const node = this.create(nodes.ThenTermStatement);
 			this.consumeToken(); // then
-			this._parseBody(node, this.parseIfThenSingleLineStatement.bind(this), false);
+			this._parseBody(node, this.parseThenTermStatement.bind(this), false);
 			
 			if (this.acceptKeyword('else')) {
 				// ELSE term
 				if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
 					const elseNode = this.create(nodes.ElseStatement);
-					this._parseBody(elseNode, this.parseIfThenSingleLineStatement.bind(this), false);
+					this._parseBody(elseNode, this.parseThenTermStatement.bind(this), false);
 					node.setElseClause(elseNode);
 				} 
 				else {
@@ -910,14 +928,14 @@ export class Parser {
 				}
 			}
 			else{
-				this.acceptKeyword('endif');
+				this.acceptKeyword('endif'); // optional
 			}
 			
 			return this.finish(node);
 		} 
 		else {
 			this.restoreAtMark(pos);
-			const node = this.create(nodes.ThenEndifStatement);
+			const node = this.create(nodes.IfEndifStatement);
 			this.consumeToken(); // then
 
 			this._parseBody(node, parseStatement);
@@ -930,13 +948,28 @@ export class Parser {
 			}
 
 			if (this.acceptKeyword('else')) {
-				const elseNode = this.create(nodes.ElseStatement);
-				this._parseBody(node, parseStatement);
-				node.setElseClause(elseNode);
+				// ELSE term
+				if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
+					const elseNode = this.create(nodes.ElseStatement);
+					this._parseBody(elseNode, this.parseThenTermStatement.bind(this), false);
+					node.setElseClause(elseNode);
+				} 
+				else {
+					// ELSE
+					// ENDIF
+					const elseNode = this.create(nodes.ElseStatement);
+					this._parseBody(node, parseStatement);
+					node.setElseClause(elseNode);
+					
+					if (!this.acceptKeyword('endif')) {
+						return this.finish(node, ParseError.EndifExpected);
+					}
+				}
 			}
-
-			if (!this.acceptKeyword('endif')) {
-				return this.finish(node, ParseError.EndifExpected);
+			else {
+				if (!this.acceptKeyword('endif')) {
+					this.finish(node, ParseError.EndifExpected);
+				}
 			}
 
 			return this.finish(node);
@@ -1031,6 +1064,7 @@ export class Parser {
 
 		return this.finish(node);
 	}
+
 	public _parseAddressExpression(): nodes.BinaryExpression | null {
 		let node = <nodes.BinaryExpression>this.create(nodes.BinaryExpression);	
 
@@ -1051,13 +1085,15 @@ export class Parser {
 
 		return this.finish(node);
 	}
+
 	public _parseBinaryExpr(preparsedLeft?: nodes.BinaryExpression, preparsedOper?: nodes.Node): nodes.BinaryExpression | null {
 
 		let node = <nodes.BinaryExpression>this.create(nodes.BinaryExpression);
 	
 		node.setOperator(this._parseUnaryOperator()); 
-		this.accept(TokenType.Hash);
-
+		if (this.hasKeywords(['#','['])) {
+			this.accept(TokenType.Hash);
+		}
 		if (!this.peek(TokenType.BracketL)){
 			if (!node.setLeft((<nodes.Node>preparsedLeft || this._parseTerm()))) {
 				//return this.finish(node, ParseError.TermExpected);
@@ -1068,7 +1104,9 @@ export class Parser {
 				return this.finish(node);
 			}
 
-			this.accept(TokenType.Hash);
+			if (this.hasKeywords(['#','['])) {
+				this.accept(TokenType.Hash);
+			}
 			if (!this.peek(TokenType.BracketL)){			
 				if (!node.setRight(this._parseTerm())) {
 					return this.finish(node, ParseError.TermExpected);
@@ -1109,15 +1147,15 @@ export class Parser {
 
 	public _parseDeclarationType(): nodes.Node | null {
 
-		if (!this.peek(TokenType.Symbol)) {
+		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
 		}
 
 		let declaration = this.declarations.get(this.token.text);
-		if (declaration instanceof nodes.VariableDeclaration){
+		if (declaration instanceof nodes.VariableDeclaration || this.peek(TokenType.Hash)){
 			return this._parseVariable();
 		}
-		else if (declaration instanceof nodes.LabelDeclaration){
+		else if (declaration instanceof nodes.LabelDeclaration) {
 			return this._parseLabel();
 		}
 		return null;
@@ -1128,11 +1166,12 @@ export class Parser {
 	 */
 	public _parseVariable(): nodes.Variable | null {
 
-		if (!this.peek(TokenType.Symbol)){
+		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
 		}
 
 		const node = <nodes.Variable>this.create(nodes.Variable);
+		this.accept(TokenType.Hash);
 	
 		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Variable]))){
 			return this.finish(node, ParseError.IdentifierExpected);
@@ -1147,39 +1186,6 @@ export class Parser {
 		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Label]))){
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
-		return this.finish(node);
-	}
-
-	public _parseSymbol(referenceTypes?: nodes.ReferenceType[]): nodes.Symbol | null {
-
-		// TODO if Reference type undefined, then try to find type:
-		//
-		// Adress: R100.0 is fixed
-		// Symbol R100 is Address, Variable or NC Code
-		// Symbol 100.0 is fixed
-		// Symbol 100 is Number or Variable
-
-	
-		if (!this.peek(TokenType.Symbol)){
-			return null;
-		}
-		
-		const node = <nodes.Symbol>this.create(nodes.Symbol);
-		if (referenceTypes) {
-			node.referenceTypes = referenceTypes;
-		}
-
-		/*		else if (this.isNcCode(this.token.text.charCodeAt(0))){
-	node.valueType = nodes.ValueType.Address; 
-	if (!this.acceptUnquotedString()){
-		return this.finish(node, ParseError.AddressExpected);
-	}
-}*/
-
-
-
-		this.consumeToken();
-
 		return this.finish(node);
 	}
 
@@ -1242,6 +1248,28 @@ export class Parser {
 			return this.finish(node, ParseError.ExpressionExpected);
 		}
 		
+		return this.finish(node);
+	}
+
+	public _parseSymbol(referenceTypes?: nodes.ReferenceType[]): nodes.Symbol | null {
+
+		// TODO if Reference type undefined, try to find type:
+		//
+		// Adress: R100.0 is fixed
+		// Symbol R100 is Address, Variable or NC Code
+		// Symbol 100.0 is fixed
+		// Symbol 100 is Number or Variable
+
+		if (!this.peek(TokenType.Symbol)){
+			return null;
+		}
+		
+		const node = <nodes.Symbol>this.create(nodes.Symbol);
+		if (referenceTypes) {
+			node.referenceTypes = referenceTypes;
+		}
+		this.consumeToken();
+
 		return this.finish(node);
 	}
 
@@ -1311,8 +1339,8 @@ export class Parser {
 				return true;
 			case nodes.NodeType.Goto:
 				return true;
-			case nodes.NodeType.ThenEndif:
-				return true;
+			/*case nodes.NodeType.ThenEndif:
+				return true;*/
 		}
 		return false;
 	}
