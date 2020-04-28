@@ -32,6 +32,9 @@
 			"patterns": [
 				{
 					"include": "#line_comments"
+        },
+        {
+					"include": "#line_string"
 				},
 				{
 					"include": "#line_string_a"
@@ -87,7 +90,7 @@
 		},
     "patterns": [
       {
-        "match": "(?<=^O)(.*)",
+        "match": "(?<=^O)(\\s*\\w+)",
         "name": "entity.name.function.macro"
       },
       {
@@ -224,7 +227,7 @@
 				"name": "keyword.control.conditional.macro"
 			}
 		},
-    "end": "(?i)(?<=GOTO)([^\\S\\n]*\\#*\\w{1,})(?-i)",
+    "end": "\\n",
     "endCaptures": {
       "1": {
 				"name": "constant.language.macro"
@@ -233,6 +236,9 @@
     "patterns": [
       {
         "include": "#line_variable_value"
+      },
+      {
+        "include": "#line_brackets"
       }
 		]
 	},
@@ -339,6 +345,14 @@
         "match": "(#[a-zA-Z0-9_]+\\b|#)",
         "name": "variable.parameter.macro"
       }
+		]
+  },
+  "line_string": {
+    "patterns": [
+       {
+         "name": "string.a.macro",
+         "match": "(\\()(.*)(\\))"
+       }
 		]
 	},
   "line_string_a": {
