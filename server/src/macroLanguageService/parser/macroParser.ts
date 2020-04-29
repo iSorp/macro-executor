@@ -1098,10 +1098,7 @@ export class Parser {
 		}
 
 		if (this._parseLogicalOperator()){
-			let coOp = this._parseConditionalExpression();
-			if (coOp){
-				node = this.finish(coOp);
-			}
+			node.setRight(this._parseConditionalExpression());
 		}
 
 		return this.finish(node);
