@@ -110,7 +110,7 @@ class FileProvider implements MacroFileProvider {
 
 			if (workspaceFolder){
 				let dir = Files.uriToFilePath(workspaceFolder);
-				let files = glob.sync(dir+'/**/*.{src,def}');
+				let files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF]}');
 				for (const file of files) {
 					let type = this.get(file);
 					if (type){

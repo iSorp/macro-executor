@@ -1,3 +1,6 @@
+## 0.1.2 (April 29, 2020)
+- File extension search non casesensitive
+
 ## 0.1.1 (April 29, 2020)
 - Prevent problem matcher from deleting existing problems
 - Symbol detection of left conditional term
