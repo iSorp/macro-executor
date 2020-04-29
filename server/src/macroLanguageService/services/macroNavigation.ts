@@ -139,7 +139,7 @@ export class MacroNavigation {
 			const symbol = symbols.findSymbolFromNode(node);
 			const name = node.getText();
 			
-			if (symbol && include !== type.document.uri) {
+			if (symbol && include.toLocaleLowerCase() !== type.document.uri.toLocaleLowerCase()) {
 				continue; // local declaration found
 			}
 
