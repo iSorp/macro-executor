@@ -5,7 +5,7 @@
 - Syntax validation
 
 ## 0.0.4 (March 31, 2020)
-- Probem matcher file search path is now "${fileDirname}"
+- Problem matcher file search path is now "${fileDirname}"
 
 ## 0.0.3 (March 30, 2020)
 - While Snippet
