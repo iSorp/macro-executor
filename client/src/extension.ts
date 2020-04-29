@@ -11,7 +11,7 @@ import CompositeDisposable from './common/CompositeDisposable';
 import { downloadAndUnzipVSCode } from 'vscode-test';
 
 let client: LanguageClient;
-
+let disposables = new CompositeDisposable();
 
 export function activate(context: ExtensionContext) {
 
@@ -64,12 +64,9 @@ export function activate(context: ExtensionContext) {
 
 
 	client.registerProposedFeatures();
-
-	let disposables = new CompositeDisposable();
 	disposables.add(registerCommands());
-
 	context.subscriptions.push(disposables);
-
+	
 	// Start the client. This will also launch the server
 	client.start();
 }

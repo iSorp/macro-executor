@@ -78,7 +78,7 @@ function build() {
 	let link 			= settings.MacroSettings.getInstance().macroLinkPath;
 	let build 			= settings.MacroSettings.getInstance().macroBuildPath;
 	let compiler 		= settings.MacroSettings.getInstance().macroCompilerPath;
-	let arg = ' -' 		+ settings.MacroSettings.macroControlType;
+	let arg = ' -' 		+ settings.MacroSettings.getInstance().macroControlType;
 	if (compiler !== 'MCOMPI'){
 		arg = '';
 	} 
