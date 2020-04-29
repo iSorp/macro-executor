@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -172,11 +172,11 @@
 		"problemMatchers": [
 			{
 				"name": "macro",
-				"owner": "macro",
 				"fileLocation": [
 					"relative",
 					"${fileDirname}"
 				],
+				"source": "macro",
 				"pattern": {
 					"regexp": "([0-9a-zA-Z\\._]+.LST).([0-9]+).(.*)",
 					"file": 1,

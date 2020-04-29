@@ -63,9 +63,9 @@ function compile() : Promise<void> {
 			type: 'shell', 
 			id: 'shell',
 		};
-		let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Compile','Macro', 
+		let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Compile','macro', 
 			new vscode.ShellExecution(compiler + ' ' + currentFile + args), '$macro');
-		
+
 		vscode.tasks.executeTask(t);
 	});
 }
@@ -128,7 +128,7 @@ function build() {
 			bscript 			+= 'copy *.mem ' + exportPath;
 
 			let def = { type: 'shell', id: 'shell'};
-			let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Make', 'Macro', new vscode.ShellExecution(bscript), '$macro');
+			let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Make', 'macro', new vscode.ShellExecution(bscript), '$macro');
 			vscode.tasks.executeTask(t);
 		});
 	} 
@@ -171,7 +171,7 @@ function clean() {
 			}
 			else {
 				let args = ['0', 'clean'];
-				let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Clean', 'Macro', new vscode.ShellExecution('.\\'+ makeFile + ' ' + args));
+				let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Clean', 'macro', new vscode.ShellExecution('.\\'+ makeFile + ' ' + args));
 				vscode.tasks.executeTask(t);
 			}
 		});
