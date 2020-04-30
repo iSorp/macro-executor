@@ -282,7 +282,7 @@
       },
       {
         "begin": "(?i)(?<=WHILE)(?-i)",
-        "end": "(?i)(DO)(.*)(?-i)",
+        "end": "(?i)(DO)(\\s\\w+|\\d+)(?-i)",
         "endCaptures": {
           "1": {
 						"name": "keyword.control.conditional.macro"

@@ -25,9 +25,9 @@ export interface LanguageService {
 	doHover(document: TextDocument, position: Position, macroFile: Macrofile):Hover | null;
 	findDefinition(document: TextDocument, position: Position, macroFile: Macrofile): Location | null;
 	findReferences(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
+	findImplementations(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
 	findDocumentLinks(document: TextDocument, stylesheet: Macrofile, documentContext: DocumentContext): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, stylesheet: Macrofile): SymbolInformation[];
-	doRename(document: TextDocument, position: Position, newName: string, stylesheet: Macrofile): WorkspaceEdit;
 }
 
 function createFacade(parser: Parser, hover: MacroHover, navigation: MacroNavigation, validation: MacroValidation): LanguageService {
@@ -37,9 +37,9 @@ function createFacade(parser: Parser, hover: MacroHover, navigation: MacroNaviga
 		doHover: hover.doHover.bind(hover),
 		findDefinition: navigation.findDefinition.bind(navigation),
 		findReferences: navigation.findReferences.bind(navigation),
+		findImplementations: navigation.findImplementations.bind(navigation),
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
-		doRename: navigation.doRename.bind(navigation)
 	};
 }
 

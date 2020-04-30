@@ -20,6 +20,7 @@ export enum TokenType {
 	String,
 	BadString,
 	UnquotedString,
+	Comma,
 	BracketL,
 	BracketR,
 	Whitespace,
@@ -156,6 +157,7 @@ export const _BRL = '['.charCodeAt(0);
 export const _BRR = ']'.charCodeAt(0);
 export const _DOT = '.'.charCodeAt(0);
 export const _EQS = '='.charCodeAt(0);
+export const _CMA = ','.charCodeAt(0);
 export const _SUB = 'O'.charCodeAt(0);
 
 
@@ -163,6 +165,7 @@ const staticTokenTable: { [code: number]: TokenType; } = {};
 staticTokenTable[_NWL] = TokenType.NewLine;
 staticTokenTable[_BRR] = TokenType.BracketR;
 staticTokenTable[_BRL] = TokenType.BracketL;
+staticTokenTable[_CMA] = TokenType.Comma;
 
 
 const staticKeywordTable: { [key: string]: TokenType; } = {};

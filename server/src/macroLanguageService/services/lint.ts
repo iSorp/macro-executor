@@ -122,7 +122,7 @@ export class LintVisitor implements nodes.IVisitor {
 		let number:string | undefined;
 		if (ident) {
 			if (ident instanceof nodes.Variable){
-				let nr = (<nodes.Variable>ident).declaration?.value?.getText();
+				let nr = (<nodes.Variable>ident).declaration?.getValue()?.getText();
 				if (nr){
 					number = nr;
 				}

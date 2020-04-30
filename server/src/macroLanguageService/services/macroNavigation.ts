@@ -45,7 +45,7 @@ export class MacroNavigation {
 		return null;
 	}
 	
-	public findReferences(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location[] {
+	public findReferences(document: TextDocument, position: Position, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined): Location[] {
 
 		let locations:Location[] = [];
 
@@ -63,156 +63,15 @@ export class MacroNavigation {
 		let symbols = new Symbols(<nodes.Node>macroFile);
 		let symbol = symbols.findSymbolFromNode(node);
 		if (symbol && !node.findAParent(nodes.NodeType.DefFile)) {
-			return this.findLocalReferences(symbol, symbols, document, macroFile);
+			return this.findLocalReferences(symbol, symbols, document, macroFile, implType);
 		}
 		else{
-			return this.findGlobalReferences(include, position, node ,document, macroFile);
+			return this.findGlobalReferences(include, position, node, implType);
 		}
 	}
 
-	private findInclude(document: TextDocument, position: Position, macroFile: nodes.Node): string | null {
-		let declarations:MacroFileType[] = [];
-
-		if (this.fileProvider){
-			declarations = this.getIncludes(macroFile, this.fileProvider);
-		}
-		
-		declarations.push({document: document, macrofile: macroFile, version:0});
-		const offset = document.offsetAt(position);
-		const node = nodes.getNodeAtOffset(macroFile, offset);
-		if (!node) {
-			return null;
-		}
-	
-		for (const declaration of declarations) {
-			const symbols = new Symbols(<nodes.Node>declaration.macrofile);
-			const symbol = symbols.findSymbolFromNode(node);
-			if (!symbol) {
-				continue;
-			}
-
-			return declaration.document.uri;
-		}
-		return null;
-	}
-
-	private findLocalReferences(symbol:Symbol, symbols:Symbols, document: TextDocument, macroFile: nodes.MacroFile) : Location[] {
-	
-		const highlights: DocumentHighlight[] = [];
-
-		macroFile.accept(candidate => {
-			if (symbol) {
-				if (symbols.matchesSymbol(candidate, symbol)) {
-					highlights.push({
-						kind: this.getHighlightKind(candidate),
-						range: this.getRange(candidate, document)
-					});
-					return false;
-				}
-			} 
-			return true;
-		});
-	
-		return highlights.map(h => {
-			return {
-				uri: document.uri,
-				range: h.range
-			};
-		});
-	}
-
-	private findGlobalReferences(include:string, position:Position, node:nodes.Node, document: TextDocument, macroFile: nodes.MacroFile):Location[] {
-	
-		let locations:Location[] = [];
-		let declarations:MacroFileType[] = [];
-
-		if (this.fileProvider){
-			let dec = this.fileProvider?.getAll();
-			if (dec) {
-				declarations = declarations.concat(dec);
-			}
-		}
-		
-		for (const type of declarations) {
-
-			const symbols = new Symbols(<nodes.Node>type.macrofile);
-			const symbol = symbols.findSymbolFromNode(node);
-			const name = node.getText();
-			
-			if (symbol && include.toLocaleLowerCase() !== type.document.uri.toLocaleLowerCase()) {
-				continue; // local declaration found
-			}
-
-			if (include !== this.findInclude(document, position, macroFile)){
-				continue;
-			}
-
-			const highlights: DocumentHighlight[] = [];
-
-			(<nodes.Node>type.macrofile).accept(candidate => {
-				if (symbol) {
-					if (symbols.matchesSymbol(candidate, symbol)) {
-						highlights.push({
-							kind: this.getHighlightKind(candidate),
-							range: this.getRange(candidate, type.document)
-						});
-						return false;
-					}
-				} 
-				if (node && node.type === candidate.type && candidate.matches(name)) {
-					// Same node type and data
-					highlights.push({
-						kind: this.getHighlightKind(candidate),
-						range: this.getRange(candidate, type.document)
-					});
-				}
-				return true;
-			});
-	
-			const ret = highlights.map(h => {
-				return {
-					uri: type.document.uri,
-					range: h.range
-				};
-			});
-			locations = locations.concat(ret);
-		}
-		return locations;
-	}
-
-	public findDocumentHighlights(document: TextDocument, position: Position, macroFile: nodes.MacroFile): DocumentHighlight[] {
-		const result: DocumentHighlight[] = [];
-
-		const offset = document.offsetAt(position);
-		let node = nodes.getNodeAtOffset(macroFile, offset);
-		if (!node) {
-			return result;
-		}
-
-		const symbols = new Symbols(macroFile);
-		const symbol = symbols.findSymbolFromNode(node);
-		const name = node.getText();
-
-		macroFile.accept(candidate => {
-			if (symbol) {
-				if (symbols.matchesSymbol(candidate, symbol)) {
-					result.push({
-						kind: this.getHighlightKind(candidate),
-						range: this.getRange(candidate, document)
-					});
-					return false;
-				}
-			} else if (node && node.type === candidate.type && candidate.matches(name)) {
-				// Same node type and data
-				result.push({
-					kind: this.getHighlightKind(candidate),
-					range: this.getRange(candidate, document)
-				});
-			}
-			return true;
-		});
-
-		return result;
+	public findImplementations(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location[] {
+		return this.findReferences(document, position, macroFile, nodes.ReferenceType.Function);
 	}
 
 	public findDocumentLinks(document: TextDocument, macroFile: nodes.MacroFile, documentContext: DocumentContext): DocumentLink[] {
@@ -298,14 +157,6 @@ export class MacroNavigation {
 		return result;
 	}
 
-	public doRename(document: TextDocument, position: Position, newName: string, macroFile: nodes.MacroFile): WorkspaceEdit {
-		const highlights = this.findDocumentHighlights(document, position, macroFile);
-		const edits = highlights.map(h => TextEdit.replace(h.range, newName));
-		return {
-			changes: { [document.uri]: edits }
-		};
-	}
-
 	private uriLiteralNodeToDocumentLink(document: TextDocument, uriLiteralNode: nodes.Node, documentContext: DocumentContext): DocumentLink | null {
 		if (uriLiteralNode.getChildren().length === 0) {
 			return null;
@@ -336,10 +187,137 @@ export class MacroNavigation {
 		return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 	}
 	
-	private getHighlightKind(node: nodes.Node): DocumentHighlightKind {
-		return DocumentHighlightKind.Read;
-	}
+	private findLocalReferences(symbol:Symbol, symbols:Symbols, document: TextDocument, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined) : Location[] {
 	
+		const highlights: DocumentHighlight[] = [];
+
+		macroFile.accept(candidate => {
+			if (symbol) {
+				if (symbols.matchesSymbol(candidate, symbol)) {
+					let s = <nodes.Symbol>candidate;
+					if (s && s.referenceTypes && implType){
+						if (s.referenceTypes?.indexOf(implType) > 0) {
+							highlights.push({
+								kind: this.getHighlightKind(candidate),
+								range: this.getRange(candidate, document)
+							});
+						}
+					}
+					else {
+						highlights.push({
+							kind: this.getHighlightKind(candidate),
+							range: this.getRange(candidate, document)
+						});
+					}
+					return false;
+				}
+			} 
+			return true;
+		});
+
+		return highlights.map(h => {
+			return {
+				uri: document.uri,
+				range: h.range
+			};
+		});
+	}
+
+	private findGlobalReferences(include:string, position:Position, node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
+	
+		let locations:Location[] = [];
+		let declarations:MacroFileType[] = [];
+
+		if (this.fileProvider){
+			declarations = this.fileProvider?.getAll();
+		}
+		
+		for (const type of declarations) {
+
+			// only accept the origin def file
+			if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile && include !== type.document.uri)){
+				continue;
+			}
+
+			// only accept a src file which includes the origin def file
+			if (this.fileProvider && (<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
+				let includes = this.getIncludes(<nodes.Node>type.macrofile, this.fileProvider);
+				if (includes.filter(a => a.document.uri === include).length <= 0){
+					continue;
+				}
+			}
+
+			// all symbols found in the origin def file
+			const symbols = new Symbols(<nodes.Node>type.macrofile);
+			
+			// condition: name and reference type
+			const symbol = symbols.findSymbolFromNode(node); 			
+			const name = node.getText();
+			
+			// only accept the symbol of the origin symbol source file
+			if (symbol && include.toLocaleLowerCase() !== type.document.uri.toLocaleLowerCase()) {
+				continue; // local declaration found
+			}
+
+			const highlights: DocumentHighlight[] = [];
+			(<nodes.Node>type.macrofile).accept(candidate => {
+				if (node && node.type === candidate.type && candidate.matches(name)) {
+					let s = <nodes.Symbol>candidate;
+					if (s && s.referenceTypes && implType){
+						if (s.referenceTypes?.indexOf(implType) > 0) {
+							highlights.push({
+								kind: this.getHighlightKind(candidate),
+								range: this.getRange(candidate, type.document)
+							});
+						}
+					}
+					else {
+						highlights.push({
+							kind: this.getHighlightKind(candidate),
+							range: this.getRange(candidate, type.document)
+						});
+					}
+				}
+				return true;
+			});
+	
+			const ret = highlights.map(h => {
+				return {
+					uri: type.document.uri,
+					range: h.range
+				};
+			});
+			locations = locations.concat(ret);
+		}
+		return locations;
+	}
+
+	private findInclude(document: TextDocument, position: Position, macroFile: nodes.Node): string | null {
+		let declarations:MacroFileType[] = [];
+
+		if (this.fileProvider){
+			declarations = this.getIncludes(macroFile, this.fileProvider);
+		}
+		
+		declarations.push({document: document, macrofile: macroFile, version:0});
+		const offset = document.offsetAt(position);
+		const node = nodes.getNodeAtOffset(macroFile, offset);
+		if (!node) {
+			return null;
+		}
+	
+		for (const declaration of declarations) {
+			const symbols = new Symbols(<nodes.Node>declaration.macrofile);
+			const symbol = symbols.findSymbolFromNode(node);
+			if (!symbol) {
+				continue;
+			}
+
+			return declaration.document.uri;
+		}
+		return null;
+	}
+
 	private getIncludes(macrofile:nodes.MacroFile, fileProvider:MacroFileProvider) : MacroFileType[] {
 		let declarations:MacroFileType[] = [];
 		macrofile.accept(candidate => {
@@ -356,5 +334,9 @@ export class MacroNavigation {
 			return true;
 		});
 		return declarations;
+	}
+
+	private getHighlightKind(node: nodes.Node): DocumentHighlightKind {
+		return DocumentHighlightKind.Read;
 	}
 }

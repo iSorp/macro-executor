@@ -1,3 +1,8 @@
+## 0.1.3 (May 01, 2020)
+- Missing arithmetic functions implemented
+- Implementation provider for sub programs
+- Error on global reference search fixed
+
 ## 0.1.2 (April 29, 2020)
 - File extension search non casesensitive
 

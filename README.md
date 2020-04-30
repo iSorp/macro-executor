@@ -6,14 +6,14 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 
 ## Features
 
-* Compiling and linking of fanuc macro executor projects.
+* Compiling and linking
 * Problem matcher
 * Syntax highlighting
 * Syntax validation
 * Symbol provider
+* Lint features
 
-
-**The syntax validation is not yet fully supported. There are cases where mistakes are not appropriate or not detected.**
+**The program parsing is not yet complete implemented. There are cases where mistakes are not appropriate or not detected.**
 
 
 ### Validation
@@ -24,6 +24,9 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 
 ### References
 ![Definition](./resources/references.gif)
+
+### Implementations
+![Definition](./resources/implementations.gif)
 
 
 ## Required file extension

@@ -30,6 +30,11 @@ import {
 	RenameParams,
 	DidChangeConfigurationParams,
 	WorkspaceFoldersChangeEvent,
+	ImplementationParams,
+	FileChangeType,
+	NotificationHandler,
+	DidOpenTextDocumentParams,
+	DidChangeWatchedFilesParams
 } from 'vscode-languageserver';
 
 import {
@@ -38,9 +43,10 @@ import {
 
 import { getMacroLanguageService, Macrofile, MacroFileType } from './macroLanguageService/macroLanguageService';
 import { URI } from 'vscode-uri';
+import { rejects } from 'assert';
 
 
-const maxNumberOfProblems = 100;
+const maxNumberOfProblems = 1000;
 
 let connection = createConnection(ProposedFeatures.all);
 let workspaceFolder: string | null;
@@ -52,7 +58,6 @@ let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 const defaultSettings: LanguageSettings = { validate: true, validateWorkspace: false };
 let globalSettings: LanguageSettings = defaultSettings;
-let documentSettings: Map<string, Thenable<LanguageSettings>> = new Map();
 
 
 class FileProvider implements MacroFileProvider {
@@ -165,6 +170,7 @@ connection.onInitialize((params: InitializeParams) => {
 			hoverProvider: true,
 			//renameProvider: true,
 			referencesProvider: true,
+			implementationProvider:true,
 			documentLinkProvider: {
 				resolveProvider:true
 			},
@@ -186,31 +192,33 @@ connection.onInitialized(async () => {
 	}
 });
 
-connection.onDidChangeWatchedFiles(_change => {});
+connection.onDidChangeWatchedFiles(watchedFiles);
 connection.onDidChangeConfiguration(configuration);
 connection.onDefinition(definition);
 connection.onReferences(references);
+connection.onImplementation(implementations);
 connection.onDocumentSymbol(documentSymbol);
 connection.onDocumentLinks(documentLinks);
-//connection.onRenameRequest(renameRequest);
 connection.onHover(hower);
 
-documents.onDidChangeContent(async change => {
-	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
+connection.onDidChangeTextDocument(a => {
+	console.log();
 });
 
-documents.onDidClose(e => {
-	documentSettings.delete(e.document.uri);
+documents.onDidChangeContent(change => {
+	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
+
+	if (change.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
+		Promise.resolve(validateOpenDocuments());	
+	}
 });
 
 documents.listen(connection);
 connection.listen();
 
+
 async function configuration(params: DidChangeConfigurationParams) {
-	if (hasConfigurationCapability) {
-		// Reset all cached document settings
-		documentSettings.clear();
-	} else {
+	if (!hasConfigurationCapability) {
 		globalSettings = <LanguageSettings>((params.settings.macroLanguageServer || defaultSettings));
 	}
 
@@ -229,7 +237,12 @@ function getSettings(): Thenable<LanguageSettings> {
 	return result;
 }
 
-function workspace(event:WorkspaceFoldersChangeEvent) {
+function watchedFiles(handler:DidChangeWatchedFilesParams){
+	for (const file of handler.changes) {
+		if (file.type === FileChangeType.Deleted){
+			parsedDocuments.delete(file.uri);
+		} 
+	}
 }
 
 function hower(params: TextDocumentPositionParams) {
@@ -251,22 +264,24 @@ function references(params: ReferenceParams) {
 	return macroLanguageService.findReferences(repo.document, params.position, repo.macrofile);
 }
 
+function implementations(params: ImplementationParams) {
+	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+	if (!repo) {return null;}
+	return macroLanguageService.findImplementations(repo.document, params.position, repo.macrofile);
+	return null;
+}
+
 function documentSymbol(params: DocumentSymbolParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.findDocumentSymbols(repo.document, repo.macrofile);
+	return null;
 }
 
 function documentLinks(params: DocumentLinkParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.findDocumentLinks(repo.document, repo.macrofile, new Links());
-}
-
-function renameRequest(params: RenameParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.doRename(repo.document, params.position, params.newName,repo.macrofile);
 }
 
 async function validateTextDocument(doc: MacroFileType | undefined) {
@@ -276,12 +291,10 @@ async function validateTextDocument(doc: MacroFileType | undefined) {
 	try {
 
 		let settings = await getSettings();
-
-		const version = doc.document.version;
 		const diagnostics: Diagnostic[] = [];
 		if (doc.document.languageId === 'macro') {
 
-			if (doc.document && doc.document.version === version) {
+			if (doc.document) {
 				if (macroLanguageService.doValidation && doc.macrofile) {
 					let entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
 					let index = 0;
@@ -307,6 +320,12 @@ async function validateWorkspace() {
 	let types = fp.getAll();
 	for (const element of types){
 		validateTextDocument(element);
+	}
+}
+
+async function validateOpenDocuments() {
+	for (const document of documents.all()){
+		validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile));
 	}
 }
 

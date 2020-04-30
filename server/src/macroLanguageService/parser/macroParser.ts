@@ -11,9 +11,6 @@ import * as nodes from './macroNodes';
 import { ParseError, MacroIssueType } from './macroErrors';
 import { TextDocument, MacroFileProvider } from '../MacroLanguageTypes';
 
-const _NWL = '\n'.charCodeAt(0);
-const _EQS = '='.charCodeAt(0);
-const _SPC = ' '.charCodeAt(0);
 
 export interface IMark {
 	prev?: IToken;
@@ -441,12 +438,19 @@ export class Parser {
 		const versionId = textDocument.version;
 		const text = textDocument.getText();
 		this.textProvider = (offset: number, length: number) => {
-			if (textDocument.version !== versionId) {
+			// TODO no idea why the versions are not equivalent
+			/*if (textDocument.version !== versionId) {
 				throw new Error('Underlying model has changed, AST is no longer valid');
-			}
+			}*/
 			return text.substr(offset, length);
 		};
-		return this.internalParse(text, this._parseMacroFile, this.textProvider);
+		let type = textDocument.uri.split('.').pop();
+		if (type?.toLocaleLowerCase() === 'def'){
+			return this.internalParse(text, this._parseDefFile, this.textProvider);
+		}
+		else{
+			return this.internalParse(text, this._parseMacroFile, this.textProvider);
+		}
 	}
 
 	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {
@@ -463,6 +467,36 @@ export class Parser {
 		return node;
 	}
 
+	public _parseDefFile(): nodes.MacroFile {
+		const node = this.createNode(nodes.NodeType.DefFile);
+		let hasMatch = false;
+		do {		
+			do {
+				let child = null;	
+				hasMatch = false;
+				this.acceptKeyword('$nolist');
+				child = this._parseVariableDeclaration() || this._parseLabelDeclaration();
+				this.acceptKeyword('$list');
+				if (child){
+					node.addChild(child);
+					hasMatch = true;
+				}
+			} while (hasMatch);
+	
+			if (this.peek(TokenType.EOF)) {
+				break;
+			}
+
+			let child = this.parseUnexpected();
+			if (child){
+				node.addChild(child);
+				hasMatch = true;
+			}
+			this.consumeToken();
+	
+		} while (!this.peek(TokenType.EOF));
+		return this.finish(node);
+	}
 
 	public _parseMacroFile(): nodes.MacroFile {
 		
@@ -474,7 +508,7 @@ export class Parser {
 				hasMatch = false;
 	
 				if (this.peek(TokenType.Dollar)) {
-					child = this._parseIncludes() || this._parseDefFile();
+					child = this._parseIncludes();
 				}
 				else if (this.peek(TokenType.AT)) {
 					child = this._parseVariableDeclaration();
@@ -508,29 +542,6 @@ export class Parser {
 			this.consumeToken();
 	
 		} while (!this.peek(TokenType.EOF));
-		return this.finish(node);
-	}
-
-	/**
-	 * Parse includes starting with $
-	 */
-	public _parseDefFile() : nodes.Node | null {
-	
-		this.acceptKeyword('$nolist');
-
-		const node = this.createNode(nodes.NodeType.DefFile);
-
-		while (true){
-			this._processNewLines();
-			let def = this._parseVariableDeclaration() || this._parseLabelDeclaration();
-			if (def){
-				node.addChild(def);
-			}
-			else {break;}
-		}
-
-		this.acceptKeyword('$list');
-
 		return this.finish(node);
 	}
 
@@ -581,10 +592,10 @@ export class Parser {
 		}
 		let declaration = this.declarations.get(this.token.text);
 		if (declaration) {
-			node.setIdentifier(this._parseVariable(declaration));
+			node.setIdentifier(this._parseVariable(declaration, nodes.ReferenceType.Function));
 		}
 		else {
-			node.setIdentifier(this._parseSymbol([nodes.ReferenceType.Variable]));
+			node.setIdentifier(this._parseSymbol([nodes.ReferenceType.Variable, nodes.ReferenceType.Function]));
 		}
 	
 		return this._parseBody(node, this._parseFunctionBody.bind(this));
@@ -1203,7 +1214,8 @@ export class Parser {
 	/**
 	 * Variable: #symbol; #[symbol]
 	 */
-	public _parseVariable(declaration:nodes.VariableDeclaration | undefined = undefined): nodes.Variable | null {
+	public _parseVariable(declaration:nodes.VariableDeclaration | undefined = undefined, 
+		referenceType: nodes.ReferenceType | undefined=undefined): nodes.Variable | null {
 
 		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
@@ -1211,8 +1223,13 @@ export class Parser {
 
 		const node = <nodes.Variable>this.create(nodes.Variable);
 		this.accept(TokenType.Hash);
-	
-		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Variable]))){
+		
+		let referenceTypes = [nodes.ReferenceType.Variable];
+		if (referenceType){
+			referenceTypes.push(referenceType);
+		}
+
+		if (!node.setSymbol(this._parseSymbol(referenceTypes))){
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
 		if (declaration){
@@ -1282,22 +1299,65 @@ export class Parser {
 		return null;
 	}
 
+	/**
+	 * Function expression: e.g  SIN[1+1]
+	 */
 	public _parseFfunc(): nodes.Ffunc | null {
 		const node = <nodes.Ffunc>this.create(nodes.Ffunc);
-		if (!this.accept(TokenType.Ffunc)){
+		if (!this.peek(TokenType.Ffunc)){
 			return null;
 		}
 
-		if (!this.peek(TokenType.BracketL)){
-			return this.finish(node, ParseError.LeftSquareBracketExpected);
+		if (this.peekKeyword('pow')){
+			this.consumeToken();
+			if (!this.accept(TokenType.BracketL)){
+				return this.finish(node, ParseError.LeftSquareBracketExpected, [TokenType.NewLine]);
+			}
+			let expression1 = this._parseBinaryExpr();
+			if (!node.setParameter1(expression1)){
+				return this.finish(node, ParseError.ParameterExpected, [TokenType.NewLine]);
+			}
+			if (!this.accept(TokenType.Comma)){
+				this.finish(node, ParseError.ParameterExpected, [TokenType.BracketR, TokenType.NewLine]);
+			}
+			let expression2 = this._parseBinaryExpr();
+			if (!node.setParameter2(expression2)){
+				return this.finish(node, ParseError.ParameterExpected, [TokenType.BracketR, TokenType.NewLine]);
+			}
+		}
+		else if (this.peekKeyword('atan') || this.peekKeyword('prm')){
+			this.consumeToken();
+			if (!this.accept(TokenType.BracketL)){
+				return this.finish(node, ParseError.LeftSquareBracketExpected);
+			}
+			let expression = this._parseBinaryExpr();
+			if (!node.setParameter1(expression)){
+				return this.finish(node, ParseError.ParameterExpected);
+			}
+			if (this.accept(TokenType.Comma)){
+				let expression = this._parseBinaryExpr();
+				if (!node.setParameter2(expression)){
+					return this.finish(node, ParseError.ParameterExpected, [TokenType.BracketR, TokenType.NewLine]);
+				}
+			}
+		} 
+		else {
+			this.consumeToken();
+
+			if (!this.accept(TokenType.BracketL)){
+				this.finish(node, ParseError.LeftSquareBracketExpected, [TokenType.BracketR, TokenType.NewLine]);
+			}
+
+			let expression = this._parseBinaryExpr();
+			if (!node.setParameter1(expression)){
+				return this.finish(node, ParseError.ParameterExpected, [TokenType.BracketR, TokenType.NewLine]);
+			}
 		}
 
-		// Parameter expression: e.g  SIN[1+1]
-		let expression = this._parseBinaryExpr();
-		if (!node.setParameter(expression)){
-			return this.finish(node, ParseError.ExpressionExpected);
+		if (!this.accept(TokenType.BracketR)){
+			return this.finish(node, ParseError.RightSquareBracketExpected, [TokenType.NewLine]);
 		}
-		
+
 		return this.finish(node);
 	}
 

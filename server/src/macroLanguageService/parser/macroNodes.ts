@@ -7,6 +7,7 @@
 export enum ReferenceType {
 	Label,
 	Variable,
+	Function,
 	Undefined
 }
 
@@ -648,7 +649,8 @@ export class Address extends Node {
 
 export class Ffunc extends Node {
 
-	public parameter?:BinaryExpression;
+	public parameter1?:BinaryExpression;
+	public parameter2?:BinaryExpression;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -658,12 +660,20 @@ export class Ffunc extends Node {
 		return NodeType.Ffunc;
 	}
 
-	public setParameter(node: BinaryExpression | null): node is BinaryExpression {
-		return this.setNode('parameter', node, 0);
+	public setParameter1(node: BinaryExpression | null): node is BinaryExpression {
+		return this.setNode('parameter1', node, 0);
 	}
 
-	public getParameter(): BinaryExpression | undefined {
-		return this.parameter;
+	public getParameter1(): BinaryExpression | undefined {
+		return this.parameter1;
+	}
+
+	public setParameter2(node: BinaryExpression | null): node is BinaryExpression {
+		return this.setNode('parameter2', node, 0);
+	}
+
+	public getParameter2(): BinaryExpression | undefined {
+		return this.parameter2;
 	}
 }
 
