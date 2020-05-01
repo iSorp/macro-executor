@@ -2,6 +2,13 @@
 
 <img src="./resources/icon.png" alt="drawing" width="100"/>
 
+![maintained](https://img.shields.io/maintenance/yes/2020.svg)
+[![open issues](https://img.shields.io/github/issues/iSorp/macro-executor.svg?)](https://github.com/iSorp/macro-executor/issues)
+[![stars](https://img.shields.io/github/stars/iSorp/macro-executor)](https://github.com/iSorp/macro-executor/stargazers)
+[![vscode installs](https://img.shields.io/vscode-marketplace/i/iSorp.macro-executor.svg)](https://marketplace.visualstudio.com/items?itemName=iSorp.macro-executor) 
+[![license](https://img.shields.io/github/license/iSorp/macro-executor)](https://opensource.org/licenses/MIT)
+
+
 Fanuc Macro Executor syntax highlighting/validating and project building 
 
 ## Features

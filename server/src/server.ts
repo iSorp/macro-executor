@@ -5,7 +5,7 @@
 'use strict';
 
 import * as path from 'path';
-import { readFileSync, readdirSync, statSync, promises } from 'fs';
+import { readFileSync} from 'fs';
 
 import { LanguageSettings, MacroFileProvider, FindDocumentLinks } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
@@ -19,7 +19,6 @@ import {
 	InitializeParams,
 	TextDocumentPositionParams,
 	DefinitionParams,
-	WorkspaceSymbolParams,
 	TextDocumentSyncKind,
 	InitializeResult,
 	DidChangeConfigurationNotification,
@@ -27,13 +26,9 @@ import {
 	ReferenceParams,
 	DocumentSymbolParams,
 	DocumentLinkParams,
-	RenameParams,
 	DidChangeConfigurationParams,
-	WorkspaceFoldersChangeEvent,
 	ImplementationParams,
 	FileChangeType,
-	NotificationHandler,
-	DidOpenTextDocumentParams,
 	DidChangeWatchedFilesParams
 } from 'vscode-languageserver';
 
@@ -59,8 +54,9 @@ let hasDiagnosticRelatedInformationCapability: boolean = false;
 const defaultSettings: LanguageSettings = { validate: true, validateWorkspace: false };
 let globalSettings: LanguageSettings = defaultSettings;
 
-
 class FileProvider implements MacroFileProvider {
+
+	private links = new Links();
 
 	get(file: string): MacroFileType | undefined {
 	
@@ -68,51 +64,41 @@ class FileProvider implements MacroFileProvider {
 			return undefined;
 		}
 
-		let uri = '';
-		if (path.isAbsolute(file)){
-			uri = URI.file(file).toString();
-		}
-		else {
-			uri = workspaceFolder + '/' + file;
-			let filePath = Files.uriToFilePath(file);
-			if (filePath && path.isAbsolute(filePath)) {
-				uri = file;
-			}
-		}
-
-		let doc = getParsedDocument(uri, new Parser(this).parseMacroFile);
-		if (!doc) {		
-			try {
-				const file = readFileSync(Files.uriToFilePath(uri)!, 'utf-8');
-				let document = TextDocument.create(uri!, 'macro', 1, file.toString());
+		let uri = this.links.resolveReference(file);
+		if (uri) {
+			let doc = getParsedDocument(uri, new Parser(this).parseMacroFile);
+			if (!doc) {		
 				try {
-					let macrofile = new Parser(this).parseMacroFile(document);
+					const file = readFileSync(Files.uriToFilePath(uri)!, 'utf-8');
+					let document = TextDocument.create(uri!, 'macro', 1, file.toString());
+					try {
+						let macrofile = new Parser(this).parseMacroFile(document);
 					
-					doc = {
-						macrofile: macrofile,
-						document: document,
-						version: 1
-					};
+						doc = {
+							macrofile: macrofile,
+							document: document,
+							version: 1
+						};
 					// add new parsed document to the repository
 					// parsedDocuments.set(uri, doc);
+					}
+					catch (e){
+						console.log();
+					}
 				}
-				catch (e){
-					console.log();
+				catch (err) {
+					return undefined;
 				}
 			}
-			catch (err) {
-				return undefined;
-			}
+			return doc;
 		}
-		return doc;
+		return undefined;
 	}
 
 	getAll(): MacroFileType[] {
 
 		let types:MacroFileType[] = [];
 		try {
-
-
 			if (workspaceFolder){
 				let dir = Files.uriToFilePath(workspaceFolder);
 				let files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF]}');
@@ -132,16 +118,53 @@ class FileProvider implements MacroFileProvider {
 }
 
 class Links implements FindDocumentLinks {
-	public resolveReference(ref: string, base?: string): string {
-		let uri = workspaceFolder + '/' + ref;
-		if (uri) {return uri;}
+	public resolveReference(ref: string, base?: string): string | undefined {
+		if (!workspaceFolder){
+			return '';
+		}
+		
+		let file:string | undefined = '';
+		if (!path.isAbsolute(ref)) {
+			file = Files.uriToFilePath(workspaceFolder + '/' + ref);
+
+			// convert already existing URI
+			let filePath = Files.uriToFilePath(ref);
+			if (filePath && path.isAbsolute(filePath)) {
+				file = filePath;
+			}
+		}
+		else{
+			file = ref;
+		}
+
+		if (!file){
+			return undefined;
+		}
+
+		file = path.normalize(file.toLocaleLowerCase());
+
+		// Workaround to get the case-sensitive path of a non case-sensitive path
+		// TODO find correct solution
+		let files = glob.sync(Files.uriToFilePath(workspaceFolder)+'/**/*.{[sS][rR][cC],[dD][eE][fF]}');
+		let filter = files.filter(a => {
+			let b = path.normalize(a.toLocaleLowerCase());
+			if (b === file){
+				return true;
+			}
+			else {
+				return false;
+			}
+		});
+
+		if (filter && filter.length > 0) {
+			return URI.file(filter[0]).toString();
+		}
 		else {return '';}
 	}
 }
 
 const macroLanguageService = getMacroLanguageService({
 	fileProvider: new FileProvider(),
-
 });
 
 connection.onInitialize((params: InitializeParams) => {

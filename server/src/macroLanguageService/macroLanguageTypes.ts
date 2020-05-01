@@ -18,11 +18,11 @@ export interface LanguageSettings {
 }
 
 export interface DocumentContext {
-	resolveReference(ref: string, base?: string): string;
+	resolveReference(ref: string, base?: string): string | undefined;
 }
 
 export interface FindDocumentLinks {
-	resolveReference(ref: string, base?: string): string;
+	resolveReference(ref: string, base?: string): string | undefined;
 }
 
 export interface LanguageServiceOptions {

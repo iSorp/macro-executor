@@ -59,6 +59,7 @@ export class MacroNavigation {
 		if (!include){
 			return locations;
 		}
+		include = include.toLocaleLowerCase();
 
 		let symbols = new Symbols(<nodes.Node>macroFile);
 		let symbol = symbols.findSymbolFromNode(node);
@@ -235,14 +236,14 @@ export class MacroNavigation {
 		for (const type of declarations) {
 
 			// only accept the origin def file
-			if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile && include !== type.document.uri)){
+			if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile && include !== type.document.uri.toLocaleLowerCase())){
 				continue;
 			}
 
 			// only accept a src file which includes the origin def file
 			if (this.fileProvider && (<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
 				let includes = this.getIncludes(<nodes.Node>type.macrofile, this.fileProvider);
-				if (includes.filter(a => a.document.uri === include).length <= 0){
+				if (includes.filter(a => a.document.uri.toLocaleLowerCase() === include).length <= 0){
 					continue;
 				}
 			}
@@ -255,7 +256,7 @@ export class MacroNavigation {
 			const name = node.getText();
 			
 			// only accept the symbol of the origin symbol source file
-			if (symbol && include.toLocaleLowerCase() !== type.document.uri.toLocaleLowerCase()) {
+			if (symbol && include !== type.document.uri.toLocaleLowerCase()) {
 				continue; // local declaration found
 			}
 
