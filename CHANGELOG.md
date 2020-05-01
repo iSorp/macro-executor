@@ -1,5 +1,4 @@
 ## 0.1.4 (May 02, 2020)
-- Readme 
 - Opening links with capital letters issue fixed 
 - Duplicate label statement warning 
 
