@@ -29,7 +29,8 @@ import {
 	DidChangeConfigurationParams,
 	ImplementationParams,
 	FileChangeType,
-	DidChangeWatchedFilesParams
+	DidChangeWatchedFilesParams,
+	CodeAction, CodeActionKind, Command, 
 } from 'vscode-languageserver';
 
 import {
@@ -79,14 +80,16 @@ class FileProvider implements MacroFileProvider {
 							document: document,
 							version: 1
 						};
-					// add new parsed document to the repository
-					// parsedDocuments.set(uri, doc);
+						// add new parsed document to the repository
+						// TODO handle unused files in repo
+						parsedDocuments.set(uri, doc);
 					}
-					catch (e){
-						console.log();
+					catch (err){
+						connection.console.log(err);
 					}
 				}
 				catch (err) {
+					connection.console.log(err);
 					return undefined;
 				}
 			}
@@ -94,7 +97,7 @@ class FileProvider implements MacroFileProvider {
 		}
 		return undefined;
 	}
-
+	
 	getAll(): MacroFileType[] {
 
 		let types:MacroFileType[] = [];
@@ -109,8 +112,8 @@ class FileProvider implements MacroFileProvider {
 					}
 				}
 			}
-		}catch (e){
-			console.log();
+		}catch (err){
+			connection.console.log(err);
 		}
 
 		return types;
@@ -196,7 +199,7 @@ connection.onInitialize((params: InitializeParams) => {
 			implementationProvider:true,
 			documentLinkProvider: {
 				resolveProvider:true
-			},
+			}
 		}
 
 	};
@@ -208,11 +211,7 @@ connection.onInitialized(async () => {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
-
-	let settings = await getSettings();
-	if (settings && settings.validateWorkspace){
-		validateWorkspace();
-	}
+	validateWorkspace();
 });
 
 connection.onDidChangeWatchedFiles(watchedFiles);
@@ -223,10 +222,6 @@ connection.onImplementation(implementations);
 connection.onDocumentSymbol(documentSymbol);
 connection.onDocumentLinks(documentLinks);
 connection.onHover(hower);
-
-connection.onDidChangeTextDocument(a => {
-	console.log();
-});
 
 documents.onDidChangeContent(change => {
 	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
@@ -258,14 +253,6 @@ function getSettings(): Thenable<LanguageSettings> {
 		section: 'macroLanguageServer'
 	});
 	return result;
-}
-
-function watchedFiles(handler:DidChangeWatchedFilesParams){
-	for (const file of handler.changes) {
-		if (file.type === FileChangeType.Deleted){
-			parsedDocuments.delete(file.uri);
-		} 
-	}
 }
 
 function hower(params: TextDocumentPositionParams) {
@@ -339,10 +326,13 @@ async function validateTextDocument(doc: MacroFileType | undefined) {
 }
 
 async function validateWorkspace() {
-	let fp = new FileProvider();
-	let types = fp.getAll();
-	for (const element of types){
-		validateTextDocument(element);
+	let settings = await getSettings();
+	if (settings && settings.validateWorkspace){
+		let fp = new FileProvider();
+		let types = fp.getAll();
+		for (const element of types){
+			validateTextDocument(element);
+		}
 	}
 }
 
@@ -352,14 +342,33 @@ async function validateOpenDocuments() {
 	}
 }
 
-function getParsedDocument(uri: string, cb:((document:TextDocument) => Macrofile)) : MacroFileType | undefined {
+function watchedFiles(handler:DidChangeWatchedFilesParams){
+	for (const file of handler.changes) {
+		if (file.type === FileChangeType.Deleted){
+			parsedDocuments.delete(file.uri);
+			validateWorkspace();
+		} 
+		else if (file.type === FileChangeType.Changed) {
+			// if the file is not opened it was changed extern. 
+			// n the parsedDocuments repo it is not up-to-date anymore.
+			if (!documents.get(file.uri)){
+				parsedDocuments.delete(file.uri);
+			}
+		} 
+		else if (file.type === FileChangeType.Created) {
+			validateWorkspace();
+		} 
+	}
+}
+
+function getParsedDocument(uri: string, parser:((document:TextDocument) => Macrofile)) : MacroFileType | undefined {
 	let document = documents.get(uri);
 	if (document) {
 		let parsed = parsedDocuments.get(uri);
 		if (parsed) {
 			if (document.version !== parsed.version){
 				parsedDocuments.set(uri , {
-					macrofile: cb(document),
+					macrofile: parser(document),
 					document: document,
 					version: document.version
 				});
@@ -367,7 +376,7 @@ function getParsedDocument(uri: string, cb:((document:TextDocument) => Macrofile
 		}
 		else {
 			parsedDocuments.set(uri, {
-				macrofile: cb(document),
+				macrofile: parser(document),
 				document: document,
 				version: document.version
 			});

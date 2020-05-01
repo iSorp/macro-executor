@@ -1,6 +1,7 @@
 ## 0.1.4 (May 02, 2020)
 - Readme 
 - Opening links with capital letters issue fixed 
+- Duplicate label statement warning 
 
 ## 0.1.3 (May 01, 2020)
 - Missing arithmetic functions implemented

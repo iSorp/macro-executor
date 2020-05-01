@@ -5,11 +5,9 @@
 'use strict';
 
 import * as nodes from '../parser/macroNodes';
-import * as nls from 'vscode-nls';
 
 import { TextDocument, MacroFileProvider } from '../MacroLanguageTypes';
 import { Rules, Rule } from './lintRules';
-const localize = nls.loadMessageBundle();
 
 const _0 = '0'.charCodeAt(0);
 const _9 = '9'.charCodeAt(0);
@@ -25,7 +23,9 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private declarations:Map<string,nodes.AbstractDeclaration> = new Map<string,nodes.AbstractDeclaration>()
-	
+	private sequenceNumbers:FunctionMap = new FunctionMap();
+	private labelList:FunctionMap = new FunctionMap();
+
 	private rules: nodes.IMarker[] = [];
 	private imports:string[] = [];
 
@@ -67,8 +67,6 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private LoadIncludes(node:nodes.MacroFile) {
-
-		let promises:Promise<any>[] = [];
 		node.accept(candidate => {
 			if (candidate.type === nodes.NodeType.Include) {
 				this.visitInclude(<nodes.Include>candidate);
@@ -155,9 +153,8 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private labelList:FunctionMap = new FunctionMap();
 	private visitLabels(node: nodes.Label) : boolean {
-	/*	if (node.getParent()?.type !== nodes.NodeType.Statement){
+		if (node.getParent()?.type !== nodes.NodeType.Function){
 			return true;
 		}
 
@@ -167,12 +164,12 @@ export class LintVisitor implements nodes.IVisitor {
 			let a = this.labelList.get(func);
 			let index = a?.indexOf(value);
 			if (index !== undefined && index > -1){
-				this.addEntry(node, Rules.DuplicateAddress);
+				this.addEntry(node, Rules.DuplicateLabel);
 			} 
 			else {
 				this.labelList.add(func, value);
 			}
-		}*/
+		}
 		return true;
 	}
 
@@ -206,7 +203,6 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private sequenceNumbers:FunctionMap = new FunctionMap();
 	private visitSequenceNumber(node: nodes.SequenceNumber): boolean {
 
 		let number = node.getNumber();

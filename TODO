@@ -1,6 +1,4 @@
 - Unused symbol search
 - Symbol search for NC Statemets
-- Duplicated  declaration (Label) warning
-- Workspace symbol search
 - Parsing of .lnk files (read declarated "FILE=" properties validate only these files)
 - Improve bild system (read properties of .lnk files)
