@@ -357,6 +357,8 @@ export class Parser {
 		node.setSymbol(symbol);
 
 		const value = this.createNode(nodes.NodeType.DeclarationValue);
+		
+
 		if (node.setValue(this.parseNumeric())){
 			node.valueType = nodes.ValueType.Numeric;
 		}
@@ -608,8 +610,11 @@ export class Parser {
 		let mark = this.mark();
 		this.consumeToken();
 		let ret = false;
-		if (this.accept(TokenType.Symbol) && this.accept(TokenType.NewLine)){
-			ret = true;
+		if (this.accept(TokenType.Symbol)) {
+			this.accept(TokenType.String);
+			if(this.accept(TokenType.NewLine)){
+				ret = true;
+			}
 		}
 		this.restoreAtMark(mark);
 		return ret;
@@ -617,7 +622,7 @@ export class Parser {
 
 	public _parseFunctionBody(): nodes.Node | null {
 
-		if (this._isFunction() || this.peek(TokenType.Dollar) || this.peek(TokenType.AT) || this.peek(TokenType.GTS)) {
+		if (this._isFunction() || this.peek(TokenType.Dollar)) {
 			return null;
 		}
 
@@ -636,11 +641,16 @@ export class Parser {
 			|| this._parseNcStatement()
 			|| this.parseString();
 
+		let declaraion = this._parseVariableDeclaration() || this._parseLabelDeclaration();
+		if (declaraion){
+			this.setLocalDeclaration(declaraion);
+		}
+		
 		if (sequence && statement){
 			sequence.addChild(statement);
 			return sequence;
 		}
-		return sequence || statement;
+		return sequence || statement || declaraion;
 	}
 
 	private parseUnexpected() : nodes.Node | null{
