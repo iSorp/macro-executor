@@ -19,7 +19,7 @@ export class MacroValidation {
 	}
 
 	public doValidation(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings | undefined = this.settings): Diagnostic[] {
-		if (settings && settings.validate === false) {
+		if (settings && settings?.validate?.enable === false) {
 			return [];
 		}
 

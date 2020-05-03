@@ -7,7 +7,7 @@
 [![license](https://img.shields.io/github/license/iSorp/macro-executor)](https://opensource.org/licenses/MIT)
 
 
-Fanuc Macro Executor syntax highlighting/validating and project building 
+Fanuc Macro Executor syntax highlighting, validating and project building 
 
 ## Features
 
@@ -16,6 +16,7 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 * Syntax highlighting
 * Syntax validation
 * Symbol provider
+* CodeLens
 * Lint features
 
 **The program parsing is not yet complete implemented. There are cases where mistakes are not appropriate or not detected.**
@@ -33,6 +34,8 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 ### Implementations
 ![Definition](./resources/implementations.gif)
 
+### CodeLens reference counter
+![Definition](./resources/codelens.png)
 
 ## Required file extension
 * Macro files `.src`
@@ -53,7 +56,9 @@ Fanuc Macro Executor syntax highlighting/validating and project building
 This extension contributes the following settings:
 
 
-* `macroLanguageServer.validate`: Syntax validation activation
+* `macro.codelens.Enable`: Reference counter for variable and label declarations
+* `macro.validate.enable`: Syntax validation activation
+* `macro.validate.workspace`: Syntax validation for entire workspace
 * `macro.build.compiler`: Compiler Selection {MCOMPI, MCOMP0}
 * `macro.build.controlType`: Control Type Selection {0, 30}
 * `macro.build.makeFile`: Makefile

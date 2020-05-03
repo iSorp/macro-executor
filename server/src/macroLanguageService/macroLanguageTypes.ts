@@ -7,14 +7,20 @@
 
 import { Macrofile } from './macroLanguageService';
 import  { MarkupKind, TextDocument } from 'vscode-languageserver-types';
+import { type } from 'os';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 
 export * from 'vscode-languageserver-types';
 
 
 export interface LanguageSettings {
-	validate?: boolean;
-	validateWorkspace?: boolean;
+	validate? : {
+		enable?: boolean;
+		workspace?:boolean;
+	};
+	codelens?: {
+		enable?:boolean;
+	}
 }
 
 export interface DocumentContext {
@@ -42,4 +48,18 @@ export interface MacroFileType {
 export interface MacroFileProvider {
 	get(uri: string) : MacroFileType | undefined;
 	getAll() : MacroFileType[]
+	getLink(ref:string) : string |undefined;
 }
+
+export interface MacroCodeLensType {
+	title: string;
+	uri:string;
+	line:number;
+	character:number;
+	type:MacroCodeLensCommand;
+}	
+
+export enum MacroCodeLensCommand {
+	References
+}
+

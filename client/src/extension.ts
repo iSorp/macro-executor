@@ -1,8 +1,8 @@
 import * as path from 'path';
-import { ExtensionContext, workspace } from 'vscode';
+import { ExtensionContext, workspace, commands, window, Selection } from 'vscode';
 import { 
 	LanguageClient, LanguageClientOptions, 
-	ServerOptions, TransportKind, RevealOutputChannelOn,
+	ServerOptions, TransportKind, RevealOutputChannelOn, Position,
 } from 'vscode-languageclient';
 import registerCommands from './common/commands';
 
@@ -50,10 +50,18 @@ export function activate(context: ExtensionContext) {
 		diagnosticCollectionName: 'macro',
 		progressOnInitialization: true,
 		revealOutputChannelOn: RevealOutputChannelOn.Never,
-
+		middleware: {
+			executeCommand: async (command, args, next) => {
+				if (command === 'macro.codelens.references') {
+					let line = Number(args[0]);
+					let char = Number(args[1]);
+					let selection = new Selection(line, char, line,char);
+					window.activeTextEditor.selection = selection;
+					commands.executeCommand('references-view.find');
+				}
+			}
+		}
 	};
-
-
 	// Create the language client and start the client.
 	client = new LanguageClient(
 		'macroLanguageServer',

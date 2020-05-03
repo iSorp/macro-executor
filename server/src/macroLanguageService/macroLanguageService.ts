@@ -12,7 +12,7 @@ import { MacroValidation } from './services/macroValidation';
 import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, DocumentLink,
 	SymbolInformation, Diagnostic, Position, Hover, Location, 
-	TextDocument, WorkspaceEdit
+	TextDocument, WorkspaceEdit, CodeLens
 } from './macroLanguageTypes';
 
 
@@ -28,6 +28,7 @@ export interface LanguageService {
 	findImplementations(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
 	findDocumentLinks(document: TextDocument, stylesheet: Macrofile, documentContext: DocumentContext): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, stylesheet: Macrofile): SymbolInformation[];
+	findCodeLenses(document: TextDocument, stylesheet: Macrofile): CodeLens[];
 }
 
 function createFacade(parser: Parser, hover: MacroHover, navigation: MacroNavigation, validation: MacroValidation): LanguageService {
@@ -40,6 +41,7 @@ function createFacade(parser: Parser, hover: MacroHover, navigation: MacroNaviga
 		findImplementations: navigation.findImplementations.bind(navigation),
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
+		findCodeLenses: navigation.findCodeLenses.bind(navigation),
 	};
 }
 

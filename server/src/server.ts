@@ -7,7 +7,7 @@
 import * as path from 'path';
 import { readFileSync} from 'fs';
 
-import { LanguageSettings, MacroFileProvider, FindDocumentLinks } from './macroLanguageService/macroLanguageTypes';
+import { LanguageSettings, MacroFileProvider, FindDocumentLinks, Range } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
 
@@ -30,14 +30,17 @@ import {
 	ImplementationParams,
 	FileChangeType,
 	DidChangeWatchedFilesParams,
-	CodeAction, CodeActionKind, Command, 
+	CodeLensParams, 
 } from 'vscode-languageserver';
 
 import {
 	TextDocument,
 } from 'vscode-languageserver-textdocument';
 
-import { getMacroLanguageService, Macrofile, MacroFileType } from './macroLanguageService/macroLanguageService';
+import { getMacroLanguageService, 
+	Macrofile, MacroFileType, 
+	MacroCodeLensType, MacroCodeLensCommand 
+} from './macroLanguageService/macroLanguageService';
 import { URI } from 'vscode-uri';
 import { rejects } from 'assert';
 
@@ -51,8 +54,16 @@ let parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
-
-const defaultSettings: LanguageSettings = { validate: true, validateWorkspace: false };
+let settings:LanguageSettings;
+const defaultSettings: LanguageSettings = { 
+	validate : {
+		enable:true,
+		workspace:true
+	},
+	codelens: {
+		enable:true
+	}
+};
 let globalSettings: LanguageSettings = defaultSettings;
 
 class FileProvider implements MacroFileProvider {
@@ -117,6 +128,10 @@ class FileProvider implements MacroFileProvider {
 		}
 
 		return types;
+	}
+
+	getLink(ref:string) : string |undefined {
+		return this.links.resolveReference(ref);
 	}
 }
 
@@ -194,14 +209,19 @@ connection.onInitialize((params: InitializeParams) => {
 			documentSymbolProvider: true,
 			workspaceSymbolProvider: true,
 			hoverProvider: true,
+			codeLensProvider: {
+				resolveProvider:true
+			},
 			//renameProvider: true,
 			referencesProvider: true,
 			implementationProvider:true,
 			documentLinkProvider: {
 				resolveProvider:true
+			},
+			executeCommandProvider: {
+				commands: ['macro.codelens.references']
 			}
 		}
-
 	};
 	return result;
 });
@@ -211,7 +231,26 @@ connection.onInitialized(async () => {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
+	settings = await getSettings();
 	validateWorkspace();
+});
+
+connection.onCodeLens(codelens);
+connection.onCodeLensResolve(handler => {
+	let data:MacroCodeLensType = <MacroCodeLensType>handler.data;
+	let command:string = ''; 
+	if (data.type === MacroCodeLensCommand.References){
+		command = 'macro.codelens.references';
+	} 
+
+	return {
+		range: handler.range,
+		command: {
+			command: command,
+			title:data.title,
+			arguments: [data.line, data.character]
+		}
+	};
 });
 
 connection.onDidChangeWatchedFiles(watchedFiles);
@@ -240,6 +279,8 @@ async function configuration(params: DidChangeConfigurationParams) {
 		globalSettings = <LanguageSettings>((params.settings.macroLanguageServer || defaultSettings));
 	}
 
+	settings = await getSettings();
+
 	for (const document of documents.all()){
 		validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile));
 	}
@@ -250,7 +291,7 @@ function getSettings(): Thenable<LanguageSettings> {
 		return Promise.resolve(globalSettings);
 	}
 	let result = connection.workspace.getConfiguration({
-		section: 'macroLanguageServer'
+		section: 'macro'
 	});
 	return result;
 }
@@ -260,6 +301,16 @@ function hower(params: TextDocumentPositionParams) {
 	if (!repo) {return null;}
 	return macroLanguageService.doHover(repo.document, params.position, repo.macrofile);
 
+}
+
+function codelens(params: CodeLensParams) {
+	if (settings && settings?.codelens?.enable){
+		let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+		if (!repo) {
+			return null;
+		}
+		return macroLanguageService.findCodeLenses(repo.document, repo.macrofile);
+	}
 }
 
 function definition(params: DefinitionParams) {
@@ -326,8 +377,7 @@ async function validateTextDocument(doc: MacroFileType | undefined) {
 }
 
 async function validateWorkspace() {
-	let settings = await getSettings();
-	if (settings && settings.validateWorkspace){
+	if (settings && settings?.validate?.workspace){
 		let fp = new FileProvider();
 		let types = fp.getAll();
 		for (const element of types){

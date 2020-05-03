@@ -161,6 +161,7 @@ export class LintVisitor implements nodes.IVisitor {
 		let value = node.declaration?.value?.getText();
 		if (value){
 			let func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			let ident = func.getIdentifier()?.getText();
 			let a = this.labelList.get(func);
 			let index = a?.indexOf(value);
 			if (index !== undefined && index > -1){

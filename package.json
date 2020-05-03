@@ -112,17 +112,23 @@
 			"type": "object",
 			"title": "MacroExecutor Configuration",
 			"properties": {
-				"macroLanguageServer.validate": {
+				"macro.codelens.enable": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"description": "Syntax validation"
+					"description": "Enable/disable codeLens for reference counter"
 				},
-				"macroLanguageServer.validateWorkspace": {
+				"macro.validate.enable": {
 					"scope": "resource",
 					"type": "boolean",
-					"default": false,
-					"description": "workspace validation on startup"
+					"default": true,
+					"description": "Enable/disable Syntax validation"
+				},
+				"macro.validate.workspace": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Enable/disable Workspace validation"
 				},
 				"macro.build.compiler": {
 					"type": "string",
