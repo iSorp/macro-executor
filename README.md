@@ -56,7 +56,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 This extension contributes the following settings:
 
 
-* `macro.codelens.Enable`: Reference counter for variable and label declarations
+* `macro.codelens.enable`: Reference counter for variable and label declarations
 * `macro.validate.enable`: Syntax validation activation
 * `macro.validate.workspace`: Syntax validation for entire workspace
 * `macro.build.compiler`: Compiler Selection {MCOMPI, MCOMP0}
@@ -101,7 +101,7 @@ project
 └───lnk
        file1.lnk
        file1.lnk
-	   F30iA_01.MEX
+	F30iA_01.MEX
 
 ```
 
