@@ -1,5 +1,4 @@
 /*---------------------------------------------------------------------------------------------
-*	Copyright (c) 2020 Simon Waelti
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -38,6 +37,7 @@ export interface IToken {
 	offset: number;
 	len: number;
 }
+
 
 export class MultiLineStream {
 
@@ -118,6 +118,12 @@ export class MultiLineStream {
 		return this.position - posNow;
 	}
 }
+
+
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) 2020 Simon Waelti
+* Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
 
 export const _a = 'a'.charCodeAt(0);
 export const _f = 'f'.charCodeAt(0);

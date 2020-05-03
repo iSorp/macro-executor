@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-*	Copyright (c) 2020 Simon Waelti
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) 2020 Simon Waelti
+* Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
 'use strict';
 
 import { Parser } from './parser/macroParser';
