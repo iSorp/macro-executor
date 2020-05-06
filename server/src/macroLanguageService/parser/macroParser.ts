@@ -20,17 +20,15 @@ export interface IMark {
 
 export class Parser {
 	
-
 	private scanner: Scanner = new Scanner();
 	private textProvider?: nodes.ITextProvider;
 	private token: IToken;
 	private prevToken?: IToken;
 	private lastErrorToken?: IToken;
-
-	private imports:string[] = [];
 	private declarations:Map<string,nodes.AbstractDeclaration> = new Map<string,nodes.AbstractDeclaration>()
+	private includes:string[] = []
 
-	constructor(private fileProvider?: MacroFileProvider) {
+	constructor(private fileProvider: MacroFileProvider) {
 		this.token = { type: TokenType.EOF, offset: -1, len: 0, text: '' };
 		this.prevToken = undefined;
 	}
@@ -303,12 +301,13 @@ export class Parser {
 	//#region handle declaraions	
 	private resolveIncludes(node:nodes.Include) {
 		let uri = node.getData('uri');
-		if (!uri) {return;}
+		if (!uri) {
+			return;
+		}
 
-		this.imports.push(uri);
 		let declaration = this.fileProvider?.get(uri);
-
 		if (declaration) {
+			this.includes.push(declaration.document.uri);
 			(<nodes.Node>declaration?.macrofile).accept(candidate => {
 				let found = false;
 				if (candidate.type === nodes.NodeType.VariableDef || candidate.type === nodes.NodeType.labelDef) {
@@ -350,6 +349,7 @@ export class Parser {
 
 		const symbol = this.create(nodes.Symbol);
 		symbol.referenceTypes = [nodes.ReferenceType.Variable];
+		const isUpperCase = this.token.text == this.token.text.toUpperCase();
 
 		if (!this.accept(TokenType.Symbol)){
 			return this.finish(node, ParseError.IdentifierExpected);
@@ -358,9 +358,27 @@ export class Parser {
 
 		const value = this.createNode(nodes.NodeType.DeclarationValue);
 		
-
-		if (node.setValue(this.parseNumeric())){
-			node.valueType = nodes.ValueType.Numeric;
+		if (this.peekDelim('+') || this.peekDelim('-')) {
+			this.consumeToken();
+			if (node.setValue(this.parseNumeric())){
+				if (isUpperCase){
+					node.valueType = nodes.ValueType.Constant;
+				}
+				else {
+					node.valueType = nodes.ValueType.Numeric;
+				}
+			}
+			else{
+				return this.finish(node, ParseError.ValueExpected);
+			}
+		}
+		else if (node.setValue(this.parseNumeric())) {
+			if (isUpperCase){
+				node.valueType = nodes.ValueType.Constant;
+			}
+			else {
+				node.valueType = nodes.ValueType.Numeric;
+			}
 		}
 		else if (this.accept(TokenType.Hash)){
 			if (node.setValue(this.parseNumeric())){
@@ -437,22 +455,28 @@ export class Parser {
 
 	// #region Global scope 
 	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
+		this.declarations.clear();
+		this.includes = [];
 		const versionId = textDocument.version;
 		const text = textDocument.getText();
 		this.textProvider = (offset: number, length: number) => {
-			// TODO no idea why the versions are not equivalent
-			/*if (textDocument.version !== versionId) {
+			if (textDocument.version !== versionId) {
 				throw new Error('Underlying model has changed, AST is no longer valid');
-			}*/
+			}
 			return text.substr(offset, length);
 		};
-		let type = textDocument.uri.split('.').pop();
-		if (type?.toLocaleLowerCase() === 'def'){
+		let type = textDocument.uri.split('.').pop()?.toLocaleLowerCase() ;
+		if (type === 'def'){
 			return this.internalParse(text, this._parseDefFile, this.textProvider);
 		}
-		else{
+		else if (type === 'src'){
 			return this.internalParse(text, this._parseMacroFile, this.textProvider);
+		}	
+		else if (type === 'lnk'){
+			return this.internalParse(text, this._parseLnkFile, this.textProvider);
 		}
+
+		return this.createNode(nodes.NodeType.Undefined);
 	}
 
 	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {
@@ -467,6 +491,59 @@ export class Parser {
 			}
 		}
 		return node;
+	}
+
+	public _parseLnkFile(): nodes.MacroFile {
+		const node = this.createNode(nodes.NodeType.DefFile);
+		let hasMatch = false;
+		do {		
+			do {
+				let child = null;	
+				hasMatch = false;
+				child = this._parseLinkNode();
+				if (child){
+					node.addChild(child);
+					hasMatch = true;
+				}
+			} while (hasMatch);
+	
+			if (this.peek(TokenType.EOF)) {
+				break;
+			}
+
+			/*let child = this.parseUnexpected();
+			if (child){
+				node.addChild(child);
+				hasMatch = true;
+			}*/
+			this.consumeToken();
+	
+		} while (!this.peek(TokenType.EOF));
+		return this.finish(node);
+	}
+
+	public _parseLinkNode() : nodes.LinkNode | null {
+		let node = this.create(nodes.LinkNode);
+
+		if (!this.peekKeyword('file')){
+			return null;
+		}
+
+		this.consumeToken();
+
+		if (!this.acceptDelim('=')) {
+			this.finish(node, ParseError.EqualExpected, [TokenType.NewLine]);
+		}
+
+		if (this.peek(TokenType.Symbol)){
+			let file = this.create(nodes.Node);
+			this.acceptUnquotedString();
+			node.setFile(this.finish(file));
+		}else{
+			this.finish(node, ParseError.EqualExpected, [TokenType.NewLine]);
+		}
+	
+		return this.finish(node);	
 	}
 
 	public _parseDefFile(): nodes.MacroFile {
@@ -544,6 +621,8 @@ export class Parser {
 			this.consumeToken();
 	
 		} while (!this.peek(TokenType.EOF));
+
+		node.setData('includes', this.includes);
 		return this.finish(node);
 	}
 

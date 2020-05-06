@@ -12,7 +12,7 @@ export class MacroValidation {
 
 	private settings?: LanguageSettings;
 
-	constructor( private fileProvider?: MacroFileProvider) {}
+	constructor( private fileProvider: MacroFileProvider) {}
 
 	public configure(settings?: LanguageSettings) {
 		this.settings = settings;

@@ -5,7 +5,7 @@
 'use strict';
 
 import * as path from 'path';
-import { readFileSync} from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
 import { LanguageSettings, MacroFileProvider, FindDocumentLinks, Range } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
@@ -31,6 +31,8 @@ import {
 	FileChangeType,
 	DidChangeWatchedFilesParams,
 	CodeLensParams, 
+	CodeLens,
+	TextDocumentChangeEvent,
 } from 'vscode-languageserver';
 
 import {
@@ -68,7 +70,7 @@ let globalSettings: LanguageSettings = defaultSettings;
 
 class FileProvider implements MacroFileProvider {
 
-	private links = new Links();
+	private resolver = new Links();
 
 	get(file: string): MacroFileType | undefined {
 	
@@ -76,16 +78,20 @@ class FileProvider implements MacroFileProvider {
 			return undefined;
 		}
 
-		let uri = this.links.resolveReference(file);
+		let uri = this.resolver.resolveReference(file);
 		if (uri) {
-			let doc = getParsedDocument(uri, new Parser(this).parseMacroFile);
+			
+			let doc = getParsedDocument(uri, (document => {
+				let parser = new Parser(this);
+				return parser.parseMacroFile(document);
+			}));
 			if (!doc) {		
 				try {
 					const file = readFileSync(Files.uriToFilePath(uri)!, 'utf-8');
 					let document = TextDocument.create(uri!, 'macro', 1, file.toString());
 					try {
+						
 						let macrofile = new Parser(this).parseMacroFile(document);
-					
 						doc = {
 							macrofile: macrofile,
 							document: document,
@@ -110,12 +116,11 @@ class FileProvider implements MacroFileProvider {
 	}
 	
 	getAll(): MacroFileType[] {
-
 		let types:MacroFileType[] = [];
 		try {
-			if (workspaceFolder){
+			if (workspaceFolder) {
 				let dir = Files.uriToFilePath(workspaceFolder);
-				let files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF]}');
+				let files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}');
 				for (const file of files) {
 					let type = this.get(file);
 					if (type){
@@ -126,16 +131,21 @@ class FileProvider implements MacroFileProvider {
 		}catch (err){
 			connection.console.log(err);
 		}
-
 		return types;
 	}
 
 	getLink(ref:string) : string |undefined {
-		return this.links.resolveReference(ref);
+		return this.resolver.resolveReference(ref);
 	}
 }
 
 class Links implements FindDocumentLinks {
+
+	/**
+	 * Returns a given path as uri
+	 * @param ref 
+	 * @param base 
+	 */
 	public resolveReference(ref: string, base?: string): string | undefined {
 		if (!workspaceFolder){
 			return '';
@@ -159,26 +169,20 @@ class Links implements FindDocumentLinks {
 			return undefined;
 		}
 
-		file = path.normalize(file.toLocaleLowerCase());
+		file = this.resolvePathCaseSensitive(file);
 
-		// Workaround to get the case-sensitive path of a non case-sensitive path
-		// TODO find correct solution
-		let files = glob.sync(Files.uriToFilePath(workspaceFolder)+'/**/*.{[sS][rR][cC],[dD][eE][fF]}');
-		let filter = files.filter(a => {
-			let b = path.normalize(a.toLocaleLowerCase());
-			if (b === file){
-				return true;
-			}
-			else {
-				return false;
-			}
-		});
-
-		if (filter && filter.length > 0) {
-			return URI.file(filter[0]).toString();
+		if (file) {
+			return URI.file(file).toString();
 		}
 		else {return '';}
 	}
+
+	private resolvePathCaseSensitive(file:string) {
+		let norm = path.normalize(file)
+		let root = path.parse(norm).root
+		let p = norm.slice(Math.max(root.length - 1, 0))
+		return glob.sync(p, { nocase: true, cwd: root })[0]
+	  }
 }
 
 const macroLanguageService = getMacroLanguageService({
@@ -232,27 +236,11 @@ connection.onInitialized(async () => {
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
 	settings = await getSettings();
-	validateWorkspace();
+	Promise.resolve(revalidate(true));
 });
 
 connection.onCodeLens(codelens);
-connection.onCodeLensResolve(handler => {
-	let data:MacroCodeLensType = <MacroCodeLensType>handler.data;
-	let command:string = ''; 
-	if (data.type === MacroCodeLensCommand.References){
-		command = 'macro.codelens.references';
-	} 
-
-	return {
-		range: handler.range,
-		command: {
-			command: command,
-			title:data.title,
-			arguments: [data.line, data.character]
-		}
-	};
-});
-
+connection.onCodeLensResolve(codeLensResolve);
 connection.onDidChangeWatchedFiles(watchedFiles);
 connection.onDidChangeConfiguration(configuration);
 connection.onDefinition(definition);
@@ -262,14 +250,7 @@ connection.onDocumentSymbol(documentSymbol);
 connection.onDocumentLinks(documentLinks);
 connection.onHover(hower);
 
-documents.onDidChangeContent(change => {
-	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
-
-	if (change.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
-		Promise.resolve(validateOpenDocuments());	
-	}
-});
-
+documents.onDidChangeContent(content);
 documents.listen(connection);
 connection.listen();
 
@@ -296,11 +277,19 @@ function getSettings(): Thenable<LanguageSettings> {
 	return result;
 }
 
+function content(change:TextDocumentChangeEvent<TextDocument>) {
+	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
+
+	// TODO validate files only which include this def file
+	if (change.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
+		Promise.resolve(revalidate(false));	
+	}
+}
+
 function hower(params: TextDocumentPositionParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.doHover(repo.document, params.position, repo.macrofile);
-
 }
 
 function codelens(params: CodeLensParams) {
@@ -311,6 +300,24 @@ function codelens(params: CodeLensParams) {
 		}
 		return macroLanguageService.findCodeLenses(repo.document, repo.macrofile);
 	}
+}
+
+function codeLensResolve(handler:CodeLens) {
+
+	let data:MacroCodeLensType = <MacroCodeLensType>handler.data;
+	let command:string = ''; 
+	if (data.type === MacroCodeLensCommand.References){
+		command = 'macro.codelens.references';
+	} 
+
+	return {
+		range: handler.range,
+		command: {
+			command: command,
+			title:data.title,
+			arguments: [data.line, data.character]
+		}
+	};
 }
 
 function definition(params: DefinitionParams) {
@@ -329,14 +336,12 @@ function implementations(params: ImplementationParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.findImplementations(repo.document, params.position, repo.macrofile);
-	return null;
 }
 
 function documentSymbol(params: DocumentSymbolParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.findDocumentSymbols(repo.document, repo.macrofile);
-	return null;
 }
 
 function documentLinks(params: DocumentLinkParams) {
@@ -345,29 +350,17 @@ function documentLinks(params: DocumentLinkParams) {
 	return macroLanguageService.findDocumentLinks(repo.document, repo.macrofile, new Links());
 }
 
-async function validateTextDocument(doc: MacroFileType | undefined) {
+function validateTextDocument(doc: MacroFileType | undefined) {
 
 	if (!doc) {return;}
 
 	try {
 
-		let settings = await getSettings();
-		const diagnostics: Diagnostic[] = [];
-		if (doc.document.languageId === 'macro') {
-
-			if (doc.document) {
-				if (macroLanguageService.doValidation && doc.macrofile) {
-					let entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
-					let index = 0;
-					for (const entry of entries) {
-						if (maxNumberOfProblems <= index){
-							break;
-						}
-						diagnostics.push(entry);
-						++index;
-					}
-					connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
-				}
+		if (doc.document) {
+			if (macroLanguageService.doValidation && doc.macrofile) {
+				const entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
+				const diagnostics: Diagnostic[] = entries;
+				connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
 			}
 		}
 	} catch (e) {
@@ -376,47 +369,53 @@ async function validateTextDocument(doc: MacroFileType | undefined) {
 	}
 }
 
-async function validateWorkspace() {
-	if (settings && settings?.validate?.workspace){
-		let fp = new FileProvider();
-		let types = fp.getAll();
-		for (const element of types){
-			validateTextDocument(element);
-		}
-	}
-}
-
-async function validateOpenDocuments() {
-	for (const document of documents.all()){
-		validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile));
-	}
-}
-
 function watchedFiles(handler:DidChangeWatchedFilesParams){
 	for (const file of handler.changes) {
 		if (file.type === FileChangeType.Deleted){
-			parsedDocuments.delete(file.uri);
-			validateWorkspace();
+			parsedDocuments.clear();
+			revalidate(true);
 		} 
 		else if (file.type === FileChangeType.Changed) {
-			// if the file is not opened it was changed extern. 
-			// n the parsedDocuments repo it is not up-to-date anymore.
+			// if the file is not opened it was changed external 
+			// so the parsedDocuments repo is not up-to-date anymore.
 			if (!documents.get(file.uri)){
 				parsedDocuments.delete(file.uri);
 			}
 		} 
 		else if (file.type === FileChangeType.Created) {
-			validateWorkspace();
+			parsedDocuments.clear();
+			revalidate(true);
 		} 
 	}
 }
 
-function getParsedDocument(uri: string, parser:((document:TextDocument) => Macrofile)) : MacroFileType | undefined {
+function revalidate(workspace:boolean) {
+	if (workspace && settings && settings?.validate?.workspace){
+		let fp = new FileProvider();
+		let types = fp.getAll();
+		for (const element of types){
+			validateTextDocument(element);
+		}
+	} else{
+		for (const document of documents.all()){
+			validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile,true));
+		}
+	}
+}
+
+/**
+ * Returns the parsed version of a TextDocument. 
+ * An open TextDocument will be reparsd if the Version is newer than the parsed version.
+ * @param uri 
+ * @param parser 
+ * @param parse 
+ */
+function getParsedDocument(uri: string, parser:((document:TextDocument) => Macrofile), parse:boolean=false) : MacroFileType | undefined {
 	let document = documents.get(uri);
 	if (document) {
 		let parsed = parsedDocuments.get(uri);
 		if (parsed) {
-			if (document.version !== parsed.version){
+			if (document.version !== parsed.version || parse){
 				parsedDocuments.set(uri , {
 					macrofile: parser(document),
 					document: document,

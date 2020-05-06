@@ -421,6 +421,8 @@ export enum NodeType {
 	Undefined,
 	MacroFile,
 	DefFile,
+	LnkFile,
+	LinkNode,
 	Include,
 	StringLiteral,
 	Declarations,
@@ -451,6 +453,38 @@ export enum NodeType {
 	Parameter,
 	Code,
 	SequenceNumber,
+}
+
+export class LnkFile extends Node {
+
+	constructor(offset: number, length: number) {
+		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.LnkFile;
+	}
+}
+
+export class LinkNode extends Node {
+
+	file?: Node; 
+	
+	constructor(offset: number, length: number) {
+		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.LinkNode;
+	}
+
+	public setFile(node: Node | null): node is Node {
+		return this.setNode('file', node, 0);
+	}
+
+	public getFile(): Node | undefined {
+		return this.file;
+	}
 }
 
 export class MacroFile extends Node {
@@ -932,6 +966,7 @@ export class Assignment extends Node {
 export enum ValueType {
 	String = 'string',
 	Numeric = 'numeric',
+	Constant = 'constant', // same as numeric in capital
 	MacroValue = 'value',
 	Address = 'address',
 	MFunc= 'm-function',
