@@ -12,7 +12,7 @@ import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupCon
 
 export class MacroHover {
 
-	constructor(private fileProvider?: MacroFileProvider | undefined) { }
+	constructor(private fileProvider: MacroFileProvider) { }
 
 	public doHover(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Hover | null {
 		function getRange(node: nodes.Node) {

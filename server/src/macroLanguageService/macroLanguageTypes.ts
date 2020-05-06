@@ -32,7 +32,7 @@ export interface FindDocumentLinks {
 
 export interface LanguageServiceOptions {
 
-	fileProvider?: MacroFileProvider;
+	fileProvider: MacroFileProvider;
 }
 
 export interface MacroFileType {

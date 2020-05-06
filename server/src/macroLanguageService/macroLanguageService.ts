@@ -26,9 +26,9 @@ export interface LanguageService {
 	findDefinition(document: TextDocument, position: Position, macroFile: Macrofile): Location | null;
 	findReferences(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
 	findImplementations(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
-	findDocumentLinks(document: TextDocument, stylesheet: Macrofile, documentContext: DocumentContext): DocumentLink[];
-	findDocumentSymbols(document: TextDocument, stylesheet: Macrofile): SymbolInformation[];
-	findCodeLenses(document: TextDocument, stylesheet: Macrofile): CodeLens[];
+	findDocumentLinks(document: TextDocument, macrofile: Macrofile, documentContext: DocumentContext): DocumentLink[];
+	findDocumentSymbols(document: TextDocument, macrofile: Macrofile): SymbolInformation[];
+	findCodeLenses(document: TextDocument, macrofile: Macrofile): CodeLens[];
 }
 
 function createFacade(parser: Parser, hover: MacroHover, navigation: MacroNavigation, validation: MacroValidation): LanguageService {
@@ -41,11 +41,11 @@ function createFacade(parser: Parser, hover: MacroHover, navigation: MacroNaviga
 		findImplementations: navigation.findImplementations.bind(navigation),
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
-		findCodeLenses: navigation.findCodeLenses.bind(navigation),
+		findCodeLenses: navigation.findCodeLenses.bind(navigation)
 	};
 }
 
-export function getMacroLanguageService(options?: LanguageServiceOptions): LanguageService {
+export function getMacroLanguageService(options: LanguageServiceOptions): LanguageService {
 
 	return createFacade(
 		new Parser(options && options.fileProvider),

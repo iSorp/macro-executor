@@ -14,16 +14,26 @@ import { Symbols, Symbol } from '../parser/macroSymbolScope';
 import { CodeLens } from 'vscode-languageserver';
 
 
+class FunctionMap {
+	private elements:Map<string, string[]> = new Map<string,string[]>();
+	public add(key:string, value:string){
+		if (!this.elements.has(key)){
+			this.elements.set(key, new Array<string>());
+		}
+		this.elements.get(key)?.push(value);
+	}
+
+	public get(key:string) : string[] | undefined {
+		return this.elements.get(key);
+	}
+}
+
 export class MacroNavigation {
-	constructor(private fileProvider?: MacroFileProvider){}
+	constructor(private fileProvider: MacroFileProvider){}
 	
 	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.Node): Location | null {
-		let includes:string[] = [];
 
-		if (this.fileProvider){
-			includes = this.getIncludeUris(macroFile, this.fileProvider);
-		}
-		
+		const includes = this.getIncludeUris(macroFile, this.fileProvider);
 		includes.push(document.uri);
 		const offset = document.offsetAt(position);
 		const node = nodes.getNodeAtOffset(macroFile, offset);
@@ -168,24 +178,24 @@ export class MacroNavigation {
 			return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 		}	
 
-		let codeLenses: CodeLens[] = [];
-		let declarations:nodes.Node[] =  [];
-
-		if (!this.fileProvider){
-			return codeLenses;
-		}
+		const codeLenses: CodeLens[] = [];
+		const declarations:FunctionMap = new FunctionMap();
 
 		// local search
 		if (macroFile.type === nodes.NodeType.MacroFile) {
 			macroFile.accept(candidate => {
 				if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
-					declarations.push(candidate);
-				}				
+					const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
+						if (node) {
+							declarations.add(node.getText(), node.getText());
+						}
+					return false;
+				}			
 				return true;
 			});
 		}
 		// global search
-		{
+		else {
 			const types = this.fileProvider?.getAll();
 			for (const type of types) {
 
@@ -194,16 +204,19 @@ export class MacroNavigation {
 				}
 
 				if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
-					let includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
+					const includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
 					if (includes.filter(uri => uri === document.uri).length <= 0) {
 						continue;
 					}
 				}
 
-				
 				(<nodes.Node>type.macrofile).accept(candidate => {
 					if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
-						declarations.push(candidate);
+						const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
+						if (node) {
+							declarations.add(node.getText(), node.getText());
+						}
+						return false;
 					}
 					return true;
 				});
@@ -211,39 +224,34 @@ export class MacroNavigation {
 		}
 
 		(<nodes.Node>macroFile).accept(candidate => {
-			if (candidate.type === nodes.NodeType.VariableDef || candidate.type === nodes.NodeType.labelDef /*|| candidate.type === nodes.NodeType.Function*/) {
+			if (candidate.type === nodes.NodeType.VariableDef || candidate.type === nodes.NodeType.labelDef) {
 
-				let node:nodes.Node | undefined;
-				/*if (candidate.type === nodes.NodeType.Function){
-					node = (<nodes.Function>candidate).getIdentifier();
-				}*/
-				{
-					node = (<nodes.AbstractDeclaration>candidate).getSymbol();
-				}
-				let count = declarations.filter(a => (<nodes.DeclarationType<nodes.AbstractDeclaration>>a).getSymbol()?.getText() === node?.getText());
-
+				const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
 				if (node) {
-					let pos = document.positionAt(node.offset);
+					const value = declarations.get(node.getText()); //declarations.filter(a => a === node?.getText());
+					const count = value?.length;
+					const pos = document.positionAt(node.offset);
+					const c = count === undefined ? 0 : count;
 					codeLenses.push(
 						{
 							range: getRange(node), 
 							data: {
-								title: count.length + (count.length > 1 ? ' references found' : ' reference found'),
+								title: c + (c !== 1 ? ' references' : ' reference'),
 								uri:document.uri,
 								line:pos.line,
 								character:pos.character,
 								type: MacroCodeLensCommand.References
 							}
 						});
-					return false;
 				}
+				return false;
 			}
 			return true;
 		});
 
 		return codeLenses;
 	}
-
+	
 	private uriLiteralNodeToDocumentLink(document: TextDocument, uriLiteralNode: nodes.Node, documentContext: DocumentContext): DocumentLink | null {
 		if (uriLiteralNode.getChildren().length === 0) {
 			return null;
@@ -313,22 +321,18 @@ export class MacroNavigation {
 	private findGlobalReferences(includeUri:string, position:Position, node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
 	
 		let locations:Location[] = [];
-		let declarations:MacroFileType[] = [];
-
-		if (this.fileProvider){
-			declarations = this.fileProvider?.getAll();
-		}
+		let declarations = this.fileProvider?.getAll();
 		
 		for (const type of declarations) {
 
 			// only accept the origin def file
-			if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile && includeUri !== type.document.uri.toLocaleLowerCase())){
+			if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile && includeUri !== type.document.uri)){
 				continue;
 			}
 
 			// only accept a src file which includes the origin def file
-			if (this.fileProvider && (<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
-				let includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
+			if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
+				const includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
 				if (includes.filter(uri => uri === includeUri).length <= 0){
 					continue;
 				}
@@ -342,7 +346,7 @@ export class MacroNavigation {
 			const name = node.getText();
 			
 			// only accept the symbol of the origin symbol source file
-			if (symbol && includeUri !== type.document.uri.toLocaleLowerCase()) {
+			if (symbol && includeUri !== type.document.uri) {
 				continue; // local declaration found
 			}
 
@@ -379,13 +383,19 @@ export class MacroNavigation {
 		return locations;
 	}
 
+	/**
+	 * Finds the uri of the declaration origin of a certain node
+	 * @param document 
+	 * @param node 
+	 * @param macroFile 
+	 */
 	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
-		let includes:string[] = [];
-
-		if (this.fileProvider){
-			includes = this.getIncludeUris(macroFile, this.fileProvider);
+		let includes:string[] = []
+		const uris = this.getIncludeUris(macroFile, this.fileProvider);
+		if (uris) {
+			includes = uris;
 		}
-		
+
 		includes.push(document.uri);
 		if (!node) {
 			return null;
@@ -408,22 +418,13 @@ export class MacroNavigation {
 		return null;
 	}
 
+	/**
+	 * Gets the include uris of a macrofile
+	 * @param macroFile 
+	 * @param fileProvider 
+	 */
 	private getIncludeUris(macroFile: nodes.MacroFile, fileProvider:MacroFileProvider) : string[] {
-		let includeUris:string[] = [];
-		macroFile.accept(candidate => {
-			if (candidate.type === nodes.NodeType.Include) {
-				const uriStringNode = candidate.getChild(0);
-				if (uriStringNode) {
-					const f = fileProvider.getLink(uriStringNode?.getText());
-					if (f){
-						includeUris.push(f);
-					}
-				}
-				return false;
-			}
-			return true;
-		});
-		return includeUris;
+		return <string[]>macroFile.getData('includes');
 	}
 
 	private getHighlightKind(node: nodes.Node): DocumentHighlightKind {

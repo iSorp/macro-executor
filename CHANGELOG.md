@@ -1,3 +1,9 @@
+## 0.1.6 (May 06, 2020)
+- Performance update
+
+## 0.1.5 (May 04, 2020)
+- Node package issue
+
 ## 0.1.4 (May 02, 2020)
 - Opening links with capital letters issue fixed 
 - Duplicate label statement warning

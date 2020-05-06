@@ -34,6 +34,7 @@ export const ParseError = {
 	OperatorExpected: new MacroIssueType('macro-operatorexpected', localize('expected.operator', 'operator expected')),
 	IdentifierExpected: new MacroIssueType('macro-identifierexpected', localize('expected.ident', 'identifier expected')),
 	AddressExpected: new MacroIssueType('macro-addressexpected', localize('expected.address', 'address expected')),
+	ValueExpected: new MacroIssueType('macro-valueexpected', localize('expected.value', 'value expected')),
 	BodyExpected: new MacroIssueType('macro-bodyexpected', localize('expected.body', 'body expected')),
 	LabelExpected: new MacroIssueType('macro-labelexpected', localize('expected.label', 'label expected')),
 	TermExpected: new MacroIssueType('macro-termexpected', localize('expected.term', 'term expected')),

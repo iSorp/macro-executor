@@ -2,6 +2,7 @@
 
 <img src="./resources/icon.png" alt="drawing" width="100"/>
 
+![release](https://img.shields.io/github/v/release/iSorp/macro-executor)
 ![maintained](https://img.shields.io/maintenance/yes/2020.svg)
 [![open issues](https://img.shields.io/github/issues/iSorp/macro-executor.svg?)](https://github.com/iSorp/macro-executor/issues)
 [![license](https://img.shields.io/github/license/iSorp/macro-executor)](https://opensource.org/licenses/MIT)
@@ -38,8 +39,13 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ![Definition](./resources/codelens.png)
 
 ## Required file extension
-* Macro files `.src`
+* Macro files`.src`
 * Include files `.def` 
+* Link files `.lnk` 
+
+## Coding conventions
+* Uppercase for constants: `@MY_CONSTANT` 100
+* Space between statements: `N9000 G01 X1`
 
 
 ## Default Commands
@@ -95,13 +101,13 @@ project
 │      file2.src
 │   
 └───def
-│       file1.def
-│       file1.def
+│      file1.def
+│      file1.def
 │ 
 └───lnk
        file1.lnk
        file1.lnk
-	F30iA_01.MEX
+       F30iA_01.MEX
 
 ```
 

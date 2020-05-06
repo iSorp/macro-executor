@@ -15,9 +15,8 @@ const _dot = '.'.charCodeAt(0);
 
 export class LintVisitor implements nodes.IVisitor {
 
-	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider?: MacroFileProvider): nodes.IMarker[] {
+	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider: MacroFileProvider): nodes.IMarker[] {
 		const visitor = new LintVisitor(macrofile, fileProvider);
-		visitor.LoadIncludes(macrofile);
 		macrofile.acceptVisitor(visitor);
 		return visitor.getEntries();
 	}
@@ -25,11 +24,12 @@ export class LintVisitor implements nodes.IVisitor {
 	private declarations:Map<string,nodes.AbstractDeclaration> = new Map<string,nodes.AbstractDeclaration>()
 	private sequenceNumbers:FunctionMap = new FunctionMap();
 	private labelList:FunctionMap = new FunctionMap();
+	private imports: string[] = [];
 
 	private rules: nodes.IMarker[] = [];
-	private imports:string[] = [];
+	private functionList = new Array<string>();
 
-	private constructor(private macrofile: nodes.Node, private fileProvider?: MacroFileProvider) { }
+	private constructor(private macrofile: nodes.Node, private fileProvider: MacroFileProvider) { }
 
 	public getEntries(filter: number = (nodes.Level.Warning | nodes.Level.Error)): nodes.IMarker[] {
 		return this.rules.filter(entry => {
@@ -46,6 +46,8 @@ export class LintVisitor implements nodes.IVisitor {
 		switch (node.type) {
 			case nodes.NodeType.MacroFile:
 				return this.visitGlobalScope(<nodes.MacroFile>node);
+			case nodes.NodeType.Include:
+				return this.visitIncludes(<nodes.Include>node);
 			case nodes.NodeType.Symbol:
 				return this.visitSymbols(<nodes.Symbol>node);
 			case nodes.NodeType.Variable:
@@ -66,28 +68,11 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private LoadIncludes(node:nodes.MacroFile) {
-		node.accept(candidate => {
-			if (candidate.type === nodes.NodeType.Include) {
-				this.visitInclude(<nodes.Include>candidate);
-				return false;
-			}
-			return true;
-		});
-	}
-
-	private visitGlobalScope(node: nodes.Node) : boolean {
-		for (const element of node.getChildren()) {
-			if (element.type === nodes.NodeType.Symbol){
-				this.addEntry(element, Rules.IllegalStatement);
-			}
-		}
-		return true;
-	}
-
-	private visitInclude(node: nodes.Include) {
+	private visitIncludes(node: nodes.Include) : boolean {
 		let uri = node.getChild(0);
-		if (!uri) {return;}
+		if (!uri) {
+			return false;
+		}
 
 		if (this.imports.indexOf(uri?.getText()) > -1){
 			this.addEntry(node, Rules.DuplicateDeclarations);
@@ -108,12 +93,20 @@ export class LintVisitor implements nodes.IVisitor {
 			}
 			else {
 				this.addEntry(node, Rules.IncludeNotFound);
-				return;
 			}
 		}
+		return false;
 	}
 
-	private functionList = new Array<string>();
+	private visitGlobalScope(node: nodes.Node) : boolean {
+		for (const element of node.getChildren()) {
+			if (element.type === nodes.NodeType.Symbol){
+				this.addEntry(element, Rules.IllegalStatement);
+			}
+		}
+		return true;
+	}
+
 	private visitFunction(node: nodes.Function): boolean {
 
 		let ident = node.getIdentifier();
@@ -184,11 +177,11 @@ export class LintVisitor implements nodes.IVisitor {
 				this.addEntry(def, Rules.DuplicateDeclarations);
 			}
 			
-			for (const element of this.declarations.values()){
+			/*for (const element of this.declarations.values()){
 				if (element.getValue()?.getText() === def.getValue()?.getText()){
-					//this.addEntry(def, Rules.DuplicateAddress);
+					this.addEntry(def, Rules.DuplicateAddress);
 				}
-			}
+			}*/
 			
 			if (node.type === nodes.NodeType.VariableDef) {
 				this.declarations.set(ident, <nodes.VariableDeclaration>node);
