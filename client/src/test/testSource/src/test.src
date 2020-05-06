@@ -1,13 +1,24 @@
-$INCLUDE def/Test.def
+@CONST 	  1000
+@adr 	    1000
+@var 	    #1000
 
->Label        10
-@functions    1
-@operators    2
-@conditionals 3
-@statements   4
+@CALL     M98P
+@RETURN   M99
 
-O functions
-  #c1=ATAN[#j]/[#k]
+>LOOP_I   10
+
+@FUNCTIONS    1
+@OPERATORS    2
+@CONDITIONALS 3
+@STATEMENTS   4
+
+@i 200
+@k 200
+@j 200
+
+
+O FUNCTIONS
+  #i=ATAN[#j]/[#k]
   #i=ABS[#j]
   #i=BIN[#j]
   #i=BCD[#j]
@@ -33,7 +44,7 @@ O functions
       
   ENDIF
 
-O operators
+O OPERATORS
   #i=#j
   #i=#j+#k
   #i=#j-#k
@@ -45,22 +56,24 @@ O operators
   #i=#j MOD #k
 
 
-O conditionals
-  Label
+O CONDITIONALS
+  >L_Label     10
 
-  GOTO Label
+  L_Label
 
-    IF [#VAR] THEN #VAR = 1
-    ELSE #VAR = 1
+  GOTO L_Label
 
-    IF [#VAR] THEN 
-        #VAR = 1
-    ELSE #VAR = 1
+    IF [#var] THEN #var = 1
+    ELSE #var = 1
 
-    IF [#VAR] THEN #VAR = 1
+    IF [#var] THEN 
+        #var = 1
+    ELSE #var = 1
+
+    IF [#var] THEN #var = 1
 
     ELSE 
-        #VAR = 1
+        #var = 1
     ENDIF
 
     IF [#k] THEN
@@ -69,13 +82,13 @@ O conditionals
         ENDIF
     ENDIF
 
-    WHILE [#VAR LT CONST] DO LOOP_I
+    WHILE [#var LT CONST] DO LOOP_I
       GOTO L_Label
     END LOOP_I
 
 
-O statements
-  N100 G01 G4.1 G[1] G#VAR X1 Y-[#1+1] F360.
-  N100 G01 X-#1 F360.1 
+O STATEMENTS
+  N100 G01 G4.1 G[1] G#var X1 Y-[#1+1] F360.
+  N110 G01 X-#1 F360.1 
 
 RETURN

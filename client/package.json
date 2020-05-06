@@ -3,7 +3,7 @@
 	"description": "Fanuc Macro-Executor Programming Language",
 	"author": "iSorp",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"publisher": "iSorp",
 	"repository": {
 		"type": "git",

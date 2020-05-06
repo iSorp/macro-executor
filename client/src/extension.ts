@@ -2,7 +2,7 @@ import * as path from 'path';
 import { ExtensionContext, workspace, commands, window, Selection } from 'vscode';
 import { 
 	LanguageClient, LanguageClientOptions, 
-	ServerOptions, TransportKind, RevealOutputChannelOn, Position,
+	ServerOptions, TransportKind, RevealOutputChannelOn,
 } from 'vscode-languageclient';
 import registerCommands from './common/commands';
 
@@ -45,7 +45,7 @@ export function activate(context: ExtensionContext) {
 
 		synchronize: {
 			// Notify the server about file changes 
-			fileEvents: workspace.createFileSystemWatcher('**/*.{src,def}')
+			fileEvents: workspace.createFileSystemWatcher('**/*.{src,def,lnk}')
 		},		
 		diagnosticCollectionName: 'macro',
 		progressOnInitialization: true,
