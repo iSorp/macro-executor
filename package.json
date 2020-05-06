@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.4",
+	"version": "0.1.6",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -41,7 +41,8 @@
 				],
 				"extensions": [
 					".src",
-					".def"
+					".def",
+					".lnk"
 				],
 				"configuration": "./syntaxes/macro.configuration.json"
 			}
@@ -208,8 +209,8 @@
 		"@types/mocha": "^7.0.1",
 		"@types/node": "^12.11.7",
 		"@typescript-eslint/parser": "^2.3.0",
+		"eslint": "^6.4.0",
 		"mocha": "^7.0.1",
-		"typescript": "^3.8.3",
-		"eslint": "^6.4.0"
+		"typescript": "^3.8.3"
 	}
 }
