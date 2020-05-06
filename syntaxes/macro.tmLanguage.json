@@ -391,7 +391,10 @@
 				{
 					"match": "(?i)([\\w]+.def)(?-i)",
 					"name": "file.macro"
-				}
+        },
+        {
+          "include": "#line_comments"
+        }
 			]
 		},
 		"line_comments": {
