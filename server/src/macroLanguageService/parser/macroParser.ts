@@ -664,7 +664,7 @@ export class Parser {
 
 		const node = <nodes.Function>this.create(nodes.Function);
 		if (!this.acceptKeyword('o')){
-			this.token = this.parsePart(0, (ch) =>  ch >= scanner._A && ch <= scanner._Z || ch >= scanner._a && ch <= scanner._Z);
+			this.token = this.parsePart(0, (ch) =>  ch >= scanner._A && ch <= scanner._Z || ch >= scanner._a && ch <= scanner._z);
 			this.consumeToken();
 		}
 
