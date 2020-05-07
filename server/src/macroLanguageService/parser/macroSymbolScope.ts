@@ -10,17 +10,12 @@ export class Scope {
 
 	public parent: Scope | null;
 	public children: Scope[];
-
-	public offset: number;
-	public length: number;
+	public uri?:string;
 
 	private symbols: Symbol[];
 
-	constructor(offset: number, length: number) {
-		this.offset = offset;
-		this.length = length;
+	constructor() {
 		this.symbols = [];
-
 		this.parent = null;
 		this.children = [];
 	}
@@ -41,7 +36,7 @@ export class Scope {
 	public getSymbol(name: string, type: nodes.ReferenceType): Symbol | null {
 		for (let index = 0; index < this.symbols.length; index++) {
 			const symbol = this.symbols[index];
-			if (symbol.name === name && symbol.type === type) {
+			if (symbol.name === name && symbol.refType === type) {
 				return symbol;
 			}
 		}
@@ -53,25 +48,23 @@ export class Scope {
 	}
 }
 
-export class GlobalScope extends Scope {
-
-	constructor() {
-		super(0, Number.MAX_VALUE);
-	}
+export interface SymbolContext {
+	symbols: Symbol[],
+	uri?: string
 }
 
 export class Symbol {
 
 	public name: string;
-	public value: string | undefined;
-	public type: nodes.ReferenceType;
+	public refType: nodes.ReferenceType;
+	public valueType: nodes.ValueType = nodes.ValueType.Undefinded;
 	public node: nodes.Node;
 
-	constructor(name: string, value: string | undefined, node: nodes.Node, type: nodes.ReferenceType) {
+	constructor(name: string, node: nodes.Node, refType: nodes.ReferenceType, valueType:nodes.ValueType = nodes.ValueType.Undefinded) {
 		this.name = name;
-		this.value = value;
 		this.node = node;
-		this.type = type;
+		this.refType = refType;
+		this.valueType = valueType;
 	}
 }
 
@@ -83,11 +76,11 @@ export class ScopeBuilder implements nodes.IVisitor {
 		this.scope = scope;
 	}
 
-	private addSymbol(node: nodes.Node, name: string, value: string | undefined, type: nodes.ReferenceType): void {
+	private addSymbol(node: nodes.Node, name: string, refType: nodes.ReferenceType, valueType: nodes.ValueType | undefined = undefined): void {
 		if (node.offset !== -1) {
 			const current = this.scope;
 			if (current) {
-				current.addSymbol(new Symbol(name, value, node, type));
+				current.addSymbol(new Symbol(name, node, refType, valueType));
 			}
 		}
 	}
@@ -95,10 +88,12 @@ export class ScopeBuilder implements nodes.IVisitor {
 	public visitNode(node: nodes.Node): boolean {
 		switch (node.type) {
 			case nodes.NodeType.VariableDef:
-				this.addSymbol(node, (<nodes.VariableDeclaration>node).getName(), void 0, nodes.ReferenceType.Variable);
+				const variable = (<nodes.VariableDeclaration>node);
+				this.addSymbol(node, variable.getName(), nodes.ReferenceType.Variable, variable.valueType);
 				return true;
 			case nodes.NodeType.labelDef:
-				this.addSymbol(node, (<nodes.LabelDeclaration>node).getName(), void 0, nodes.ReferenceType.Label);
+				const label = (<nodes.VariableDeclaration>node);
+				this.addSymbol(node, label.getName(), nodes.ReferenceType.Label, label.valueType);
 				return true;
 		}
 		return true;
@@ -108,10 +103,49 @@ export class ScopeBuilder implements nodes.IVisitor {
 export class Symbols {
 
 	private global: Scope;
-
-	constructor(file: nodes.MacroFile) {
-		this.global = new GlobalScope();
+	
+	constructor(file: nodes.MacroFile, uri?:string) {
+		this.global = new Scope();
+		this.global.uri = uri;
 		file.acceptVisitor(new ScopeBuilder(this.global));
+	}
+
+	public getScope() : Scope {
+		return this.global;
+	}
+
+	public findSymbols(referenceType: nodes.ReferenceType, valueTypes:nodes.ValueType[] | undefined = undefined): SymbolContext[] {
+		let scope = this.global;
+		const result: SymbolContext[] = [];
+		const names: { [name: string]: boolean } = {};	
+		let index = 0;
+		while (scope){
+			const symbols = scope.getSymbols();
+			const symbolFound:Symbol[] = []
+			for (let i = 0; i < symbols.length; i++) {
+				const symbol = symbols[i];
+				if (valueTypes){
+					if (symbol.refType === referenceType && valueTypes.indexOf(symbol.valueType) != -1 && !names[symbol.name]) {
+						symbolFound.push(symbol);
+						names[symbol.name] = true;
+					}
+				}
+				else {
+
+					if (symbol.refType === referenceType && !names[symbol.name]) {
+						symbolFound.push(symbol);
+						names[symbol.name] = true;
+					}
+				}
+			}
+			result.push({
+				symbols: symbolFound,
+				uri:scope.uri
+			})
+			scope = this.global.children[index++];
+		}
+
+		return result;
 	}
 
 	private internalFindSymbol(node: nodes.Node, referenceTypes: nodes.ReferenceType[]): Symbol | null {
@@ -168,7 +202,7 @@ export class Symbols {
 		}
 
 		const referenceTypes = this.evaluateReferenceTypes(node);
-		if (!referenceTypes || referenceTypes.indexOf(symbol.type) === -1) {
+		if (!referenceTypes || referenceTypes.indexOf(symbol.refType) === -1) {
 			return false;
 		}
 

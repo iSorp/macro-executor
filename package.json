@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -134,13 +134,15 @@
 				"macro.build.compiler": {
 					"type": "string",
 					"scope": "window",
+					"enum": ["MCOMPI", "MCOMP0"],
 					"default": "MCOMPI",
 					"description": "Macro Compiler Path",
 					"$id": "1"
 				},
 				"macro.build.controlType": {
-					"type": "string",
-					"default": "0",
+					"type": "integer",
+					"enum": [0, 30],
+					"default": 0,
 					"description": "MCOMPI Compiler Argument ",
 					"$id": "2"
 				},

@@ -17,6 +17,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * Syntax highlighting
 * Syntax validation
 * Symbol provider
+* Completion provider
 * CodeLens
 * Lint features
 
@@ -24,19 +25,19 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 
 ### Validation
-![Compile](./resources/validation.gif)
+![Validation](./resources/validation.gif)
 
 ### Navigation
-![Definition](./resources/navigation.gif)
+![Navigation](./resources/navigation.gif)
 
 ### References
-![Definition](./resources/references.gif)
+![References](./resources/references.gif)
 
 ### Implementations
-![Definition](./resources/implementations.gif)
+![Implementations](./resources/implementations.gif)
 
 ### CodeLens reference counter
-![Definition](./resources/codelens.png)
+![CodeLens](./resources/codelens.png)
 
 ## Required file extension
 * Macro files`.src`
@@ -44,8 +45,10 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * Link files `.lnk` 
 
 ## Coding conventions
-* Uppercase for constants: `@MY_CONSTANT` 100
-* Space between statements: `N9000 G01 X1`
+* Uppercase for constants: `@MY_CONSTANT 100`
+* Space between statements: `O SUB_PROBGRAM; N9000 G01 X1`
+* A comment of a declaration `@var` <span style="color:green">/* my comment</span> is displayed on hover and completion
+
 
 
 ## Default Commands

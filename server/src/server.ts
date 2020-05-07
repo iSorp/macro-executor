@@ -7,7 +7,7 @@
 import * as path from 'path';
 import { readFileSync, existsSync } from 'fs';
 
-import { LanguageSettings, MacroFileProvider, FindDocumentLinks, Range } from './macroLanguageService/macroLanguageTypes';
+import { LanguageSettings, MacroFileProvider, FindDocumentLinks, Range, FileProviderParams } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
 
@@ -23,6 +23,7 @@ import {
 	InitializeResult,
 	DidChangeConfigurationNotification,
 	Files,
+	CompletionParams,
 	ReferenceParams,
 	DocumentSymbolParams,
 	DocumentLinkParams,
@@ -33,6 +34,7 @@ import {
 	CodeLensParams, 
 	CodeLens,
 	TextDocumentChangeEvent,
+	CompletionContext
 } from 'vscode-languageserver';
 
 import {
@@ -115,12 +117,23 @@ class FileProvider implements MacroFileProvider {
 		return undefined;
 	}
 	
-	getAll(): MacroFileType[] {
+	getAll(param?:FileProviderParams) {
 		let types:MacroFileType[] = [];
+	
 		try {
 			if (workspaceFolder) {
-				let dir = Files.uriToFilePath(workspaceFolder);
-				let files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}');
+				const dir = Files.uriToFilePath(workspaceFolder);
+				let files:string[] = [];
+				if (param?.uris){
+					files = param.uris;
+				}
+				else if (param?.glob) {
+					files = glob.sync(dir + param.glob);
+				}
+				else {
+					files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}');
+				}
+
 				for (const file of files) {
 					let type = this.get(file);
 					if (type){
@@ -133,6 +146,7 @@ class FileProvider implements MacroFileProvider {
 		}
 		return types;
 	}
+
 
 	getLink(ref:string) : string |undefined {
 		return this.resolver.resolveReference(ref);
@@ -213,6 +227,9 @@ connection.onInitialize((params: InitializeParams) => {
 			documentSymbolProvider: true,
 			workspaceSymbolProvider: true,
 			hoverProvider: true,
+			completionProvider: {
+				triggerCharacters: ['#'],
+			},
 			codeLensProvider: {
 				resolveProvider:true
 			},
@@ -249,6 +266,7 @@ connection.onImplementation(implementations);
 connection.onDocumentSymbol(documentSymbol);
 connection.onDocumentLinks(documentLinks);
 connection.onHover(hower);
+connection.onCompletion(completion);
 
 documents.onDidChangeContent(content);
 documents.listen(connection);
@@ -290,6 +308,15 @@ function hower(params: TextDocumentPositionParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.doHover(repo.document, params.position, repo.macrofile);
+}
+
+
+//onCompletion(handler: ServerRequestHandler<CompletionParams, CompletionItem[] | CompletionList | undefined | null, CompletionItem[], void>): void;
+
+function completion(params: CompletionParams) {
+	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+	if (!repo) {return null;}
+	return macroLanguageService.doComplete(repo.document, params.position, repo.macrofile);
 }
 
 function codelens(params: CodeLensParams) {
@@ -359,6 +386,7 @@ function validateTextDocument(doc: MacroFileType | undefined) {
 		if (doc.document) {
 			if (macroLanguageService.doValidation && doc.macrofile) {
 				const entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
+				entries.splice(1000);
 				const diagnostics: Diagnostic[] = entries;
 				connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
 			}

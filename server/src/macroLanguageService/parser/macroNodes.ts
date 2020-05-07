@@ -498,6 +498,11 @@ export class MacroFile extends Node {
 	}
 }
 
+export enum Data {
+	Path 		= 'path',		// Path for include node	
+	Includes 	= 'includes',	// Data contains an array of all included uris
+}
+
 export class Include extends Node {
 
 	constructor(offset: number, length: number) {
@@ -964,6 +969,7 @@ export class Assignment extends Node {
 }
 
 export enum ValueType {
+	Undefinded = '',
 	String = 'string',
 	Numeric = 'numeric',
 	Constant = 'constant', // same as numeric in capital

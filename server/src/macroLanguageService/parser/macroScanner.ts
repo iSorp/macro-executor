@@ -124,7 +124,8 @@ export class MultiLineStream {
 * Copyright (c) 2020 Simon Waelti
 * Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
-
+export const _o = 'o'.charCodeAt(0);
+export const _O = 'O'.charCodeAt(0);
 export const _a = 'a'.charCodeAt(0);
 export const _f = 'f'.charCodeAt(0);
 export const _z = 'z'.charCodeAt(0);
@@ -213,6 +214,7 @@ staticFunctionTable['exp'] = TokenType.Ffunc;
 staticFunctionTable['pow'] = TokenType.Ffunc;
 staticFunctionTable['adp'] = TokenType.Ffunc;
 staticFunctionTable['prm'] = TokenType.Ffunc;
+
 
 export class Scanner {
 
@@ -621,3 +623,44 @@ export class Scanner {
 		return false;
 	}
 }
+
+/**
+ * Gets the comment of a declaration node
+ * @param document 
+ * @param location 
+ */
+export function getComment(pos:number, text:string) : string {
+
+	const comments = [[_FSL, _MUL], [_SEM]]
+	const stream = new MultiLineStream(text);
+	stream.goBackTo(pos);
+	
+	// Check first comment char
+	let comment:number[] = [];
+	stream.advanceWhileChar(a => ((ch:number) : boolean => {
+		for (const cm of comments) {
+			if (cm[0] === ch) {
+				comment = cm;
+				return false;
+			}
+		}
+		return true;
+	})(a) &&  a !== _NWL);
+
+	// Check all other comment char
+	let start = stream.pos();
+	if (comment.length > 0) {
+		stream.advanceWhileChar(a => ((ch:number) : boolean => {
+			for (const char of comment) {
+				if (char !== ch) {
+					return false;
+				}
+			}
+			return true;
+		})(a) &&  a !== _NWL);
+	}
+
+	stream.advanceWhileChar(a => a !== _NWL);
+	let end = stream.pos();
+	return text.substr(start, end-start); 
+}	

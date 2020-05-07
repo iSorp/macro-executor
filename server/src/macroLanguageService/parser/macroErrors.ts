@@ -22,7 +22,7 @@ export class MacroIssueType implements nodes.IRule {
 export const ParseError = {
 
 	UnknownOperation: new MacroIssueType('macro-unknownoperation', localize('expected.unknownoperation', 'unknown operation')),
-	DefinitionExpected: new MacroIssueType('macro-definitionexpected', localize('expected.definition', 'definition expected')),
+	DefinitionExpected: new MacroIssueType('macro-definitionexpected', localize('expected.definition', 'definition file expected')),
 	UnknownKeyword: new MacroIssueType('macro-unknownkeyword', localize('unknown.keyword', 'unknown keyword')),
 	EndifExpected: new MacroIssueType('macro-endifexpected', localize('expected.endif', 'endif expected')),
 	EndExpected: new MacroIssueType('macro-endexpected', localize('expected.end', 'end expected')),
@@ -33,6 +33,7 @@ export const ParseError = {
 	RightParenthesisExpected: new MacroIssueType('macro-rparentexpected', localize('expected.rparent', ') expected')),
 	OperatorExpected: new MacroIssueType('macro-operatorexpected', localize('expected.operator', 'operator expected')),
 	IdentifierExpected: new MacroIssueType('macro-identifierexpected', localize('expected.ident', 'identifier expected')),
+	FunctionIdentExpected: new MacroIssueType('macro-functionidentifierexpected', localize('expected.funcident', 'function identifier expected')),
 	AddressExpected: new MacroIssueType('macro-addressexpected', localize('expected.address', 'address expected')),
 	ValueExpected: new MacroIssueType('macro-valueexpected', localize('expected.value', 'value expected')),
 	BodyExpected: new MacroIssueType('macro-bodyexpected', localize('expected.body', 'body expected')),
