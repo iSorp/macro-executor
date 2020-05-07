@@ -28,5 +28,143 @@
 		"body": "\nWHILE [${1:condition}] DO LOOP_${2:I}\n\t$3\nEND LOOP_${4:I}",
 		"description": "WHILE ... DO ... LOOP_I ... END ... LOOP_I",
 		"scope": "source.macro"
+	},
+	"goto": {
+		"prefix": "goto",
+		"body": "GOTO ${1:label}",
+		"description": "GOTO label",
+		"scope": "source.macro"
+	},
+	"sin": {
+		"prefix": "sin",
+		"body": "SIN[${1:value}]",
+		"description": "Sine (in degrees)",
+		"scope": "source.macro"
+	},
+	"cos": {
+		"prefix": "cos",
+		"body": "COS[${1:value}]",
+		"description": "Cosine (in degrees)",
+		"scope": "source.macro"
+	},	
+	"tan": {
+		"prefix": "tan",
+		"body": "TAN[${1:value}]",
+		"description": "Tangent (in degrees)",
+		"scope": "source.macro"
+	},
+	"asin": {
+		"prefix": "asin",
+		"body": "ASIN[${1:value}]",
+		"description": "Arcsine",
+		"scope": "source.macro"
+	},
+	"acos": {
+		"prefix": "acos",
+		"body": "ACOS[${1:value}]",
+		"description": "Arccosine",
+		"scope": "source.macro"
+	},
+	"atan": {
+		"prefix": "atan",
+		"body": "ATAN[${1:value}]",
+		"description": "Arc tangent (one argument), ATN can also be used.",
+		"scope": "source.macro"
+	},
+	"atan2": {
+		"prefix": "atan",
+		"body": "ATAN[${1:value1}]/[${2:value2}]",
+		"description": "Arc tangent (two arguments), ATN can also be used.",
+		"scope": "source.macro"
+	},
+	"atan3": {
+		"prefix": "atan",
+		"body": "ATAN[${1:name1},${2:name2}]",
+		"description": "Arc tangent (two arguments), ATN can also be used.",
+		"scope": "source.macro"
+	},
+	"sqrt": {
+		"prefix": "sqrt",
+		"body": "SQRT[${1:value}]",
+		"description": "Square root, SQR can also be used.",
+		"scope": "source.macro"
+	},
+	"abs": {
+		"prefix": "abs",
+		"body": "ABS[${1:value}]",
+		"description": "Absolute value",
+		"scope": "source.macro"
+	},
+	"bin": {
+		"prefix": "bin",
+		"body": "BIN[${1:value}]",
+		"description": "Conversion from BCD to binary function",
+		"scope": "source.macro"
+	},
+	"bcd": {
+		"prefix": "bcd",
+		"body": "BCD[${1:value}]",
+		"description": "Conversion from binary to BCD function",
+		"scope": "source.macro"
+	},
+	"round": {
+		"prefix": "round",
+		"body": "ROUND[${1:value}]",
+		"description": "Rounding off, RND can also be used",
+		"scope": "source.macro"
+	},
+	"fix": {
+		"prefix": "fix",
+		"body": "FIX[${1:value}]",
+		"description": "Rounding down to an integer",
+		"scope": "source.macro"
+	},
+	"fup": {
+		"prefix": "fup",
+		"body": "FUP[${1:value}]",
+		"description": "Rounding up to an integer",
+		"scope": "source.macro"
+	},
+	"ln": {
+		"prefix": "ln",
+		"body": "LN[${1:value}]",
+		"description": "Natural logarithm",
+		"scope": "source.macro"
+	},
+	"exp": {
+		"prefix": "exp",
+		"body": "EXP[${1:name}]",
+		"description": "Exponent using base e (2.718...)",
+		"scope": "source.macro"
+	},
+	"pow": {
+		"prefix": "pow",
+		"body": "POW[${1:base}, ${2:exponent}]",
+		"description": "Power (#j to the #kth power)",
+		"scope": "source.macro"
+	},
+	"adp": {
+		"prefix": "adp",
+		"body": "ADP[${1:value}]",
+		"description": "Addition of a decimal point",
+		"scope": "source.macro"
+	},
+	"prm": {
+		"prefix": "prm",
+		"body": "PRM[${1:value}]",
+		"description": "Parameter reading (system common, path, or machine group parameter)",
+		"scope": "source.macro"
+	},
+	"prm2": {
+		"prefix": "prm",
+		"body": "PRM[${1:value1}, ${2:value2}]",
+		"description": "Parameter reading (system common, path, or machine group parameter bit number specification)",
+		"scope": "source.macro"
+	},
+	"prm3": {
+		"prefix": "prm",
+		"body": "PRM[${1:value1}, ${2:value2}]/[${3:value3}]",
+		"description": "Parameter reading (axis or spindle parameter bit number specification)",
+		"scope": "source.macro"
 	}
 }
