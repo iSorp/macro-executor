@@ -29,7 +29,7 @@ export const Rules = {
 	IllegalStatement: new Rule('illegalStatement', localize('rule.illegalStatement', 'Illegal statement'), Error),
 	IncopleteParameter: new Rule('incopleteParameter', localize('rule.incopleteParameter', 'incoplete parameter found. G-Code or M-Code may need a numeric value or a variable as parameter'), Error),
 	IncludeNotFound: new Rule('includeNotFound', localize('rule.includeNotFound', 'Include file not found'), Error),
-
+	AssignmentConstant: new Rule('assignmentConstant', localize('rule.assignmentConstant', 'Assignment to constant'), Warning),
 
 
 };

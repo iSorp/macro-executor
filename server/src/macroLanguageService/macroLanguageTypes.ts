@@ -44,9 +44,15 @@ export interface MacroFileType {
 	version: number;
 }
 
+
+export interface FileProviderParams {
+	uris?:string[],
+	glob?:string
+}
+
 export interface MacroFileProvider {
 	get(uri: string) : MacroFileType | undefined;
-	getAll() : MacroFileType[]
+	getAll(param?: FileProviderParams) : MacroFileType[]
 	getLink(ref:string) : string |undefined;
 }
 

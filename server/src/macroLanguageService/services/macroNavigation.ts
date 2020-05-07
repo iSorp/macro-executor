@@ -196,7 +196,8 @@ export class MacroNavigation {
 		}
 		// global search
 		else {
-			const types = this.fileProvider?.getAll();
+
+			let types = this.fileProvider.getAll({glob:'/**/*.[sS][rR][cC]'});
 			for (const type of types) {
 
 				if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile)) {
@@ -321,16 +322,15 @@ export class MacroNavigation {
 	private findGlobalReferences(includeUri:string, position:Position, node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
 	
 		let locations:Location[] = [];
-		let declarations = this.fileProvider?.getAll();
-		
-		for (const type of declarations) {
+		let types = this.fileProvider.getAll({glob:'/**/*.[sS][rR][cC]'});
+		const origin = this.fileProvider.get(includeUri);
+		if (origin){
+			types = types.concat(origin);
+		}
 
-			// only accept the origin def file
-			if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile && includeUri !== type.document.uri)){
-				continue;
-			}
+		for (const type of types) {
 
-			// only accept a src file which includes the origin def file
+			// for macro files: only accept a src file which includes the origin def file
 			if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
 				const includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
 				if (includes.filter(uri => uri === includeUri).length <= 0){
@@ -338,10 +338,10 @@ export class MacroNavigation {
 				}
 			}
 
-			// all symbols found in the origin def file
+			// all symbols found in the file
 			const symbols = new Symbols(<nodes.Node>type.macrofile);
 			
-			// condition: name and reference type
+			// finding condition: name and reference type
 			const symbol = symbols.findSymbolFromNode(node); 			
 			const name = node.getText();
 			
@@ -424,7 +424,7 @@ export class MacroNavigation {
 	 * @param fileProvider 
 	 */
 	private getIncludeUris(macroFile: nodes.MacroFile, fileProvider:MacroFileProvider) : string[] {
-		return <string[]>macroFile.getData('includes');
+		return <string[]>macroFile.getData(nodes.Data.Includes);
 	}
 
 	private getHighlightKind(node: nodes.Node): DocumentHighlightKind {

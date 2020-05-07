@@ -64,6 +64,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitStatement(<nodes.NcStatement>node);
 			case nodes.NodeType.SequenceNumber:
 				return this.visitSequenceNumber(<nodes.SequenceNumber>node);		
+			case nodes.NodeType.Assignment:
+				return this.visitAssignment(<nodes.Assignment>node);	
 		}
 		return true;
 	}
@@ -209,6 +211,17 @@ export class LintVisitor implements nodes.IVisitor {
 			} 
 			else {
 				this.sequenceNumbers.add(func, number.getText());
+			}
+		}
+		return true;
+	}
+
+	private visitAssignment(node: nodes.Assignment): boolean {
+
+		if (node.getVariable() instanceof nodes.Variable){
+			const variable = <nodes.Variable>node.getVariable();
+			if (variable.declaration?.valueType === nodes.ValueType.Constant){
+				this.addEntry(variable, Rules.AssignmentConstant);
 			}
 		}
 		return true;

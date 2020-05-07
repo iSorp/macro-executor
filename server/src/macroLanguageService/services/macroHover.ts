@@ -6,7 +6,7 @@
 
 import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
-import { MultiLineStream } from '../parser/macroScanner';
+import { getComment } from '../parser/macroScanner';
 import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupContent, 
 	MacroFileProvider } from '../MacroLanguageTypes';
 
@@ -69,27 +69,9 @@ export class MacroHover {
 	}
 
 
-	/**
-	 * Gets the comment of a declaration node
-	 * @param document 
-	 * @param location 
-	 */
-	private getComment(document:TextDocument, location:Location) {
-		let stream = new MultiLineStream(document.getText());
-		stream.goBackTo(document.offsetAt(location.range.start));
-		stream.advanceWhileChar(a => a !== '/'.charCodeAt(0) && a !== '\n'.charCodeAt(0));
-		let start = stream.pos();
-		stream.advance(1);
-		if (stream.peekChar() === '*'.charCodeAt(0)){
-			stream.advanceWhileChar(a => a !== '\n'.charCodeAt(0));
-		}
-		let end = stream.pos();
-		return document.getText().substr(start, end-start); 
-	}	
-
 	private getMarkedStringForDeclaration(type: string, macroFile: nodes.Node, document:TextDocument, location:Location) : MarkedString {
 		let node = <nodes.AbstractDeclaration>nodes.getNodeAtOffset(macroFile, document.offsetAt(location.range.start));		
-		let comment = this.getComment(document, location).trim();
+		let comment = getComment(document.offsetAt(location.range.start), document.getText()).trim();
 		let name = node.getName();
 		let address = node.getValue()?.getText();
 		let valueType = node.valueType?.toString();
