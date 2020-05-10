@@ -974,8 +974,7 @@ export enum ValueType {
 	Numeric = 'numeric',
 	Constant = 'constant', // same as numeric in capital
 	MacroValue = 'value',
-	Address = 'address',
-	MFunc= 'm-function',
+	Address = 'address'
 }
 
 export class AbstractDeclaration extends Node {

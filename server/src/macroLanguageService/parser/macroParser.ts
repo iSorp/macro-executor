@@ -284,8 +284,12 @@ export class Parser {
 		return part;
 	}
 
-	private parseNumeric() : nodes.Node | null{
+	private parseNumeric(integer:boolean = false) : nodes.Node | null{
 		if (!this.peek(TokenType.Symbol) || isNaN(Number(this.token.text))) {
+			return null;
+		}
+
+		if (integer && this.peekRegExp(TokenType.Symbol, /\d*\.\d*/)) {
 			return null;
 		}
 		
@@ -374,7 +378,7 @@ export class Parser {
 				}
 			}
 			else{
-				return this.finish(node, ParseError.ValueExpected);
+				return this.finish(node, ParseError.NumberExpected);
 			}
 		}
 		else if (node.setValue(this.parseNumeric())) {
@@ -386,29 +390,19 @@ export class Parser {
 			}
 		}
 		else if (this.accept(TokenType.Hash)){
-			if (node.setValue(this.parseNumeric())){
+			if (node.setValue(this.parseNumeric(true))) {
 				node.valueType = nodes.ValueType.MacroValue;
 			}
 			else{
-				return this.finish(node, ParseError.AddressExpected);
+				return this.finish(node, ParseError.IntegerExpected);
 			}
 		}
-		else if (this.token.text.toLocaleLowerCase().charAt(0) === 'm'){
-			node.valueType = nodes.ValueType.MFunc; 
-			if (!this.acceptUnquotedString()){
-				return this.finish(node, ParseError.AddressExpected);
-			}
-		}
-		else if (this.isNcCode(this.token.text.charCodeAt(0))){
+		else if (this.peekRegExp(TokenType.Symbol, /\w\d+/i) || this.peekOneOf([TokenType.Address, TokenType.AddressPartial])) {
 			node.valueType = nodes.ValueType.Address; 
-			if (!this.acceptUnquotedString()){
-				return this.finish(node, ParseError.AddressExpected);
-			}
+			this.consumeToken();
 		}
-		else{
-			if (!this.acceptUnquotedString()){
-				return this.finish(node, ParseError.AddressExpected);
-			}
+		else {
+			return this.finish(node, ParseError.AddressExpected, [TokenType.NewLine]);
 		}
 		this.finish(value);
 		node.setValue(value);
@@ -819,6 +813,13 @@ export class Parser {
 		}
 
 		const node = this.create(nodes.NcStatement);
+
+		// NC statement can not start with a value variable (#)
+		const declaration = this.declarations.get(this.token.text);
+		if (declaration && declaration?.valueType !== nodes.ValueType.Address) {
+			this.markError(node, ParseError.InvalidStatement, [TokenType.NewLine], [TokenType.Symbol]);
+		}
+
 		while (true) {
 			let child = this.parseString() || this._parseNcStatementInternal();
 			if (child){
@@ -962,33 +963,39 @@ export class Parser {
 		|| this._parseGotoStatement(parseStatement);
 	}
 
-	public _parseMacroStatement(): nodes.Assignment | null {
+	/**
+	 * A macro statement is of the form #var = term
+	 * @param test if true, return null on invalid left statement (left statement needs the form #var)
+	 */
+	public _parseMacroStatement(test:boolean = true): nodes.Assignment | null {
 
 		if (!this. peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
 		}
 
-		const node = <nodes.Assignment>this.create(nodes.Assignment);	
-		let declaration:nodes.VariableDeclaration | undefined;
+		const node = this.create(nodes.Assignment);	
+		const declaration = this.declarations.get(this.token.text);
 		if (this.peek(TokenType.Symbol)) {		
-			declaration = this.declarations.get(this.token.text);
 			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue) {
-				return null;
+				if (test){
+					return null;
+				}
+				else {
+					return this.finish(node, ParseError.MacroVariableExpected, [TokenType.NewLine]);
+				}
 			}
 		}
 
-
 		this.accept(TokenType.Hash);
-		declaration = this.declarations.get(this.token.text);
-
+		
 		if (this.peek(TokenType.BracketL)) {
 			let expression = this._parseBinaryExpr();
 			if (!node.setExpression(expression)) {
-				return this.finish(node, ParseError.IdentifierExpected);
+				return this.finish(node, ParseError.IdentifierExpected, [TokenType.NewLine]);
 			}
 		} 
 		else if (!node.setVariable(this._parseVariable(declaration))) {
-			return this.finish(node, ParseError.IdentifierExpected);
+			return this.finish(node, ParseError.MacroVariableExpected, [TokenType.NewLine]);
 		}
 
 		if (this.peekDelim('=')) {
@@ -997,12 +1004,12 @@ export class Parser {
 			// right side
 			let expression = this._parseBinaryExpr();
 			if (!expression){
-				return this.finish(node, ParseError.TermExpected);	
+				return this.finish(node, ParseError.TermExpected,  [TokenType.NewLine]);	
 			}
 			node.setExpression(expression);
 		}
 		else {
-			return this.finish(node, ParseError.EqualExpected, [TokenType.Delim]);
+			return this.finish(node, ParseError.EqualExpected, [TokenType.NewLine]);
 		}
 
 		return this.finish(node); 
@@ -1025,19 +1032,19 @@ export class Parser {
 		this.consumeToken(); // if
 
 		if (!this.accept(TokenType.BracketL)) {
-			return this.finish(node, ParseError.LeftSquareBracketExpected);
+			this.markError(node, ParseError.LeftSquareBracketExpected, [], [TokenType.Symbol, TokenType.BracketR, TokenType.KeyWord, TokenType.NewLine]);
 		}
 
 		if (!node.setConditional(this._parseConditionalExpression())) {
-			return this.finish(node, ParseError.ExpressionExpected);
+			this.markError(node, ParseError.ExpressionExpected, [], [TokenType.KeyWord, TokenType.NewLine]);
 		}
 
 		if (!this.accept(TokenType.BracketR)) {
-			this.markError(node, ParseError.RightSquareBracketExpected, [TokenType.BracketR]);
+			this.markError(node, ParseError.RightSquareBracketExpected, [], [TokenType.KeyWord, TokenType.Symbol, TokenType.NewLine]);
 		}
 
 		if (!this.peekKeyword('then') && !this.peekKeyword('goto')) {
-			this.markError(node, ParseError.UnknownKeyword, [TokenType.NewLine]);
+			return this.finish(node, ParseError.ThenGotoExpected, [TokenType.NewLine]);
 		}
 
 		if (!this._parseBody(node, () => parseIfBodyStatement(parseStatement))){
@@ -1048,7 +1055,7 @@ export class Parser {
 	}
 
 	public parseThenTermStatement(): nodes.Node | null {
-		return this._parseMacroStatement();		
+		return this._parseMacroStatement(false);		
 	}
 
 	public _parseThenStatement(parseStatement: () => nodes.Node | null): nodes.Node | null {
@@ -1145,17 +1152,17 @@ export class Parser {
 		if (this.peek(TokenType.BracketL) || this.peek(TokenType.Hash) ){
 			let expression = this._parseBinaryExpr();
 			if (!node.setLabel(expression)) {
-				this.markError(node, ParseError.ExpressionExpected);
+				this.markError(node, ParseError.ExpressionExpected, [TokenType.NewLine]);
 			}
 		}
-		else if (this.peek(TokenType.Symbol)){
+		else if (this.peek(TokenType.Symbol)) {
 			let symbol = this._parseDeclarationType() || this._parseSymbol();
 			if (!node.setLabel(symbol)) {
-				this.markError(node, ParseError.LabelExpected);
+				this.markError(node, ParseError.LabelExpected, [TokenType.NewLine]);
 			}
 		}
 		else {
-			this.markError(node, ParseError.LabelExpected);
+			this.markError(node, ParseError.LabelExpected, [TokenType.NewLine]);
 		}
 
 		return this.finish(node);
@@ -1170,35 +1177,34 @@ export class Parser {
 		this.consumeToken(); // while
 
 		if (!this.accept(TokenType.BracketL)) {
-			return this.finish(node, ParseError.LeftSquareBracketExpected);
+			this.markError(node, ParseError.LeftSquareBracketExpected, [], [TokenType.Symbol, TokenType.BracketR, TokenType.KeyWord, TokenType.NewLine]);
 		}
 
 		if (!node.setConditional(this._parseConditionalExpression())) {
-			return this.finish(node, ParseError.ExpressionExpected);
+			this.markError(node, ParseError.ExpressionExpected, [], [TokenType.KeyWord, TokenType.Symbol, TokenType.NewLine]);
 		}
 
 		if (!this.accept(TokenType.BracketR)) {
-			return this.finish(node, ParseError.RightSquareBracketExpected);
+			this.markError(node, ParseError.RightSquareBracketExpected, [], [TokenType.KeyWord, TokenType.Symbol, TokenType.NewLine]);
 		}
 
 		if (!this.acceptKeyword('do')) {
-			return this.finish(node, ParseError.DoExpected);
+			this.markError(node, ParseError.DoExpected, [], [TokenType.Symbol, TokenType.NewLine]);
 		}
 
 		if (!node.setDoLabel(this._parseDeclarationType()) && !node.setDoLabel(this._parseSymbol())) {
-			this.markError(node, ParseError.LabelExpected);
+			return this.finish(node, ParseError.LabelExpected, [TokenType.NewLine]);
 		}
 
 		this._parseBody(node, parseStatement);
 
 		if (!this.acceptKeyword('end')) {
-			return this.finish(node, ParseError.EndExpected);
+			this.markError(node, ParseError.EndExpected, [], [TokenType.Symbol, TokenType.NewLine]);
 		}
 
 		if (!node.setEndLabel(this._parseDeclarationType()) && !node.setDoLabel(this._parseSymbol())) {
-			this.markError(node, ParseError.LabelExpected);
+			return this.finish(node, ParseError.LabelExpected, [TokenType.NewLine]);
 		}
-
 
 		return this.finish(node);
 	}
@@ -1208,8 +1214,8 @@ export class Parser {
 	public _parseConditionalExpression(): nodes.Conditional | null {
 		let node = <nodes.Conditional>this.create(nodes.Conditional);	
 
-		if (!node.setLeft(this._parseBinaryExpr())){
-			return this.finish(node, ParseError.TermExpected);
+		if (!node.setLeft(this._parseBinaryExpr())) {
+			this.markError(node, ParseError.TermExpected);
 		}
 
 		if (node.setOperator(this._parseConditionalOperator())){
@@ -1248,18 +1254,19 @@ export class Parser {
 
 	public _parseBinaryExpr(preparsedLeft?: nodes.BinaryExpression, preparsedOper?: nodes.Node): nodes.BinaryExpression | null {
 
-		let node = <nodes.BinaryExpression>this.create(nodes.BinaryExpression);
+		let node = this.create(nodes.BinaryExpression);
 	
 		node.setOperator(this._parseUnaryOperator()); 
 		if (this.hasKeywords(['#','['])) {
 			this.accept(TokenType.Hash);
 		}
 		if (!this.peek(TokenType.BracketL)){
-			if (!node.setLeft((<nodes.Node>preparsedLeft || this._parseTerm()))) {
+			if (!node.setLeft((preparsedLeft || this._parseTerm()))) {
 				//return this.finish(node, ParseError.TermExpected);
 				return null;
 			}
 
+			// if no operator exists we have the form e.g: [true]
 			if (!node.setOperator(preparsedOper || this._parseBinaryOperator())) {
 				return this.finish(node);
 			}
@@ -1269,19 +1276,21 @@ export class Parser {
 			}
 			if (!this.peek(TokenType.BracketL)){			
 				if (!node.setRight(this._parseTerm())) {
-					return this.finish(node, ParseError.TermExpected);
+					this.markError(node, ParseError.TermExpected, [], [TokenType.KeyWord, TokenType.BracketR, TokenType.NewLine] );
 				}
 			} 
 		}
 		
 		if (this.accept(TokenType.BracketL)) {
-			node.addChild(<nodes.BinaryExpression>this._parseBinaryExpr());
+			if (!node.addChild(this._parseBinaryExpr())){
+				this.markError(node, ParseError.TermExpected, [], [TokenType.KeyWord, TokenType.BracketR, TokenType.NewLine] );
+			}
 			if (!this.accept(TokenType.BracketR)) {
-				return this.finish(node, ParseError.RightSquareBracketExpected);
+				this.markError(node, ParseError.RightSquareBracketExpected, [], [TokenType.KeyWord, TokenType.NewLine]);
 			}
 		}
 
-		node = <nodes.BinaryExpression>this.finish(node);
+		node = this.finish(node);
 		const operator = this._parseBinaryOperator();
 		if (operator) {
 			//node = <nodes.BinaryExpression>this._parseBinaryExpr(node, operator);

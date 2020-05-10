@@ -139,9 +139,9 @@ export class MacroNavigation {
 			} 
 			else if (node.type === nodes.NodeType.Variable) {
 				let variable = <nodes.Variable>node;
-				if (variable.declaration?.valueType === nodes.ValueType.MFunc){
+				if (variable.declaration?.valueType === nodes.ValueType.Address){
 					entry.name = variable.getName();
-					entry.kind = SymbolKind.Event;
+					entry.kind = SymbolKind.Interface;
 				}
 			} 
 			else if (node.type === nodes.NodeType.SequenceNumber) {
