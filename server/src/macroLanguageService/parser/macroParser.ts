@@ -678,17 +678,16 @@ export class Parser {
 			}
 		}
 
-		if (!this.peek(TokenType.Symbol)) {
-			return this.finish(node, ParseError.FunctionIdentExpected);
-		}
 		let declaration = this.declarations.get(this.token.text);
 		if (declaration) {
-			node.setIdentifier(this._parseVariable(declaration, nodes.ReferenceType.Function));
+			if (!node.setIdentifier(this._parseVariable(declaration, nodes.ReferenceType.Function))) {
+				this.markError(node, ParseError.FunctionIdentExpected, [TokenType.NewLine]);
+			}
 		}
-		else {
-			node.setIdentifier(this._parseSymbol([nodes.ReferenceType.Variable, nodes.ReferenceType.Function]));
+		else if (!node.setIdentifier(this._parseSymbol([nodes.ReferenceType.Variable, nodes.ReferenceType.Function]))) {
+			this.markError(node, ParseError.FunctionIdentExpected, [TokenType.NewLine]);
 		}
-	
+
 		return this._parseBody(node, this._parseFunctionBody.bind(this));
 	}
 
