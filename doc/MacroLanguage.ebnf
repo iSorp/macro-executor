@@ -1,0 +1,79 @@
+rNumber		# Real number
+nNumber		# Natural number
+integer		# Natural number pos and neg
+filePath	# Windows file path absolut or relative to the workspace
+
+nwl		= '\n'
+digit	= '0' | … | '9'
+char	= 'A' | … | 'Z' | 'a' | … | 'z'
+
+condOp 	= 'eq' | 'ne' | 'le' | 'ge' | 'lt' | 'gt'
+logOp	= '||' | '&&''
+binOp	= 'and' | 'or' | 'xor' | '/' | '*' | '+' | '-'
+unOp	= '+' | '-'
+fFunc	= 'sin' | 'cos' | ...
+
+symbol	= char | char symbol | nNumber | nNumber symbol		# ab12cd
+
+varVal	= nNumber | rNumber	| integer						# 100; 100.0; -+100
+		= char, nNumber | char, rNumber						# R100; R100.0 	
+		= char, nNumber, char								# M98P			
+ 
+varDec	= '@', symbol, varValue
+labelDec= '>', symbol, nNumber
+
+var		= symbol | '#', symbol 								# symbol with varDec declaration							
+label	= symbol											# symbol with labelDec declaration					
+seq		= 'N', nNumber
+ncCode	= char, nNumber | char, nNumber, '.', digit			# G01; G01.1
+
+term 	= [unOp], (var | label | Ffunc | address | symbol) 
+
+decType = label | var										# declaration type
+
+(* Binary expression*)
+binExpr = [ '[' ], term, [ ']' ]							# var
+		= [ '[' ], term, binOp, term , [ ']' ] 				# var + var
+		= [ '[' ], binExpr, binOp, binExpr , [ ']' ]		# var + var + var
+
+(* Conditional expression*)
+conExpr	= '[', binExpr, ']' 								# 1+1
+		= '[', binExpr, conOp, binExpr, ']' 				# 1+1 EQ 1
+		= '[', conExpr, logOp, conExpr, ']' 				# 1+1 EQ 1 || 1
+
+(* Macro statement*)
+macroSt	=  var, '=', binExpr
+
+(* NC statement*)
+ncPrm	= char, nNumber | char, binExpr 					# P10; P[1+2+3]
+ncSt	= ncCode 											# G01
+		= ncCode, ncPrm										# G04 P10
+
+(* Conditionals *) 
+then	= 'THEN', macroSt, nwl		
+else	= 'ELSE', macroSt, nwl								# then var = 123
+goto 	= 'GOTO', (label | var | nNumber), nwl
+
+if		= 'IF', conExpr, goto
+		= 'IF', conExpr, then, [nwl, else ]
+		= 'IF', conExpr, 'THEN', nwl, fbody, nwl, else
+		= 'IF', conExpr, 'THEN', nwl, fbody, [nwl, 'ELSE', nwl, fbody ] nwl, 'ENDIF'
+
+while	= 'WHILE', conExpr, 'DO', (label | nNumber), nwl, fbody, nwl, 'END', (label | nNumber), nwl 
+
+(* Fuction *) 
+fbody	= { if | while | goto | macroSt | ncSt }
+ident	= nNumber | symbol	
+func	= 'O', ident, fbody	
+
+(* Macro file *) 
+include	= '$INCLUDE', filePath, '.def'
+mFile	= { include | varDec | labelDec | function }, [ '%' ]
+
+
+(* Def file *) 
+dFile	= '$NOLIST' { varDec | labelDec } '$LIST'
+
+
+
+
