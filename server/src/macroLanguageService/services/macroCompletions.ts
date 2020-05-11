@@ -72,6 +72,7 @@ enum Sort {
 	Variable 	= '4',
 	Value 		= '5',
 	Address		= '6',
+	Nc			= '7',
 	Label		= '7'
 }
 
@@ -203,6 +204,10 @@ export class MacroCompletion {
 						case nodes.ValueType.Numeric:
 							sort = Sort.Variable;
 							kind = CompletionItemKind.Variable;
+							break;
+						case nodes.ValueType.Nc:
+							sort = Sort.Nc;
+							kind = CompletionItemKind.Event;
 							break;
 						case nodes.ValueType.Undefinded:
 							sort = Sort.Variable;

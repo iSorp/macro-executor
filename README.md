@@ -50,7 +50,6 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * A comment of a declaration `@var` <span style="color:green">/* my comment</span> is displayed on hover and completion
 
 
-
 ## Default Commands
 
 | Command | Key          |

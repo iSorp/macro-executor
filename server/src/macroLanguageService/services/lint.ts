@@ -62,6 +62,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitFunction(<nodes.Function>node);
 			case nodes.NodeType.Statement:
 				return this.visitStatement(<nodes.NcStatement>node);
+			case nodes.NodeType.Parameter:
+				return this.visitParameter(<nodes.NcParameter>node);
 			case nodes.NodeType.SequenceNumber:
 				return this.visitSequenceNumber(<nodes.SequenceNumber>node);		
 			case nodes.NodeType.Assignment:
@@ -145,6 +147,9 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitVariables(node: nodes.Variable) : boolean {
+		if (node.findAParent(nodes.NodeType.VariableDef)) {	
+			this.addEntry(node, Rules.IllegalStatement);
+		}
 		return true;
 	}
 
@@ -195,7 +200,22 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
+	private visitParameter(node: nodes.NcParameter): boolean {
+		return true;
+	}
+
 	private visitStatement(node: nodes.NcStatement): boolean {
+
+		for (const statement of node.getChildren()) {
+			if (!statement.findAParent(nodes.NodeType.VariableDef)) {
+				if (statement.type === nodes.NodeType.Parameter || statement.type === nodes.NodeType.Code) {
+					if (statement.getText().length <= 1){
+						this.addEntry(statement, Rules.IncopleteParameter);
+					}
+				}
+			}
+	
+		}
 		return true;
 	}
 

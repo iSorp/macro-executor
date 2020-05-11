@@ -15,7 +15,6 @@ export enum TokenType {
 	LogigAnd,
 	Address,
 	AddressPartial,
-	Number,
 	String,
 	BadString,
 	UnquotedString,
@@ -27,6 +26,7 @@ export enum TokenType {
 	Ffunc,
 	KeyWord,
 	Comment,
+	Ampersand,		// axis number command
 	Delim,
 	EOF,
 }
@@ -135,8 +135,8 @@ export const _Z = 'Z'.charCodeAt(0);
 export const _0 = '0'.charCodeAt(0);
 export const _1 = '1'.charCodeAt(0);
 export const _9 = '9'.charCodeAt(0);
-
-export const _N = 'n'.charCodeAt(0);
+export const _N = 'N'.charCodeAt(0);
+export const _n = 'n'.charCodeAt(0);
 
 export const _MIN = '-'.charCodeAt(0);
 export const _USC = '_'.charCodeAt(0);
@@ -167,12 +167,12 @@ export const _EQS = '='.charCodeAt(0);
 export const _CMA = ','.charCodeAt(0);
 export const _SUB = 'O'.charCodeAt(0);
 
-
 const staticTokenTable: { [code: number]: TokenType; } = {};
 staticTokenTable[_NWL] = TokenType.NewLine;
 staticTokenTable[_BRR] = TokenType.BracketR;
 staticTokenTable[_BRL] = TokenType.BracketL;
 staticTokenTable[_CMA] = TokenType.Comma;
+staticTokenTable[_AMD] = TokenType.Ampersand;
 
 
 const staticKeywordTable: { [key: string]: TokenType; } = {};
@@ -480,7 +480,7 @@ export class Scanner {
 		}
 		const ch = this.stream.peekChar();
 
-		if (ch !== 0 && ch !== _BSL && ch !== _CAR && ch !== _LFD && ch !== _NWL) {
+		if (ch !== 0 && ch !== _CAR && ch !== _LFD && ch !== _NWL) {
 			this.stream.advance(1);
 			result.push(String.fromCharCode(ch));
 			return true;
@@ -534,7 +534,7 @@ export class Scanner {
 	private _unquotedChar(result: string[]): boolean {
 		// not closeQuote, not backslash, not newline
 		const ch = this.stream.peekChar();
-		if (ch !== 0 && ch !== _BSL && ch !== _SQO && ch !== _DQO && ch !== _WSP && ch !== _TAB && ch !== _NWL && ch !== _LFD && ch !== _CAR) {
+		if (ch !== 0 && ch !== _SQO && ch !== _DQO && ch !== _WSP && ch !== _TAB && ch !== _NWL && ch !== _LFD && ch !== _CAR) {
 			this.stream.advance(1);
 			result.push(String.fromCharCode(ch));
 			return true;
