@@ -31,7 +31,7 @@ export const ParseError = {
 	NewLineExpected: new MacroIssueType('macro-newlineexpected', localize('expected.endif', 'newline expected')),
 	LeftSquareBracketExpected: new MacroIssueType('macro-lbracketexpected', localize('expected.lsquare', '[ expected')),
 	RightSquareBracketExpected: new MacroIssueType('macro-rbracketexpected', localize('expected.rsquare', '] expected')),
-	RightParenthesisExpected: new MacroIssueType('macro-rparentexpected', localize('expected.rparent', ') expected')),
+	Badstring: new MacroIssueType('macro-badstring', localize('expected.badstring', 'Missing string delimiter')),
 	OperatorExpected: new MacroIssueType('macro-operatorexpected', localize('expected.operator', 'operator expected')),
 	IdentifierExpected: new MacroIssueType('macro-identifierexpected', localize('expected.ident', 'identifier expected')),
 	FunctionIdentExpected: new MacroIssueType('macro-functionidentifierexpected', localize('expected.funcident', 'function identifier expected')),

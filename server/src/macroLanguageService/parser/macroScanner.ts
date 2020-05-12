@@ -373,7 +373,6 @@ export class Scanner {
 			return this.finishToken(offset, tokenType, content.join(''));
 		}
 		
-
 		// Delim
 		this.stream.nextChar();
 		return this.finishToken(offset, TokenType.Delim);
@@ -448,7 +447,7 @@ export class Scanner {
 		return ret;
 	}
 
-	public newline(result: string[]): boolean {
+	private _newline(result: string[]): boolean {
 		const ch = this.stream.peekChar();
 		switch (ch) {
 			case _CAR:
@@ -596,16 +595,7 @@ export class Scanner {
 	}
 
 	private _symbolFirstChar(result: string[]): boolean {
-		const ch = this.stream.peekChar();
-		if (ch >= _0 && ch <= _9 || // 0/9 
-			ch >= _a && ch <= _z || // a-z
-			ch >= _A && ch <= _Z || // A-Z
-			ch >= 0x80 && ch <= 0xFFFF) { // nonascii
-			this.stream.advance(1);
-			result.push(String.fromCharCode(ch));
-			return true;
-		}
-		return false;
+		return this._symbolChar(result);
 	}
 
 	private _symbolChar(result: string[]): boolean {

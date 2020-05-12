@@ -22,8 +22,9 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private declarations:Map<string,nodes.AbstractDeclaration> = new Map<string,nodes.AbstractDeclaration>()
-	private sequenceNumbers:FunctionMap = new FunctionMap();
-	private labelList:FunctionMap = new FunctionMap();
+	private sequenceNumbers:FunctionMap<nodes.Function> = new FunctionMap();
+	private labelList:FunctionMap<nodes.Function> = new FunctionMap();
+	private duplicateList: string[] = [];
 	private imports: string[] = [];
 
 	private rules: nodes.IMarker[] = [];
@@ -55,9 +56,9 @@ export class LintVisitor implements nodes.IVisitor {
 			case nodes.NodeType.label:
 				return this.visitLabels(<nodes.Label>node);
 			case nodes.NodeType.VariableDef:
-				return this.visitDeclarations(<nodes.VariableDeclaration>node);
+				return this.visitDeclarations(<nodes.VariableDeclaration>node, true);
 			case nodes.NodeType.labelDef:
-				return this.visitDeclarations(<nodes.LabelDeclaration>node);
+				return this.visitDeclarations(<nodes.LabelDeclaration>node, true);
 			case nodes.NodeType.Function:
 				return this.visitFunction(<nodes.Function>node);
 			case nodes.NodeType.Statement:
@@ -89,7 +90,8 @@ export class LintVisitor implements nodes.IVisitor {
 				(<nodes.Node>declaration?.macrofile).accept(candidate => {
 					let found = false;
 					if (candidate.type === nodes.NodeType.VariableDef || candidate.type === nodes.NodeType.labelDef) {
-						this.visitDeclarations(candidate);
+						const count = this.duplicateList.length;
+						this.visitDeclarations(candidate, false);
 						found = true;
 					}
 					return !found;
@@ -150,6 +152,11 @@ export class LintVisitor implements nodes.IVisitor {
 		if (node.findAParent(nodes.NodeType.VariableDef)) {	
 			this.addEntry(node, Rules.IllegalStatement);
 		}
+
+		if (this.duplicateList.indexOf(node.getName()) != -1) {
+			this.addEntry(node, Rules.DuplicateDeclarations);
+		}
+
 		return true;
 	}
 
@@ -174,14 +181,17 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private visitDeclarations(node: nodes.Node) : boolean{
+	private visitDeclarations(node: nodes.Node, local:boolean) : boolean {
 		// scan local declarations
 		let def = <nodes.AbstractDeclaration>node;
 		let ident = def.getName();
 
 		if (ident){
-			if (this.declarations.has(ident)){
-				this.addEntry(def, Rules.DuplicateDeclarations);
+			if (this.declarations.has(ident)) {
+				this.duplicateList.push(ident);
+				if (local) {
+					this.addEntry(def, Rules.DuplicateDeclarations);
+				}
 			}
 			
 			/*for (const element of this.declarations.values()){
@@ -262,16 +272,16 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 }
 
-class FunctionMap {
-	private elements:Map<nodes.Function, string[]> = new Map<nodes.Function,string[]>();
-	public add(key:nodes.Function, value:string){
+class FunctionMap<T extends nodes.Node> {
+	private elements:Map<T, string[]> = new Map<T,string[]>();
+	public add(key:T, value:string){
 		if (!this.elements.has(key)){
 			this.elements.set(key, new Array<string>());
 		}
 		this.elements.get(key)?.push(value);
 	}
 
-	public get(key:nodes.Function) : string[] | undefined {
+	public get(key:T) : string[] | undefined {
 		return this.elements.get(key);
 	}
 }

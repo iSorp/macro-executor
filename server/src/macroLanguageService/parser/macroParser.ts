@@ -260,7 +260,7 @@ export class Parser {
 		
 		const node = this.createNode(nodes.NodeType.String);
 		if (this.accept(TokenType.BadString)){
-			return this.finish(node, ParseError.RightParenthesisExpected);
+			return this.finish(node, ParseError.Badstring);
 		}
 		
 		this.consumeToken();
@@ -1021,7 +1021,17 @@ export class Parser {
 			}
 		}
 
-		this.accept(TokenType.Hash);
+		// ##var is invalid
+		if (this.peek(TokenType.Hash) && declaration && declaration.valueType === nodes.ValueType.MacroValue){
+			return this.finish(node, ParseError.InvalidStatement, [TokenType.NewLine]);
+		} 
+
+		if (this.accept(TokenType.Hash)) {
+			const declaration = this.declarations.get(this.token.text);
+			if (declaration && declaration.valueType === nodes.ValueType.MacroValue){
+				return this.finish(node, ParseError.InvalidStatement, [TokenType.NewLine]);
+			} 
+		}
 		
 		if (this.peek(TokenType.BracketL)) {
 			let expression = this._parseBinaryExpr();
