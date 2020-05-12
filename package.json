@@ -22,12 +22,7 @@
 		"vscode": "^1.43.0"
 	},
 	"activationEvents": [
-		"onLanguage:macro",
-		"onCommand:macro.compile",
-		"onCommand:macro.build",
-		"onCommand:macro.clean",
-		"onCommand:macro.setCompiler",
-		"onCommand:macro.setExportPath"
+		"onLanguage:macro"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -90,8 +85,32 @@
 				"command": "macro.setControlType",
 				"title": "Select Control Type",
 				"category": "Macro"
+			},
+			{
+				"command": "macro.action.refactorsequeces",
+				"title": "Reorganize sequence numbers",
+				"category": "Macro"
+			},
+			{
+				"command": "macro.action.addsequeces",
+				"title": "Add missing sequence numbers",
+				"category": "Macro"
 			}
 		],
+		"menus": {
+			"editor/context": [
+				{
+					"when": "resourceLangId == macro",
+					"command": "macro.action.refactorsequeces",
+					"group": "macro.action@1"
+				},
+				{
+					"when": "resourceLangId == macro",
+					"command": "macro.action.addsequeces",
+					"group": "macro.action@1"
+				}
+			]
+		},
 		"keybindings": [
 			{
 				"command": "macro.build",
@@ -111,8 +130,20 @@
 		],
 		"configuration": {
 			"type": "object",
-			"title": "MacroExecutor Configuration",
+			"title": "Macro Executor",
 			"properties": {
+				"macro.sequence.base": {
+					"scope": "window",
+					"type": "integer",
+					"default": 1000,
+					"description": "Sequence number start"
+				},
+				"macro.sequence.increment": {
+					"scope": "window",
+					"type": "integer",
+					"default": 10,
+					"description": "Sequence number increment"
+				},
 				"macro.codelens.enable": {
 					"scope": "resource",
 					"type": "boolean",

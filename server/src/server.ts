@@ -7,7 +7,12 @@
 import * as path from 'path';
 import { readFileSync, existsSync } from 'fs';
 
-import { LanguageSettings, MacroFileProvider, FindDocumentLinks, Range, FileProviderParams } from './macroLanguageService/macroLanguageTypes';
+import { 
+	LanguageSettings, 
+	MacroFileProvider, 
+	FindDocumentLinks, 
+	FileProviderParams
+} from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
 
@@ -34,7 +39,7 @@ import {
 	CodeLensParams, 
 	CodeLens,
 	TextDocumentChangeEvent,
-	CompletionContext
+	ExecuteCommandParams
 } from 'vscode-languageserver';
 
 import {
@@ -66,6 +71,10 @@ const defaultSettings: LanguageSettings = {
 	},
 	codelens: {
 		enable:true
+	},
+	sequence: {
+		base:1000,
+		increment:10
 	}
 };
 let globalSettings: LanguageSettings = defaultSettings;
@@ -201,6 +210,7 @@ class Links implements FindDocumentLinks {
 
 const macroLanguageService = getMacroLanguageService({
 	fileProvider: new FileProvider(),
+
 });
 
 connection.onInitialize((params: InitializeParams) => {
@@ -240,7 +250,11 @@ connection.onInitialize((params: InitializeParams) => {
 				resolveProvider:true
 			},
 			executeCommandProvider: {
-				commands: ['macro.codelens.references']
+				commands: [
+					'macro.codelens.references',
+					'macro.action.refactorsequeces',
+					'macro.action.addsequeces'
+				]
 			}
 		}
 	};
@@ -267,11 +281,11 @@ connection.onDocumentSymbol(documentSymbol);
 connection.onDocumentLinks(documentLinks);
 connection.onHover(hower);
 connection.onCompletion(completion);
+connection.onExecuteCommand(command);
 
 documents.onDidChangeContent(content);
 documents.listen(connection);
 connection.listen();
-
 
 async function configuration(params: DidChangeConfigurationParams) {
 	if (!hasConfigurationCapability) {
@@ -295,6 +309,41 @@ function getSettings(): Thenable<LanguageSettings> {
 	return result;
 }
 
+function command (params: ExecuteCommandParams) {
+	if (params.command === 'macro.action.refactorsequeces' || params.command === 'macro.action.addsequeces') {
+		if (params.arguments) {
+			const textDocument 	= documents.get(params.arguments[0]);
+			const position 		= params.arguments[1];
+
+			if (textDocument && position) {
+				let repo = getParsedDocument(textDocument.uri, macroLanguageService.parseMacroFile);
+				if (!repo) {
+					return null;
+				}
+
+				if (params.command === 'macro.action.refactorsequeces') {
+					const edit = macroLanguageService.doRefactorSequences(repo.document, position, repo.macrofile, settings);
+					if (edit) {
+						connection.workspace.applyEdit({
+							documentChanges: [edit]
+						});
+						connection.window.showInformationMessage('Refactoring sequences successful')
+					}
+				}
+				else if (params.command === 'macro.action.addsequeces'){
+					const edit = macroLanguageService.doCreateSequences(repo.document, position, repo.macrofile, settings);
+					if (edit) {
+						connection.workspace.applyEdit({
+							documentChanges: [edit]
+						});
+						connection.window.showInformationMessage('Adding sequences successful')
+					}
+				}
+			}
+		}
+	}
+}
+
 function content(change:TextDocumentChangeEvent<TextDocument>) {
 	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
 
@@ -310,13 +359,10 @@ function hower(params: TextDocumentPositionParams) {
 	return macroLanguageService.doHover(repo.document, params.position, repo.macrofile);
 }
 
-
-//onCompletion(handler: ServerRequestHandler<CompletionParams, CompletionItem[] | CompletionList | undefined | null, CompletionItem[], void>): void;
-
 function completion(params: CompletionParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
-	return macroLanguageService.doComplete(repo.document, params.position, repo.macrofile);
+	return macroLanguageService.doComplete(repo.document, params.position, repo.macrofile, settings);
 }
 
 function codelens(params: CodeLensParams) {

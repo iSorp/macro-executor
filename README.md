@@ -10,6 +10,12 @@
 
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
+## Latest news
+### Sequence number refactoring for functions
+* Consecutive numbering on completion (snippet N-Number)
+* Command for renumbering sequences (incl. GOTOs)
+* Command for adding missing sequences (NC statements)
+
 ## Features
 
 * Compiling and linking
@@ -36,6 +42,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ### Implementations
 ![Implementations](./resources/implementations.gif)
 
+
 ### CodeLens reference counter
 ![CodeLens](./resources/codelens.png)
 
@@ -46,7 +53,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 ## Coding conventions
 * Uppercase for constants: `@MY_CONSTANT 100`
-* Space between statements: `O SUB_PROBGRAM; N9000 G01 X1`
+* Space between statements: `O SUB_PROBGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
 * A comment of a declaration `@var` <span style="color:green">/* my comment</span> is displayed on hover and completion
 
 

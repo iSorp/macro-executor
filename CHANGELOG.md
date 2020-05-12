@@ -7,6 +7,8 @@
 	- Code completion specified for certain nodes
 	- Error matching improved
 	- Allow Backslash in strings and includes
+- Sequence number (N-Number) completion
+- Sequence number refactoring
 
 ## 0.1.7 (May 06, 2020)
 - Completions provider
