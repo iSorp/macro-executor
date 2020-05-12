@@ -42,6 +42,8 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ### Implementations
 ![Implementations](./resources/implementations.gif)
 
+### Sequences
+![Sequences](./resources/sequences.gif)
 
 ### CodeLens reference counter
 ![CodeLens](./resources/codelens.png)
