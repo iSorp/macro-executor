@@ -13,7 +13,10 @@ import {
 	CompletionItem, 
 	CompletionItemKind, 
 	Range, 
-	MacroFileProvider
+	MacroFileProvider,
+	InsertTextFormat,
+	TextEdit,
+	LanguageSettings
 } from '../macroLanguageTypes';
 import { getComment } from '../parser/macroScanner';
 
@@ -72,8 +75,8 @@ enum Sort {
 	Variable 	= '4',
 	Value 		= '5',
 	Address		= '6',
-	MFunc		= '7',
-	Label		= '8'
+	Nc			= '7',
+	Label		= '7'
 }
 
 export class MacroCompletion {
@@ -85,6 +88,7 @@ export class MacroCompletion {
 	symbolContext!: Symbols;
 	defaultReplaceRange!: Range;
 	nodePath!: nodes.Node[];
+	inc : number = 10;
 
 	constructor(private fileProvider: MacroFileProvider) {}
 
@@ -92,10 +96,10 @@ export class MacroCompletion {
 		if (!this.symbolContext) {
 
 			// local symbols
-			this.symbolContext = new Symbols(this.macroFile);
+			this.symbolContext = new Symbols(this.macroFile, this.textDocument.uri);
 
 			// Included symbols 
-			const uris = this.getIncludeUris(this.macroFile, this.fileProvider);
+			const uris = this.getIncludeUris(this.macroFile);
 			const types = this.fileProvider?.getAll({uris:uris});
 			for (const type of types) {
 				const symbols = new Symbols(<nodes.Node>type.macrofile, type.document.uri);
@@ -105,17 +109,18 @@ export class MacroCompletion {
 		return this.symbolContext;
 	}
 
-	private getIncludeUris(macroFile: nodes.MacroFile, fileProvider:MacroFileProvider) : string[] {
+	private getIncludeUris(macroFile: nodes.MacroFile) : string[] {
 		return <string[]>macroFile.getData(nodes.Data.Includes);
 	}
 
-	public doComplete(document: TextDocument, position: Position, macroFile: nodes.MacroFile): CompletionList {
+	public doComplete(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings): CompletionList {
 		this.offset = document.offsetAt(position);
 		this.position = position;
 		this.currentWord = this.getCurrentWord(document, this.offset);
 		this.defaultReplaceRange = Range.create(Position.create(this.position.line, this.position.character - this.currentWord.length), this.position);
 		this.textDocument = document;
 		this.macroFile = macroFile;
+		this.inc	= settings.sequence?.increment ? Number(settings.sequence?.increment) : 10;
 
 		try {
 			const result: CompletionList = { isIncomplete: false, items: [] };
@@ -128,28 +133,22 @@ export class MacroCompletion {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label);
 					this.getKeyWordProposals(result);
+					this.getSequenceNumberSnipped(node, result);
 				}
-				else if (node.type === nodes.NodeType.If) {
+				else if (node.type === nodes.NodeType.If || node.type === nodes.NodeType.While) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-					this.getOperatorProposals(result);
 					this.getKeyWordProposals(result);
+					this.getSequenceNumberSnipped(node, result);
 				}
-				else if (node.type === nodes.NodeType.While) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
-					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-					this.getOperatorProposals(result);
-					this.getKeyWordProposals(result);
-				}
-				else if (node.type === nodes.NodeType.Condition) {
+				else if (node.type === nodes.NodeType.Condition || node.type === nodes.NodeType.BinaryExpression) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 					this.getOperatorProposals(result);
 				}
-				else if (node.type === nodes.NodeType.BinaryExpression) {
+				else if (node.type === nodes.NodeType.Goto || node.type === nodes.NodeType.Assignment) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-					this.getOperatorProposals(result);
 				}
 				else {
 					continue;
@@ -205,10 +204,6 @@ export class MacroCompletion {
 							sort = Sort.Constant;
 							kind = CompletionItemKind.Constant;
 							break;
-						case nodes.ValueType.MFunc:
-							sort = Sort.MFunc;
-							kind = CompletionItemKind.Event;
-							break;
 						case nodes.ValueType.MacroValue:
 							sort = Sort.Value;
 							kind = CompletionItemKind.Value;
@@ -216,6 +211,10 @@ export class MacroCompletion {
 						case nodes.ValueType.Numeric:
 							sort = Sort.Variable;
 							kind = CompletionItemKind.Variable;
+							break;
+						case nodes.ValueType.Nc:
+							sort = Sort.Nc;
+							kind = CompletionItemKind.Event;
 							break;
 						case nodes.ValueType.Undefinded:
 							sort = Sort.Variable;
@@ -248,7 +247,7 @@ export class MacroCompletion {
 				const doc = text ? getComment(symbol.node.offset, text) : ''; 
 				const completionItem: CompletionItem = {
 					label: symbol.name,
-					documentation: doc,
+					documentation: doc + '\n' + (<nodes.AbstractDeclaration>symbol.node).getValue()?.getText(),
 					kind: kind,
 					sortText: sort
 				};
@@ -283,6 +282,37 @@ export class MacroCompletion {
 		return result;
 	}
 
+	private getSequenceNumberSnipped(node: nodes.Node, result: CompletionList): CompletionList {
+
+		const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+		let seq = 0;
+		if (func) {
+			func.accept(candidate => {
+				if (candidate.type === nodes.NodeType.SequenceNumber) {
+					const nnode = (<nodes.SequenceNumber>candidate).getNumber();
+					if (nnode) {
+						const number = nnode.getText().toLocaleLowerCase().split('n').pop();
+						seq = Math.max(seq, Number(number) + this.inc)
+						return false;
+					}
+				}
+				return true;
+			});
+		}
+
+		const range = this.getCompletionRange(null);
+		const item: CompletionItem = {
+			label: 'N-Number',
+			documentation: '',
+			textEdit: TextEdit.replace(range, 'N${1:'+`${seq}`+'} $0'),
+			insertTextFormat: InsertTextFormat.Snippet,
+			kind: CompletionItemKind.Snippet,
+			sortText: ' '
+		};
+		result.items.push(item);
+		return result;
+	}
+
 	private getCompletionsForMacroFile(result: CompletionList): CompletionList {
 		const node = this.macroFile.findFirstChildBeforeOffset(this.offset);
 		for (const key of keys) {
@@ -298,6 +328,17 @@ export class MacroCompletion {
 			i--;
 		}
 		return text.substring(i + 1, offset);
+	}
+
+	private getCompletionRange(existingNode: nodes.Node | null) : Range {
+		if (existingNode && existingNode.offset <= this.offset && this.offset <= existingNode.end) {
+			const end = existingNode.end !== -1 ? this.textDocument.positionAt(existingNode.end) : this.position;
+			const start = this.textDocument.positionAt(existingNode.offset);
+			if (start.line === end.line) {
+				return Range.create(start, end); // multi line edits are not allowed
+			}
+		}
+		return this.defaultReplaceRange;
 	}
 }
 

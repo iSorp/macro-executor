@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ExtensionContext, workspace, commands, window, Selection } from 'vscode';
+import { ExtensionContext, workspace, commands, window as Window, Selection } from 'vscode';
 import { 
 	LanguageClient, LanguageClientOptions, 
 	ServerOptions, TransportKind, RevealOutputChannelOn,
@@ -56,8 +56,35 @@ export function activate(context: ExtensionContext) {
 					let line = Number(args[0]);
 					let char = Number(args[1]);
 					let selection = new Selection(line, char, line,char);
-					window.activeTextEditor.selection = selection;
+					Window.activeTextEditor.selection = selection;
 					commands.executeCommand('references-view.find');
+				}
+				else if (command === 'macro.action.refactorsequeces' || command === 'macro.action.addsequeces') {
+					function validate(input:string): string {
+						return Number.isInteger(Number(input)) ? null : 'Integer expected';
+					}
+
+					const config = workspace.getConfiguration('macro');
+					if (command === 'macro.action.refactorsequeces'){
+						const start = await Window.showInputBox({
+							prompt: 'Start sequence number',
+							value: config.sequence.base,
+							validateInput: validate
+						});
+						if (config) {
+							config.update('sequence.base', Number(start));
+						}
+					}
+		
+					const increment = await Window.showInputBox({
+						prompt: 'Sequence number increment',
+						value: config.sequence.increment,
+						validateInput: validate
+					});
+					if (increment){
+						config.update('sequence.increment', Number(increment)); 
+					}
+					return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
 				}
 			}
 		}

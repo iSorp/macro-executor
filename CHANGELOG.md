@@ -1,3 +1,18 @@
+## 0.1.8 (May 11, 2020)
+- Bug fixes Parser 	
+	- Parsing of declared statements  (@var G04P10)
+	- Declared G and M codes shown as events (outline, completion)
+	- Allow expression in declarations e.g @var #[1+[1]]
+	- Axis number based command & e.g. G01 &A 1
+	- Code completion specified for certain nodes
+	- Error matching improved
+	- Allow Backslash in strings and includes
+- Sequence number (N-Number) completion
+- Sequence number refactoring
+
+## 0.1.7 (May 06, 2020)
+- Completions provider
+
 ## 0.1.6 (May 06, 2020)
 - Performance update
 

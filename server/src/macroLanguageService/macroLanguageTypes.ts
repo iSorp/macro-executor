@@ -19,6 +19,10 @@ export interface LanguageSettings {
 	};
 	codelens?: {
 		enable?:boolean;
+	};
+	sequence?: {
+		base?:number;
+		increment?:number;
 	}
 }
 
@@ -67,4 +71,3 @@ export interface MacroCodeLensType {
 export enum MacroCodeLensCommand {
 	References
 }
-

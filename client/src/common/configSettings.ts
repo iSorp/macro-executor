@@ -34,6 +34,8 @@ export class MacroSettings extends events.EventEmitter {
 		this.macroSourcePath = macroSettings.project.sourcePath;
 		this.macroBuildPath = macroSettings.project.buildPath;
 		this.macroLinkPath = macroSettings.project.linkPath;
+		this.sequenceStart = macroSettings.sequence.start;
+		this.sequenceInc = macroSettings.sequence.inc;
 	}
 }
 MacroSettings.macroSettings = new MacroSettings();

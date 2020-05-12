@@ -10,15 +10,9 @@ import { TextDocument, Range, Diagnostic, DiagnosticSeverity, LanguageSettings, 
 
 export class MacroValidation {
 
-	private settings?: LanguageSettings;
-
 	constructor( private fileProvider: MacroFileProvider) {}
 
-	public configure(settings?: LanguageSettings) {
-		this.settings = settings;
-	}
-
-	public doValidation(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings | undefined = this.settings): Diagnostic[] {
+	public doValidation(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings): Diagnostic[] {
 		if (settings && settings?.validate?.enable === false) {
 			return [];
 		}

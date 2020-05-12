@@ -425,7 +425,6 @@ export enum NodeType {
 	LinkNode,
 	Include,
 	StringLiteral,
-	Declarations,
 	Function,
 	VariableDef,
 	labelDef,
@@ -975,7 +974,7 @@ export enum ValueType {
 	Constant = 'constant', // same as numeric in capital
 	MacroValue = 'value',
 	Address = 'address',
-	MFunc= 'm-function',
+	Nc = 'nc'
 }
 
 export class AbstractDeclaration extends Node {

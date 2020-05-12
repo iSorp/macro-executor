@@ -10,6 +10,12 @@
 
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
+## News
+### Sequence number refactoring for functions
+* Consecutive numbering on completion (snippet N-Number)
+* Command for renumbering sequences (incl. GOTOs)
+* Command for adding missing sequences (NC statements)
+
 ## Features
 
 * Compiling and linking
@@ -36,19 +42,21 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ### Implementations
 ![Implementations](./resources/implementations.gif)
 
+### Sequences
+![Sequences](./resources/sequences.gif)
+
 ### CodeLens reference counter
 ![CodeLens](./resources/codelens.png)
 
-## Required file extension
+## Required file extensions
 * Macro files`.src`
 * Include files `.def` 
 * Link files `.lnk` 
 
 ## Coding conventions
 * Uppercase for constants: `@MY_CONSTANT 100`
-* Space between statements: `O SUB_PROBGRAM; N9000 G01 X1`
+* Space between statements: `O SUB_PROBGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
 * A comment of a declaration `@var` <span style="color:green">/* my comment</span> is displayed on hover and completion
-
 
 
 ## Default Commands
@@ -64,7 +72,8 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 This extension contributes the following settings:
 
-
+* `macro.sequence.base`: Sequence number start
+* `macro.sequence.increment`: Sequence number increment
 * `macro.codelens.enable`: Reference counter for variable and label declarations
 * `macro.validate.enable`: Syntax validation activation
 * `macro.validate.workspace`: Syntax validation for entire workspace
@@ -111,7 +120,9 @@ project
        file1.lnk
        file1.lnk
        F30iA_01.MEX
-
 ```
+
+
+
 
 -----------------------------------------------------------------------------------------------------------

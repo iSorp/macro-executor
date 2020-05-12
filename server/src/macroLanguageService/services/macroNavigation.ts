@@ -128,21 +128,49 @@ export class MacroNavigation {
 				entry.kind = SymbolKind.Function;
 			} 
 			else if (node.type === nodes.NodeType.label) {
-				if (node.getParent()?.type === nodes.NodeType.Function){
-					entry.name = (<nodes.Label>node).getName();
+				let label = <nodes.Label>node;
+				if (label.declaration?.valueType === nodes.ValueType.Numeric) {
+					entry.name = label.getName();
 					entry.kind = SymbolKind.Constant;
-				}
-			} 
-			else if (node.type === nodes.NodeType.Goto) {
-				entry.name = node.getText();
-				entry.kind = SymbolKind.Event;
+				} 
+				else if (label.declaration?.valueType === nodes.ValueType.String){
+					entry.name = label.getName();
+					entry.kind = SymbolKind.String;
+				} 
 			} 
 			else if (node.type === nodes.NodeType.Variable) {
 				let variable = <nodes.Variable>node;
-				if (variable.declaration?.valueType === nodes.ValueType.MFunc){
+
+				if (variable.parent?.type === nodes.NodeType.Statement) {
+					entry.name = variable.getName();
+					switch (variable.declaration?.valueType){
+						case nodes.ValueType.Address:
+							entry.kind = SymbolKind.Interface;
+							break;
+						case nodes.ValueType.Constant:
+							entry.kind = SymbolKind.Constant;
+							break;
+						case nodes.ValueType.MacroValue:
+							entry.kind = SymbolKind.Variable;
+							break;
+						case nodes.ValueType.Numeric:
+							entry.kind = SymbolKind.Variable;
+							break;
+						case nodes.ValueType.Nc:
+							entry.kind = SymbolKind.Event;
+							break;
+						case nodes.ValueType.Undefinded:
+							entry.kind = SymbolKind.Variable;
+							break;
+						default:
+							entry.kind = SymbolKind.Variable;
+							break;
+					}
+				} 	
+				else if (variable.declaration?.valueType === nodes.ValueType.Nc){
 					entry.name = variable.getName();
 					entry.kind = SymbolKind.Event;
-				}
+				} 
 			} 
 			else if (node.type === nodes.NodeType.SequenceNumber) {
 				entry.name = node.getText();
@@ -161,6 +189,10 @@ export class MacroNavigation {
 			else if (node.type === nodes.NodeType.Parameter) {
 				entry.name = (<nodes.NcParameter>node).getText();
 				entry.kind = SymbolKind.Property;
+			} 
+			else if (node.type === nodes.NodeType.Goto) {
+				entry.name = node.getText();
+				entry.kind = SymbolKind.Event;
 			} 
 		
 			if (entry.name) {
