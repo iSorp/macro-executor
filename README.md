@@ -10,7 +10,7 @@
 
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
-## Latest news
+## News
 ### Sequence number refactoring for functions
 * Consecutive numbering on completion (snippet N-Number)
 * Command for renumbering sequences (incl. GOTOs)
@@ -46,7 +46,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ### CodeLens reference counter
 ![CodeLens](./resources/codelens.png)
 
-## Required file extension
+## Required file extensions
 * Macro files`.src`
 * Include files `.def` 
 * Link files `.lnk` 
@@ -70,7 +70,8 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 This extension contributes the following settings:
 
-
+* `macro.sequence.base`: Sequence number start
+* `macro.sequence.increment`: Sequence number increment
 * `macro.codelens.enable`: Reference counter for variable and label declarations
 * `macro.validate.enable`: Syntax validation activation
 * `macro.validate.workspace`: Syntax validation for entire workspace
