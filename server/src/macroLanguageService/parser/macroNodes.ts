@@ -322,9 +322,11 @@ export interface IRule {
 }
 
 export enum Level {
-	Ignore = 1,
+	Error 	= 1,
 	Warning = 2,
-	Error = 4
+	Info 	= 3,
+	Hint 	= 4,
+	Ignore 	= 5
 }
 
 export interface IMarker {
@@ -443,7 +445,7 @@ export enum NodeType {
 	String,
 	Term,
 	Assignment,
-	Condition,
+	ConditionalExpression,
 	BinaryExpression,
 	Operator,
 	Identifier,
@@ -780,8 +782,23 @@ export class ElseTermStatement extends ElseStatement {
 	}
 }
 
-export class IfStatement extends BodyDeclaration {
+export class ConditionalStatement extends BodyDeclaration {
 	public contitional?: Conditional;
+
+	constructor(offset: number, length: number) {
+		super(offset, length);
+	}
+
+	public setConditional(node: Conditional | null): node is Conditional {
+		return this.setNode('contitional', node, 0);
+	}
+
+	public getConditional(): Conditional | undefined {
+		return this.contitional;
+	}
+}
+
+export class IfStatement extends ConditionalStatement {
 	public elseClause?: BodyDeclaration;
 
 	constructor(offset: number, length: number) {
@@ -792,19 +809,12 @@ export class IfStatement extends BodyDeclaration {
 		return NodeType.If;
 	}
 
-	public setConditional(node: Conditional | null): node is Conditional {
-		return this.setNode('contitional', node, 0);
-	}
-
-
 	public setElseClause(elseClause: BodyDeclaration | null): elseClause is BodyDeclaration {
 		return this.setNode('elseClause', elseClause);
 	}
 }
 
-export class WhileStatement extends BodyDeclaration {
-
-	public conditional?: Conditional;
+export class WhileStatement extends ConditionalStatement {
 	public dolabel?:Node;
 	public endlabel?:Node;
 
@@ -814,10 +824,6 @@ export class WhileStatement extends BodyDeclaration {
 
 	public get type(): NodeType {
 		return NodeType.While;
-	}
-
-	public setConditional(node: Conditional | null): node is Conditional {
-		return this.setNode('conditional', node, 0);
 	}
 
 	public setDoLabel(label: Node | null): label is Node {
@@ -831,40 +837,58 @@ export class WhileStatement extends BodyDeclaration {
 
 export class Conditional extends Node {
 
-	public left?: Node;
-	public right?: Node;
+	public left?: BinaryExpression;
+	public right?: BinaryExpression;
+	public next?: Conditional;
 	public condition?: Node;
+	public logic?: Node;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
 	}
 
 	public get type(): NodeType {
-		return NodeType.Condition;
+		return NodeType.ConditionalExpression;
 	}
 
-	public setLeft(left: Node | null): left is Node {
+	public setLeft(left: BinaryExpression | null): left is BinaryExpression {
 		return this.setNode('left', left);
 	}
 
-	public getLeft(): Node | undefined {
+	public getLeft(): BinaryExpression | undefined {
 		return this.left;
 	}
 
-	public setRight(right: Node | null): right is Node {
+	public setRight(right: BinaryExpression | null): right is BinaryExpression {
 		return this.setNode('right', right);
 	}
 
-	public getRight(): Node | undefined {
+	public getRight(): BinaryExpression | undefined {
 		return this.right;
 	}
 
-	public setOperator(value: Node | null): value is Node {
+	public setNext(next: Conditional | null): next is Conditional {
+		return this.setNode('next', next);
+	}
+
+	public getNext(): Conditional | undefined {
+		return this.next;
+	}
+
+	public setConditionalOp(value: Node | null): value is Node {
 		return this.setNode('condition', value);
 	}
 
-	public getOperator(): Node | undefined {
+	public getConditionalOp(): Node | undefined {
 		return this.condition;
+	}
+
+	public setLogicOp(value: Node | null): value is Node {
+		return this.setNode('logic', value);
+	}
+
+	public getLogicOp(): Node | undefined {
+		return this.logic;
 	}
 }
 

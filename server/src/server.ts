@@ -4,6 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 'use strict';
 
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
+
 import * as path from 'path';
 import { readFileSync, existsSync } from 'fs';
 
@@ -327,7 +330,7 @@ function command (params: ExecuteCommandParams) {
 						connection.workspace.applyEdit({
 							documentChanges: [edit]
 						});
-						connection.window.showInformationMessage('Refactoring sequences successful')
+						connection.window.showInformationMessage(localize('message.refactorsequeces.success', 'Refactoring sequences successful'));
 					}
 				}
 				else if (params.command === 'macro.action.addsequeces'){
@@ -336,7 +339,7 @@ function command (params: ExecuteCommandParams) {
 						connection.workspace.applyEdit({
 							documentChanges: [edit]
 						});
-						connection.window.showInformationMessage('Adding sequences successful')
+						connection.window.showInformationMessage(localize('message.addsequeces.success', 'Adding sequences successful'));
 					}
 				}
 			}

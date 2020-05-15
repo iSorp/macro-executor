@@ -59,6 +59,10 @@ export class MacroCommand {
 								const end = document.positionAt(label.end);
 								textEdits.push(TextEdit.del(Range.create(start, end)));
 								textEdits.push(TextEdit.insert(start, seq.toString()));
+								var index = gotoLabelList.indexOf(label);
+								if (index > -1) {
+									gotoLabelList.splice(index, 1);
+								}
 							}
 
 							seq = seq + inc;

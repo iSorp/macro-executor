@@ -10,6 +10,11 @@ import registerCommands from './common/commands';
 import CompositeDisposable from './common/CompositeDisposable';
 import { downloadAndUnzipVSCode } from 'vscode-test';
 
+import * as nls from 'vscode-nls';
+
+// The example uses the file message format.
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
+
 let client: LanguageClient;
 let disposables = new CompositeDisposable();
 
@@ -56,11 +61,13 @@ export function activate(context: ExtensionContext) {
 					let line = Number(args[0]);
 					let char = Number(args[1]);
 					let selection = new Selection(line, char, line,char);
-					Window.activeTextEditor.selection = selection;
-					commands.executeCommand('references-view.find');
+					if (Window.activeTextEditor) {
+						Window.activeTextEditor.selection = selection;
+						commands.executeCommand('references-view.find');
+					}
 				}
 				else if (command === 'macro.action.refactorsequeces' || command === 'macro.action.addsequeces') {
-					function validate(input:string): string {
+					function validate(input:string): string | null {
 						return Number.isInteger(Number(input)) ? null : 'Integer expected';
 					}
 
@@ -84,7 +91,9 @@ export function activate(context: ExtensionContext) {
 					if (increment){
 						config.update('sequence.increment', Number(increment)); 
 					}
-					return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+					if (Window.activeTextEditor) {
+						return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+					}
 				}
 			}
 		}

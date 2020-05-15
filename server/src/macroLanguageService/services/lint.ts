@@ -13,6 +13,8 @@ const _0 = '0'.charCodeAt(0);
 const _9 = '9'.charCodeAt(0);
 const _dot = '.'.charCodeAt(0);
 
+const MAX_CONDITIONALS = 4
+
 export class LintVisitor implements nodes.IVisitor {
 
 	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider: MacroFileProvider): nodes.IMarker[] {
@@ -63,12 +65,16 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitFunction(<nodes.Function>node);
 			case nodes.NodeType.Statement:
 				return this.visitStatement(<nodes.NcStatement>node);
-			case nodes.NodeType.Parameter:
-				return this.visitParameter(<nodes.NcParameter>node);
+			/*case nodes.NodeType.Parameter:
+				return this.visitParameter(<nodes.NcParameter>node);*/
 			case nodes.NodeType.SequenceNumber:
 				return this.visitSequenceNumber(<nodes.SequenceNumber>node);		
 			case nodes.NodeType.Assignment:
-				return this.visitAssignment(<nodes.Assignment>node);	
+				return this.visitAssignment(<nodes.Assignment>node);
+			case nodes.NodeType.If:
+				return this.visitIfStatement(<nodes.ConditionalStatement>node);	
+			case nodes.NodeType.While:
+				return this.visitWhileStatement(<nodes.ConditionalStatement>node);
 		}
 		return true;
 	}
@@ -131,7 +137,7 @@ export class LintVisitor implements nodes.IVisitor {
 				this.functionList.push(number);
 			}
 			else{
-				this.addEntry(ident, Rules.DuplicateAddress);
+				this.addEntry(ident, Rules.DuplicateFunction);
 			}
 		}
 		return true;
@@ -168,7 +174,6 @@ export class LintVisitor implements nodes.IVisitor {
 		let value = node.declaration?.value?.getText();
 		if (value){
 			let func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			let ident = func.getIdentifier()?.getText();
 			let a = this.labelList.get(func);
 			let index = a?.indexOf(value);
 			if (index !== undefined && index > -1){
@@ -176,11 +181,20 @@ export class LintVisitor implements nodes.IVisitor {
 			} 
 			else {
 				this.labelList.add(func, value);
+				const seq = this.sequenceNumbers.get(func)?.indexOf(value);
+				if (seq !== undefined && seq !== -1) {
+					this.addEntry(node, Rules.DuplicateLabelSequence);
+				}
 			}
 		}
 		return true;
 	}
 
+	/**
+	 * 
+	 * @param node 
+	 * @param local if true execute some checks only for the current file 
+	 */
 	private visitDeclarations(node: nodes.Node, local:boolean) : boolean {
 		// scan local declarations
 		let def = <nodes.AbstractDeclaration>node;
@@ -194,11 +208,17 @@ export class LintVisitor implements nodes.IVisitor {
 				}
 			}
 			
-			/*for (const element of this.declarations.values()){
-				if (element.getValue()?.getText() === def.getValue()?.getText()){
-					this.addEntry(def, Rules.DuplicateAddress);
+			if (local){
+				const value = def.getValue()?.getText();
+				for (const element of this.declarations.values()){
+					if ((def.valueType ===  nodes.ValueType.Address 
+						|| def.valueType ===  nodes.ValueType.Nc 
+						|| def.valueType ===  nodes.ValueType.Numeric) 
+						&& (def.type ===  element.type &&  element.getValue()?.getText() === value)) {
+						this.addEntry(def, Rules.DuplicateAddress);
+					}
 				}
-			}*/
+			}
 			
 			if (node.type === nodes.NodeType.VariableDef) {
 				this.declarations.set(ident, <nodes.VariableDeclaration>node);
@@ -210,12 +230,7 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private visitParameter(node: nodes.NcParameter): boolean {
-		return true;
-	}
-
 	private visitStatement(node: nodes.NcStatement): boolean {
-
 		for (const statement of node.getChildren()) {
 			if (!statement.findAParent(nodes.NodeType.VariableDef)) {
 				if (statement.type === nodes.NodeType.Parameter || statement.type === nodes.NodeType.Code) {
@@ -231,28 +246,70 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private visitSequenceNumber(node: nodes.SequenceNumber): boolean {
 
-		let number = node.getNumber();
+		const number = node.getNumber();
 		if (number) {
-			let func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			let a = this.sequenceNumbers.get(func);
-			let index = a?.indexOf(number.getText());
+			const n = number.getText().substr(1, number.getText().length);
+			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			const nList = this.sequenceNumbers.get(func);
+			const index = nList?.indexOf(n);
 			if (index !== undefined && index > -1){
 				this.addEntry(number, Rules.DuplicateSequence);
 			} 
 			else {
-				this.sequenceNumbers.add(func, number.getText());
+				this.sequenceNumbers.add(func, n);
+				const label = this.labelList.get(func)?.indexOf(n);
+				if (label !== undefined && label !== -1) {
+					this.addEntry(number, Rules.DuplicateLabelSequence);
+				}
 			}
 		}
 		return true;
 	}
 
 	private visitAssignment(node: nodes.Assignment): boolean {
-
 		if (node.getVariable() instanceof nodes.Variable){
 			const variable = <nodes.Variable>node.getVariable();
 			if (variable.declaration?.valueType === nodes.ValueType.Constant){
 				this.addEntry(variable, Rules.AssignmentConstant);
 			}
+		}
+		return true;
+	}
+	
+	private visitIfStatement(node: nodes.ConditionalStatement): boolean {
+		/**
+		 * Check the logic operators of a conitional expression.
+		 * Operators (|| and && ) can not mixed up e.g. [1 EQ #var || 2 EQ #var && 3 EQ #var]
+		 * Max number of statements  MAX_CONDITIONALS
+		 */
+		let conditional = node.getConditional();
+		let count = 1;
+		if (conditional) {
+			let first = conditional.logic?.getText();
+			while (conditional?.getNext()) {
+				if (++count > MAX_CONDITIONALS){
+					this.addEntry(conditional, Rules.TooManyConditionals);
+					break;
+				}
+				
+				const op = conditional.getNext()?.logic;
+				if (!op) {
+					break;
+				}
+				if (op.getText() != first) {
+					this.addEntry(op, Rules.MixedConditionals);
+				}
+				conditional = conditional.getNext();
+			}
+		}
+		return true;
+	}
+
+	private visitWhileStatement(node: nodes.ConditionalStatement): boolean {
+		// No logic operators allowed
+		const conditional = node.getConditional();
+		if (conditional &&  conditional.logic) {
+			this.addEntry(conditional, Rules.IllegalStatement);
 		}
 		return true;
 	}

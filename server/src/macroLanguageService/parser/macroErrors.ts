@@ -7,7 +7,8 @@
 import * as nodes from './macroNodes';
 
 import * as nls from 'vscode-nls';
-const localize = nls.loadMessageBundle();
+
+const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
 export class MacroIssueType implements nodes.IRule {
 	id: string;
@@ -21,14 +22,13 @@ export class MacroIssueType implements nodes.IRule {
 
 export const ParseError = {
 
-	UnknownOperation: new MacroIssueType('macro-unknownoperation', localize('expected.unknownoperation', 'unknown operation')),
 	DefinitionExpected: new MacroIssueType('macro-definitionexpected', localize('expected.definition', 'definition file expected')),
 	UnknownKeyword: new MacroIssueType('macro-unknownkeyword', localize('unknown.keyword', 'unknown keyword')),
 	EndifExpected: new MacroIssueType('macro-endifexpected', localize('expected.endif', 'endif expected')),
 	EndExpected: new MacroIssueType('macro-endexpected', localize('expected.end', 'end expected')),
 	DoExpected: new MacroIssueType('macro-doexpected', localize('expected.do', 'do expected')),
 	ThenGotoExpected: new MacroIssueType('macro-thengotoexpected', localize('expected.thenGoto', 'Then or goto expected')),
-	NewLineExpected: new MacroIssueType('macro-newlineexpected', localize('expected.endif', 'newline expected')),
+	NewLineExpected: new MacroIssueType('macro-newlineexpected', localize('expected.newline', 'newline expected')),
 	LeftSquareBracketExpected: new MacroIssueType('macro-lbracketexpected', localize('expected.lsquare', '[ expected')),
 	RightSquareBracketExpected: new MacroIssueType('macro-rbracketexpected', localize('expected.rsquare', '] expected')),
 	Badstring: new MacroIssueType('macro-badstring', localize('expected.badstring', 'Missing string delimiter')),

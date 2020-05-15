@@ -29,7 +29,7 @@ export class MacroValidation {
 				code: marker.getRule().id,
 				source: source,
 				message: marker.getMessage(),
-				severity: marker.getLevel() === nodes.Level.Warning ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
+				severity: marker.getLevel(),
 				range: range
 			};
 		}

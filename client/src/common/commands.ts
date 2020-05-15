@@ -41,6 +41,7 @@ export default function registerCommands() : CompositeDisposable {
 	return disposables;
 }
 
+
 function compile() : Promise<void> {
 	return new Promise<void>((resolve, reject) => {
 		let compiler 		= settings.MacroSettings.getInstance().macroCompilerPath;

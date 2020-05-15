@@ -1,0 +1,10 @@
+{
+	"macro.compile": "Datei kompilieren",
+	"macro.build": "Projekt erstellen",
+	"macro.clean": "Projekt bereinigen",
+	"macro.setCompiler": "Macro Compiler auswählen",
+	"macro.setExportPath": "Exportpfad auswählen",
+	"macro.setControlType": "Steuerungstyp auswählen",
+	"macro.action.addsequeces": "Fehlende Sequenznummern hinzufügen",
+	"macro.action.refactorsequeces": "Sequenznummern neu ordnen"
+}

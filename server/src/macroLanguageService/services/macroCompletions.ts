@@ -126,22 +126,22 @@ export class MacroCompletion {
 			const result: CompletionList = { isIncomplete: false, items: [] };
 			this.nodePath = nodes.getNodePath(this.macroFile, this.offset);
 
-			for (let i = this.nodePath.length - 1; i >= 0; i--) {
+			for (let i = this. nodePath.length - 1; i >= 0; i--) {
 				const node = this.nodePath[i];
 
 				if (node.type === nodes.NodeType.Function) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label);
 					this.getKeyWordProposals(result);
-					this.getSequenceNumberSnipped(node, result);
+					this.getSequenceNumberSnippet(node, result);
 				}
 				else if (node.type === nodes.NodeType.If || node.type === nodes.NodeType.While) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 					this.getKeyWordProposals(result);
-					this.getSequenceNumberSnipped(node, result);
+					this.getSequenceNumberSnippet(node, result);
 				}
-				else if (node.type === nodes.NodeType.Condition || node.type === nodes.NodeType.BinaryExpression) {
+				else if (node.type === nodes.NodeType.ConditionalExpression || node.type === nodes.NodeType.BinaryExpression) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 					this.getOperatorProposals(result);
@@ -282,7 +282,7 @@ export class MacroCompletion {
 		return result;
 	}
 
-	private getSequenceNumberSnipped(node: nodes.Node, result: CompletionList): CompletionList {
+	private getSequenceNumberSnippet(node: nodes.Node, result: CompletionList): CompletionList {
 
 		const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
 		let seq = 0;
