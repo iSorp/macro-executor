@@ -154,7 +154,7 @@ function clean() {
 		build_ext.forEach(element => {
 			bscript = bscript + 'del *.' + element + '\n\r';
 		});
-		bscript = bscript + 'cd ..\\' + build + '\n\r';
+		bscript = bscript + 'cd ' + build + '\n\r';
 		build_ext.forEach(element => {
 			bscript = bscript + 'del *.' + element + '\n\r';
 		});
