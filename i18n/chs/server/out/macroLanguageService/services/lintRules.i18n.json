@@ -1,0 +1,16 @@
+{
+	"rule.duplicateInclude": "预加载重复",
+	"rule.duplicateDeclaration": "符号声明重复",
+	"rule.duplicateFunction": "函数重复",
+	"rule.duplicateAddress": "地址重复",
+	"rule.duplicateSequence": "顺序号重复",
+	"rule.duplicateLabel": "标签号重复",
+	"rule.duplicateLabelSequence": "顺序号和标签号重复",
+	"rule.unknownSymbol": "未定义符号",
+	"rule.whileLogicOperator": "WHILE语句中不能使用 [&&, ||]",
+	"rule.mixedConditionals": "[&&, ||]逻辑运算符混用",
+	"rule.tooManyConditionals": "条件过多",
+	"rule.incompleteParameter": "参数不完整，G代码或M代码需要数值或变量做参数",
+	"rule.includeNotFound": "预加载文件未找到",
+	"rule.assignmentConstant": "常数已赋值"
+}

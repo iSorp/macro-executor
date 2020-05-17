@@ -68,19 +68,19 @@
 	"atan": {
 		"prefix": "atan",
 		"body": "ATAN[${1:value}]",
-		"description": "Arc tangent (one argument), ATN can also be used.",
+		"description": "Arc tangent (one parameter), ATN can also be used.",
 		"scope": "source.macro"
 	},
 	"atan2": {
 		"prefix": "atan",
 		"body": "ATAN[${1:value1}]/[${2:value2}]",
-		"description": "Arc tangent (two arguments), ATN can also be used.",
+		"description": "Arc tangent (two parameters), ATN can also be used.",
 		"scope": "source.macro"
 	},
 	"atan3": {
 		"prefix": "atan",
 		"body": "ATAN[${1:name1},${2:name2}]",
-		"description": "Arc tangent (two arguments), ATN can also be used.",
+		"description": "Arc tangent (two parameters), ATN can also be used.",
 		"scope": "source.macro"
 	},
 	"sqrt": {
@@ -165,6 +165,18 @@
 		"prefix": "prm",
 		"body": "PRM[${1:value1}, ${2:value2}]/[${3:value3}]",
 		"description": "Parameter reading (axis or spindle parameter bit number specification)",
+		"scope": "source.macro"
+	},
+	"parmQ": {
+		"prefix": "q",
+		"body": "Q[${1|TRUE,FALSE|}]",
+		"description": "Q[TRUE]",
+		"scope": "source.macro"
+	},
+	"write": {
+		"prefix": "write",
+		"body": "WRITE ${1:address} Q[${2|TRUE,FALSE|}] L${3|1,2,4|}",
+		"description": "Q[TRUE]",
 		"scope": "source.macro"
 	}
 }

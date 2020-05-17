@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -58,42 +58,42 @@
 		"commands": [
 			{
 				"command": "macro.compile",
-				"title": "Compile File",
+				"title": "%macro.compile%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.build",
-				"title": "Compile and Link Project",
+				"title": "%macro.build%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.clean",
-				"title": "Clean Project",
+				"title": "%macro.clean%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.setCompiler",
-				"title": "Select Macro Compiler",
+				"title": "%macro.setCompiler%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.setExportPath",
-				"title": "Select Export Path",
+				"title": "%macro.setExportPath%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.setControlType",
-				"title": "Select Control Type",
+				"title": "%macro.setControlType%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.action.refactorsequeces",
-				"title": "Reorganize sequence numbers",
+				"title": "%macro.action.refactorsequeces%",
 				"category": "Macro"
 			},
 			{
 				"command": "macro.action.addsequeces",
-				"title": "Add missing sequence numbers",
+				"title": "%macro.action.addsequeces%",
 				"category": "Macro"
 			}
 		],
@@ -132,79 +132,96 @@
 			"type": "object",
 			"title": "Macro Executor",
 			"properties": {
+				"macro.lint": {
+					"scope": "window",
+					"type": "object",
+					"description": "%macro.lint.description%"
+				},
 				"macro.sequence.base": {
 					"scope": "window",
 					"type": "integer",
 					"default": 1000,
-					"description": "Sequence number start"
+					"description": "%macro.sequence.base.description%"
 				},
 				"macro.sequence.increment": {
 					"scope": "window",
 					"type": "integer",
 					"default": 10,
-					"description": "Sequence number increment"
+					"description": "%macro.sequence.increment.description%"
 				},
 				"macro.codelens.enable": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"description": "Enable/disable codeLens for reference counter"
+					"description": "%macro.codelens.enable.description%"
 				},
 				"macro.validate.enable": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"description": "Enable/disable Syntax validation"
+					"description": "%macro.validate.enable.description%"
 				},
 				"macro.validate.workspace": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"description": "Enable/disable Workspace validation"
+					"description": "%macro.validate.workspace.description%"
 				},
 				"macro.build.compiler": {
 					"type": "string",
 					"scope": "window",
-					"enum": ["MCOMPI", "MCOMP0"],
+					"enum": [
+						"MCOMPI",
+						"MCOMP0"
+					],
 					"default": "MCOMPI",
-					"description": "Macro Compiler Path",
+					"description": "%macro.build.compiler.description%",
 					"$id": "1"
 				},
 				"macro.build.controlType": {
 					"type": "integer",
-					"enum": [0, 30],
+					"scope": "window",
+					"enum": [
+						0,
+						30
+					],
 					"default": 0,
-					"description": "MCOMPI Compiler Argument ",
+					"description": "%macro.build.controlType.description%",
 					"$id": "2"
 				},
 				"macro.build.makeFile": {
 					"type": "string",
+					"scope": "window",
 					"default": "",
-					"description": "Make file. Args = [export path, 'make / clean', compiler, cpmpiler arg]. If no Clean.bat is found, 'clean' is used as argument. If property is empty, internal build system is used",
+					"description": "%macro.build.makeFile.description%",
 					"$id": "3"
 				},
 				"macro.project.exportPath": {
 					"type": "string",
+					"scope": "window",
 					"default": "",
-					"description": "Memoryfile Export Path",
+					"description": "%macro.project.exportPath.description%",
 					"$id": "4"
 				},
 				"macro.project.sourcePath": {
 					"type": "string",
+					"scope": "window",
 					"default": "",
-					"description": "Source Path Contains All .src Files",
+					"description": "%macro.project.sourcePath.description%",
 					"$id": "5"
 				},
 				"macro.project.buildPath": {
 					"type": "string",
+					"scope": "window",
 					"default": "",
-					"description": "Build Files Path",
+					"description": "%macro.project.buildPath.description%",
 					"$id": "6"
 				},
 				"macro.project.linkPath": {
 					"type": "string",
+					"scope": "window",
 					"default": "",
-					"description": "Link Path Contains All .lnk Files Inclusive Library",
+					"description": "%macro.project.linkPath.description%",
 					"$id": "7"
 				}
 			}
@@ -244,6 +261,15 @@
 		"@typescript-eslint/parser": "^2.3.0",
 		"eslint": "^6.4.0",
 		"mocha": "^7.0.1",
-		"typescript": "^3.8.3"
+		"typescript": "^3.8.3",
+		"del": "^4.1.1",
+		"run-sequence": "^2.2.1",
+		"event-stream": "^4.0.1",
+		"vsce": "^1.75.0",
+		"vscode-nls-dev": "^3.3.1",
+		"gulp": "^4.0.2",
+		"gulp-filter": "^6.0.0",
+		"gulp-sourcemaps": "^2.6.5",
+		"gulp-typescript": "^5.0.1"
 	}
 }

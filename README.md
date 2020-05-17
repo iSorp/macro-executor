@@ -11,23 +11,22 @@
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
 ## News
-### Sequence number refactoring for functions
-* Consecutive numbering on completion (snippet N-Number)
-* Command for renumbering sequences (incl. GOTOs)
-* Command for adding missing sequences (NC statements)
+* Supported display languages (English, Deutsch, 中文)
+* Lint configuration
 
 ## Features
-
 * Compiling and linking
-* Problem matcher
+* Compiler problem matcher
 * Syntax highlighting
 * Syntax validation
 * Symbol provider
 * Completion provider
 * CodeLens
 * Lint features
+* Sequence number refactoring
 
-**The program parsing is not yet complete implemented. There are cases where mistakes are not appropriate or not detected.**
+**The program parsing is not yet complete implemented. There are cases where mistakes are not appropriate or not detected.** <br>
+Report issues to https://github.com/iSorp/macro-executor/issues
 
 
 ### Validation
@@ -42,11 +41,6 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ### Implementations
 ![Implementations](./resources/implementations.gif)
 
-### Sequences
-![Sequences](./resources/sequences.gif)
-
-### CodeLens reference counter
-![CodeLens](./resources/codelens.png)
 
 ## Required file extensions
 * Macro files`.src`
@@ -54,9 +48,39 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * Link files `.lnk` 
 
 ## Coding conventions
+* `$Include` paths must be absolute or relative to the workspace folder
 * Uppercase for constants: `@MY_CONSTANT 100`
 * Space between statements: `O SUB_PROBGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
-* A comment of a declaration `@var` <span style="color:green">/* my comment</span> is displayed on hover and completion
+* A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
+
+## Sequence number refactoring for functions
+* Consecutive numbering on completion (snippet N-Number)
+* Command for renumbering sequences (incl. GOTOs)
+* Command for adding missing sequences (for NC statements)
+
+## Lint
+The Lint is configurable by changing the following rules in the settings (user or workspace).
+Three levels are supported: `error`, `warning` and `ignore`. 
+
+```json
+"macro.lint": {
+       "rules" : {
+            "duplicateInclude":         "error",
+            "duplicateDeclaration":     "error",
+            "duplicateFunction":        "warning",
+            "duplicateAddress":         "ignore",
+            "duplicateSequence":        "warning",
+            "duplicateLabel":           "warning",
+            "duplicateLabelSequence":   "warning",
+            "unknownSymbol":            "error",
+            "whileLogicOperator":       "error",
+            "mixedConditionals":        "error",
+            "tooManyConditionals":      "error",
+            "incompleteParameter":      "error",
+            "includeNotFound":          "error",
+            "assignmentConstant":       "warning"
+       }
+```
 
 
 ## Default Commands
@@ -72,34 +96,37 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 This extension contributes the following settings:
 
-* `macro.sequence.base`: Sequence number start
-* `macro.sequence.increment`: Sequence number increment
-* `macro.codelens.enable`: Reference counter for variable and label declarations
-* `macro.validate.enable`: Syntax validation activation
-* `macro.validate.workspace`: Syntax validation for entire workspace
-* `macro.build.compiler`: Compiler Selection {MCOMPI, MCOMP0}
-* `macro.build.controlType`: Control Type Selection {0, 30}
-* `macro.build.makeFile`: Makefile
-* `macro.project.exportPath`: Memoryfile Export Path
-* `macro.project.sourcePath`: Source Path (.src)
-* `macro.project.linkPath`: Linkfile and Library Path
-* `macro.project.buildPath`: Build Files
+* `macro.lint`: Lint settings and rule configuration
+* `macro.sequence.base`: Sequences start number for refactoring
+* `macro.sequence.increment`: Sequences increment for refactoring
+* `macro.codelens.enable`: Enables or disables the CodeLens function
+* `macro.validate.enable`: Enables or disables the validation
+* `macro.validate.workspace`: Enables or disables the workspace validation
 
+Build settings:
+* `macro.build.compiler`: Selection of the macro compiler [MCOMPI, MCOMP0]
+* `macro.build.controlType`: Selection of the control type [0, 30]
+* `macro.build.makeFile`: The path to the makefile
+* `macro.project.exportPath`: The path to the directory for the memory card file (.mem)
+* `macro.project.sourcePath`: The path to the directory for the source files (.src)
+* `macro.project.buildPath`: The path to the directory for the build files
+* `macro.project.linkPath`: The path to the directory for the link files (.lnk) and the library (.mex)
 
 ## Building
 
 ### External build system
 The building process can be performed by using an external script or the internal system. If an external script is used,
-just set the path in `macro.build.makeFile`. If a Clean.bat in the same directory exists, it is used for the cleaning process.
-The following arguments are passed to the Make.bat: 
+just set the path in `macro.build.makeFile`. If a `Clean.bat` in the same directory exists, it is used for the cleaning process.
+The following parameters are passed to the script: 
 
-1. path for memory file
-2. option {make, clean}. When perforing the cleaning command and no Clean.bat is found "clean" is passed 
-3. compiler {MCOMP0, MCOMPI}
-4. compiler arg = control type {0, 30}
+1. Export directory
+2. Option [make, clean].
+3. Compiler [MCOMP0, MCOMPI]
+4. Control type [0, 30]
+
 
 ### Internal build system
-If no Make.bat is used the internal building process is used.
+If `macro.build.makeFile` is empty the internal system is used.
 >- The compiler must be available over the system path
 >- The library (mex) must be located in `macro.project.linkPath` path 
 
@@ -114,11 +141,11 @@ project
 │   
 └───def
 │      file1.def
-│      file1.def
+│      file2.def
 │ 
 └───lnk
        file1.lnk
-       file1.lnk
+       file2.lnk
        F30iA_01.MEX
 ```
 
@@ -126,3 +153,11 @@ project
 
 
 -----------------------------------------------------------------------------------------------------------
+
+
+
+## Credits
+
+Special thanks to Pan and Yu for translating the chinese texts
+
+特别感谢潘先生和于先生翻译了中文文本

@@ -582,9 +582,21 @@ export class Parser {
 			do {
 				let child = null;	
 				hasMatch = false;
-				this.acceptKeyword('$nolist');
+				if (this.peekKeyword('$nolist')) {
+					if (this.token.text !== '$NOLIST'){
+						return this.finish(node, ParseError.UnknownKeyword, [TokenType.NewLine]);
+					}
+					this.consumeToken();
+				}
+
 				child = this._parseVariableDeclaration() || this._parseLabelDeclaration();
-				this.acceptKeyword('$list');
+
+				if (this.peekKeyword('$list')) {
+					if (this.token.text !== '$LIST'){
+						return this.finish(node, ParseError.UnknownKeyword, [TokenType.NewLine]);
+					}
+					this.consumeToken();
+				}
 				if (child){
 					node.addChild(child);
 					hasMatch = true;
@@ -665,6 +677,12 @@ export class Parser {
 		}
 
 		const node = <nodes.Include>this.create(nodes.Include);
+
+		// Check upper case
+		if (this.token.text !== '$INCLUDE'){
+			return this.finish(node, ParseError.UnknownKeyword, [TokenType.NewLine]);
+		}
+
 		this.consumeToken(); // $include
 
 		const path = this.createNode(nodes.NodeType.StringLiteral);
@@ -830,15 +848,15 @@ export class Parser {
 			return null;
 		}
 
-		let node = this.create(nodes.SequenceNumber);		
-		let number = this.create(nodes.Node);
+		const node = this.create(nodes.SequenceNumber);		
+		const number = this.create(nodes.Node);
 
-		// Separates N-Number from the rest of the statement
+ 		// Separates N-Number from the rest of the statement
 		this.token = this.parsePart(0, (ch) => ch === scanner._n || ch === scanner._N || ch >= scanner._0 && ch <= scanner._9);
-		this.consumeToken();
-		this.finish(number);
-		node.setNumber(number);
-		return this.finish(node);
+
+ 		this.consumeToken();
+		node.setNumber(this.finish(number));
+ 		return this.finish(node);
 	}
 
 	/**
@@ -1009,7 +1027,7 @@ export class Parser {
 		}
 
 		const node = this.create(nodes.Assignment);	
-		const declaration = this.declarations.get(this.token.text);
+		let declaration = this.declarations.get(this.token.text);
 		if (this.peek(TokenType.Symbol)) {		
 			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue) {
 				if (test){
@@ -1027,7 +1045,7 @@ export class Parser {
 		} 
 
 		if (this.accept(TokenType.Hash)) {
-			const declaration = this.declarations.get(this.token.text);
+			declaration = this.declarations.get(this.token.text);
 			if (declaration && declaration.valueType === nodes.ValueType.MacroValue){
 				return this.finish(node, ParseError.InvalidStatement, [TokenType.NewLine]);
 			} 
@@ -1257,21 +1275,23 @@ export class Parser {
 
 	//#region Expressions
 	public _parseConditionalExpression(): nodes.Conditional | null {
-		let node = <nodes.Conditional>this.create(nodes.Conditional);	
+		let node = this.create(nodes.Conditional);
 
 		if (!node.setLeft(this._parseBinaryExpr())) {
 			this.markError(node, ParseError.TermExpected);
 		}
 
-		if (node.setOperator(this._parseConditionalOperator())){
+		if (node.setConditionalOp(this._parseConditionalOperator())) {
 			if (!node.setRight(this._parseBinaryExpr())) {
 				this.markError(node, ParseError.TermExpected);
 			}
 		}
-
-		if (this._parseLogicalOperator()){
-			node.setRight(this._parseConditionalExpression());
-		}
+		if (node.setLogicOp(this._parseLogicalOperator())){
+			node.setNext(this._parseConditionalExpression());
+		}		
+		/*else if (!this.peek(TokenType.BracketR)) {
+			this.markError(node, ParseError.OperatorExpected);
+		}*/
 
 		return this.finish(node);
 	}
@@ -1591,8 +1611,7 @@ export class Parser {
 	}
 
 	public _parseLogicalOperator(): nodes.Node | null {
-		if (this.peekKeyword('||') || this.peekKeyword('&&')
-		) {
+		if (this.peekKeyword('||') || this.peekKeyword('&&')) {
 			const node = this.createNode(nodes.NodeType.Operator);
 			this.consumeToken();
 			return this.finish(node);

@@ -41,6 +41,7 @@ export default function registerCommands() : CompositeDisposable {
 	return disposables;
 }
 
+
 function compile() : Promise<void> {
 	return new Promise<void>((resolve, reject) => {
 		let compiler 		= settings.MacroSettings.getInstance().macroCompilerPath;
@@ -153,7 +154,7 @@ function clean() {
 		build_ext.forEach(element => {
 			bscript = bscript + 'del *.' + element + '\n\r';
 		});
-		bscript = bscript + 'cd ..\\' + build + '\n\r';
+		bscript = bscript + 'cd ' + build + '\n\r';
 		build_ext.forEach(element => {
 			bscript = bscript + 'del *.' + element + '\n\r';
 		});
