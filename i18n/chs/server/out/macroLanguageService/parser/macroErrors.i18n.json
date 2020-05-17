@@ -1,0 +1,29 @@
+{
+	"expected.definition": "预定义文件缺失",
+	"unknown.keyword": "未知关键词",
+	"expected.endif": "endif缺失",
+	"expected.end": "end缺失",
+	"expected.do": "do缺失",
+	"expected.thenGoto": "Then或者goto缺失",
+	"expected.newline": "换行符缺失",
+	"expected.lsquare": "[缺失",
+	"expected.rsquare": "]缺失",
+	"expected.badstring": "分隔符缺失",
+	"expected.operator": "运算符缺失",
+	"expected.ident": "标识符缺失",
+	"expected.funcident": "函数标识符缺失",
+	"expected.address": "地址缺失",
+	"expected.macrovariable": "#变量缺失",
+	"expected.body": "函数缺失",
+	"expected.label": "标签缺失",
+	"expected.term": "语句缺失",
+	"expected.number": "数值缺失",
+	"expected.integer": "整数缺失",
+	"expected.parameter": "参数缺失",
+	"expected.invalidstatement": "无效的注释",
+	"expected.expression": "Expression expected",
+	"expected.unexpectedToken": "符号缺失",
+	"expected.equalExpected": "=号缺失"
+}
+
+

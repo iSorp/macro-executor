@@ -1,0 +1,18 @@
+{
+	"rule.duplicateInclude": "Include Datei mehrfach vorhanden",
+	"rule.duplicateDeclaration": "Doppelte Symboldeklaration",
+	"rule.duplicateFunction": "Doppelter Funktionsbezeichner",
+	"rule.duplicateAddress": "Doppelte Adresse",
+	"rule.duplicateSequence": "Doppelte Sequenznummer",
+	"rule.duplicateLabel": "Doppelte Labelnummer",
+	"rule.duplicateLabelSequence": "Sequenznummer und Label definieren den gleichen Wert",
+	"rule.unknownSymbol": "Symboldeklaration nicht gefunden",
+	"rule.whileLogicOperator": "Logischer Operator in WHILE Anweisung [&&, ||]",
+	"rule.mixedConditionals": "Vermischte logische operatoren [&&, ||]",
+	"rule.tooManyConditionals": "Zu viele Bedingungen",
+	"rule.incompleteParameter": "Unvollständiger Parameter gefunden. G-Code oder M-Code benötigen möglicherweise einen numerischen Wert oder eine Variable als Parameter",
+	"rule.includeNotFound": "Datei nicht gefunden",
+	"rule.assignmentConstant": "Die Zuweisung erfolgt auf eine Konstante"
+}
+
+
