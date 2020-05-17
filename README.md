@@ -48,7 +48,7 @@ Report issues to https://github.com/iSorp/macro-executor/issues
 * Link files `.lnk` 
 
 ## Coding conventions
-* `$Include` paths must be absolut or relative to the workspace folder
+* `$Include` paths must be absolute or relative to the workspace folder
 * Uppercase for constants: `@MY_CONSTANT 100`
 * Space between statements: `O SUB_PROBGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
 * A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
@@ -56,7 +56,7 @@ Report issues to https://github.com/iSorp/macro-executor/issues
 ## Sequence number refactoring for functions
 * Consecutive numbering on completion (snippet N-Number)
 * Command for renumbering sequences (incl. GOTOs)
-* Command for adding missing sequences (NC statements)
+* Command for adding missing sequences (for NC statements)
 
 ## Lint
 The Lint is configurable by changing the following rules in the settings (user or workspace).
