@@ -52,6 +52,7 @@ let keys = [
 	'@',
 	'>',
 	'$',
+	'$INCLUDE',
 	'$NOLIST',
 	'$LIST',
 	'%',

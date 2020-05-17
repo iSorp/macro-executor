@@ -128,15 +128,17 @@ export class MacroNavigation {
 				entry.kind = SymbolKind.Function;
 			} 
 			else if (node.type === nodes.NodeType.label) {
-				let label = <nodes.Label>node;
-				if (label.declaration?.valueType === nodes.ValueType.Numeric) {
-					entry.name = label.getName();
-					entry.kind = SymbolKind.Constant;
-				} 
-				else if (label.declaration?.valueType === nodes.ValueType.String){
-					entry.name = label.getName();
-					entry.kind = SymbolKind.String;
-				} 
+				if (node.parent?.type === nodes.NodeType.Function) {
+					let label = <nodes.Label>node;
+					if (label.declaration?.valueType === nodes.ValueType.Numeric) {
+						entry.name = label.getName();
+						entry.kind = SymbolKind.Constant;
+					} 
+					else if (label.declaration?.valueType === nodes.ValueType.String){
+						entry.name = label.getName();
+						entry.kind = SymbolKind.String;
+					} 
+				}
 			} 
 			else if (node.type === nodes.NodeType.Variable) {
 				let variable = <nodes.Variable>node;

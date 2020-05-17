@@ -1,10 +1,24 @@
 {
-	"macro.compile": "Compile File",
-	"macro.build": "Compile and Link Project",
-	"macro.clean": "Clean Project",
-	"macro.setCompiler": "Select Macro Compiler",
-	"macro.setExportPath": "Select Export Path",
-	"macro.setControlType": "Select Control Type",
-	"macro.action.addsequeces": "Add missing sequence numbers",
-	"macro.action.refactorsequeces": "Reorganize sequence numbers"
+	"macro.compile": "编译文件",
+	"macro.build": "编译与连接项目",
+	"macro.clean": "清除项目",
+	"macro.setCompiler": "选择宏编译器",
+	"macro.setExportPath": "选择输出路径",
+	"macro.setControlType": "选择控制类型",
+	"macro.action.addsequeces": "添加缺失的顺序号",
+	"macro.action.refactorsequeces": "重排顺序号",
+
+	"macro.lint.description": "Lint设置",
+    "macro.sequence.base.description": "顺序起始号",
+    "macro.sequence.increment.description": "顺序号增量",
+    "macro.codelens.enable.description": "CodeLens使能",
+    "macro.validate.enable.description": "代码校验",
+    "macro.validate.workspace.description": "环境校验",
+    "macro.build.compiler.description": "选择宏编译器",
+    "macro.build.controlType.description": "选择控制类型",
+    "macro.build.makeFile.description": "生成文件路径。使用以下参数：输出路径、 [make,  clean]、编译器、控制类型。若路径下未发现Clean.bat，则自动调用参数clean。若未指定路径，则使用内部生成系统。",
+    "macro.project.exportPath.description": "存储卡文件(.mem) 路径",
+    "macro.project.sourcePath.description": "源文件 (.src)路径",
+    "macro.project.buildPath.description": "生成文件路径",
+    "macro.project.linkPath.description": "链接文件(.lnk) 与库文件(.mex)路径"
 }

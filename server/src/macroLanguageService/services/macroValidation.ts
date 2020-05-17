@@ -6,7 +6,16 @@
 
 import * as nodes from '../parser/macroNodes';
 import { LintVisitor } from './lint';
-import { TextDocument, Range, Diagnostic, DiagnosticSeverity, LanguageSettings, MacroFileProvider } from '../macroLanguageTypes';
+import { 
+	TextDocument, 
+	Range, 
+	Diagnostic, 
+	LanguageSettings, 
+	MacroFileProvider 
+} from '../macroLanguageTypes';
+import { 
+	LintConfiguration 
+} from './lintRules';
 
 export class MacroValidation {
 
@@ -19,7 +28,7 @@ export class MacroValidation {
 
 		const entries: nodes.IMarker[] = [];
 		entries.push.apply(entries, nodes.ParseErrorCollector.entries(macroFile));
-		entries.push.apply(entries, LintVisitor.entries(macroFile, document, this.fileProvider));
+		entries.push.apply(entries, LintVisitor.entries(macroFile, document, this.fileProvider, new LintConfiguration(settings && settings.lint)));
 
 		function toDiagnostic(marker: nodes.IMarker): Diagnostic {
 			const range = Range.create(document.positionAt(marker.getOffset()), document.positionAt(marker.getOffset() + marker.getLength()));

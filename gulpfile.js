@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 const gulp = require('gulp');
 const ts = require('gulp-typescript');
 const typescript = require('typescript');
@@ -21,7 +16,6 @@ const inlineSource = false;
 const clientOutDest = 'client/out';
 const serverOutDest = 'server/out';
 
-// If all VS Code langaues are support you can use nls.coreLanguages
 const languages = [
 	{ id: 'de',		folderName: 'deu' }, 
 	{ id: "zh-cn", 	folderName: "chs", transifexId: "zh-hans" },

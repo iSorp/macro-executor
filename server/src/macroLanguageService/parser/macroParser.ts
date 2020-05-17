@@ -1027,7 +1027,7 @@ export class Parser {
 		}
 
 		const node = this.create(nodes.Assignment);	
-		const declaration = this.declarations.get(this.token.text);
+		let declaration = this.declarations.get(this.token.text);
 		if (this.peek(TokenType.Symbol)) {		
 			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue) {
 				if (test){
@@ -1045,7 +1045,7 @@ export class Parser {
 		} 
 
 		if (this.accept(TokenType.Hash)) {
-			const declaration = this.declarations.get(this.token.text);
+			declaration = this.declarations.get(this.token.text);
 			if (declaration && declaration.valueType === nodes.ValueType.MacroValue){
 				return this.finish(node, ParseError.InvalidStatement, [TokenType.NewLine]);
 			} 
@@ -1289,9 +1289,9 @@ export class Parser {
 		if (node.setLogicOp(this._parseLogicalOperator())){
 			node.setNext(this._parseConditionalExpression());
 		}		
-		else if (!this.peek(TokenType.BracketR)) {
+		/*else if (!this.peek(TokenType.BracketR)) {
 			this.markError(node, ParseError.OperatorExpected);
-		}
+		}*/
 
 		return this.finish(node);
 	}

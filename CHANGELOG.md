@@ -1,3 +1,11 @@
+## 0.1.9 ()
+- Lint settings
+- Label-Sequence number overlap check
+- Duplicate value check
+- Conditional logic check (max 4 statements, no mixed up operators)
+- Supported display languages (English, Deutsch, 中文)
+- Bug fixes (Sequence number refactoring if duplicates exists) 	
+
 ## 0.1.8 (May 11, 2020)
 - Bug fixes Parser 	
 	- Parsing of declared statements  (@var G04P10)
