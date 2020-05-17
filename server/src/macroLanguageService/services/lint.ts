@@ -6,8 +6,15 @@
 
 import * as nodes from '../parser/macroNodes';
 
-import { TextDocument, MacroFileProvider } from '../MacroLanguageTypes';
-import { Rules, Rule } from './lintRules';
+import { 
+	TextDocument, 
+	MacroFileProvider, 
+} from '../MacroLanguageTypes';
+import { 
+	LintConfiguration, 
+	Rules,
+	Rule 
+} from './lintRules';
 
 const _0 = '0'.charCodeAt(0);
 const _9 = '9'.charCodeAt(0);
@@ -17,8 +24,8 @@ const MAX_CONDITIONALS = 4
 
 export class LintVisitor implements nodes.IVisitor {
 
-	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider: MacroFileProvider): nodes.IMarker[] {
-		const visitor = new LintVisitor(macrofile, fileProvider);
+	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider: MacroFileProvider, settings: LintConfiguration): nodes.IMarker[] {
+		const visitor = new LintVisitor(fileProvider, settings);
 		macrofile.acceptVisitor(visitor);
 		return visitor.getEntries();
 	}
@@ -32,7 +39,7 @@ export class LintVisitor implements nodes.IVisitor {
 	private rules: nodes.IMarker[] = [];
 	private functionList = new Array<string>();
 
-	private constructor(private macrofile: nodes.Node, private fileProvider: MacroFileProvider) { }
+	private constructor(private fileProvider: MacroFileProvider, private settings: LintConfiguration) { }
 
 	public getEntries(filter: number = (nodes.Level.Warning | nodes.Level.Error)): nodes.IMarker[] {
 		return this.rules.filter(entry => {
@@ -41,7 +48,7 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	public addEntry(node: nodes.Node, rule: Rule, details?: string): void {
-		const entry = new nodes.Marker(node, rule, rule.defaultValue, details);
+		const entry = new nodes.Marker(node, rule, this.settings.getRule(rule), details);
 		this.rules.push(entry);
 	}
 
@@ -86,7 +93,7 @@ export class LintVisitor implements nodes.IVisitor {
 		}
 
 		if (this.imports.indexOf(uri?.getText()) > -1){
-			this.addEntry(node, Rules.DuplicateDeclarations);
+			this.addEntry(node, Rules.DuplicateInclude);
 		}
 		else{
 			this.imports.push(uri.getText());
@@ -111,11 +118,6 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitGlobalScope(node: nodes.Node) : boolean {
-		for (const element of node.getChildren()) {
-			if (element.type === nodes.NodeType.Symbol){
-				this.addEntry(element, Rules.IllegalStatement);
-			}
-		}
 		return true;
 	}
 
@@ -155,14 +157,9 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitVariables(node: nodes.Variable) : boolean {
-		if (node.findAParent(nodes.NodeType.VariableDef)) {	
-			this.addEntry(node, Rules.IllegalStatement);
-		}
-
 		if (this.duplicateList.indexOf(node.getName()) != -1) {
-			this.addEntry(node, Rules.DuplicateDeclarations);
+			this.addEntry(node, Rules.DuplicateDeclaration);
 		}
-
 		return true;
 	}
 
@@ -204,7 +201,7 @@ export class LintVisitor implements nodes.IVisitor {
 			if (this.declarations.has(ident)) {
 				this.duplicateList.push(ident);
 				if (local) {
-					this.addEntry(def, Rules.DuplicateDeclarations);
+					this.addEntry(def, Rules.DuplicateDeclaration);
 				}
 			}
 			
@@ -235,7 +232,7 @@ export class LintVisitor implements nodes.IVisitor {
 			if (!statement.findAParent(nodes.NodeType.VariableDef)) {
 				if (statement.type === nodes.NodeType.Parameter || statement.type === nodes.NodeType.Code) {
 					if (statement.getText().length <= 1){
-						this.addEntry(statement, Rules.IncopleteParameter);
+						this.addEntry(statement, Rules.IncompleteParameter);
 					}
 				}
 			}
@@ -308,8 +305,8 @@ export class LintVisitor implements nodes.IVisitor {
 	private visitWhileStatement(node: nodes.ConditionalStatement): boolean {
 		// No logic operators allowed
 		const conditional = node.getConditional();
-		if (conditional &&  conditional.logic) {
-			this.addEntry(conditional, Rules.IllegalStatement);
+		if (conditional && conditional.logic) {
+			this.addEntry(conditional, Rules.WhileLogicOperator);
 		}
 		return true;
 	}

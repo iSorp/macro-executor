@@ -14,17 +14,25 @@ export * from 'vscode-languageserver-types';
 
 export interface LanguageSettings {
 	validate? : {
-		enable?: boolean;
-		workspace?:boolean;
+		enable: boolean;
+		workspace:boolean;
 	};
 	codelens?: {
-		enable?:boolean;
+		enable:boolean;
 	};
 	sequence?: {
-		base?:number;
-		increment?:number;
+		base:number;
+		increment:number;
 	}
+	lint?: LintSettings;
 }
+export type LintSettings = { 
+	rules : {
+		[key: string]: any 	// e.g rule.duplicateInclude: 'ignore' | 'warning' | 'error'
+	}
+
+};
+
 
 export interface DocumentContext {
 	resolveReference(ref: string, base?: string): string | undefined;

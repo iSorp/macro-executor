@@ -78,7 +78,8 @@ const defaultSettings: LanguageSettings = {
 	sequence: {
 		base:1000,
 		increment:10
-	}
+	},
+	lint: {rules: {}}
 };
 let globalSettings: LanguageSettings = defaultSettings;
 
