@@ -78,9 +78,6 @@ export function activate(context: ExtensionContext) {
 							value: config.sequence.base,
 							validateInput: validate
 						});
-						if (config) {
-							config.update('sequence.base', Number(start));
-						}
 					}
 		
 					const increment = await Window.showInputBox({
@@ -88,9 +85,7 @@ export function activate(context: ExtensionContext) {
 						value: config.sequence.increment,
 						validateInput: validate
 					});
-					if (increment){
-						config.update('sequence.increment', Number(increment)); 
-					}
+	
 					if (Window.activeTextEditor) {
 						return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
 					}
