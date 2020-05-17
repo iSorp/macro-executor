@@ -72,8 +72,9 @@ export function activate(context: ExtensionContext) {
 					}
 
 					const config = workspace.getConfiguration('macro');
-					if (command === 'macro.action.refactorsequeces'){
-						const start = await Window.showInputBox({
+					let start = undefined;
+					if (command === 'macro.action.refactorsequeces') {
+						start = await Window.showInputBox({
 							prompt: 'Start sequence number',
 							value: config.sequence.base,
 							validateInput: validate
@@ -86,8 +87,15 @@ export function activate(context: ExtensionContext) {
 						validateInput: validate
 					});
 	
+				
+					
 					if (Window.activeTextEditor) {
-						return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+						if (command === 'macro.action.addsequeces' && increment) {
+							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+						} 
+						else if (command === 'macro.action.refactorsequeces' && start && increment) {
+							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+						}
 					}
 				}
 			}

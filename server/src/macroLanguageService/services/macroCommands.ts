@@ -87,12 +87,15 @@ export class MacroCommand {
 	public doCreateSequences(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings) : TextDocumentEdit | null {
 		let edit:TextDocumentEdit | null = null;
 		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
-		if (node){
+		if (node) {
 			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
 			const inc = settings?.sequence?.increment ? Number(settings?.sequence?.increment) : 10;
 			let seq = this.getMaxSequenceNumber(func);
 			if (seq <= 0) {
 				seq = settings?.sequence?.base ? Number(settings?.sequence?.base) : 1000;
+			}
+			else {
+				seq += inc;
 			}
 
 			if (func) {
@@ -125,7 +128,7 @@ export class MacroCommand {
 	}
 
 	private getMaxSequenceNumber(node: nodes.Node) : number {
-		let seq = 0;
+		let seq = -1;
 		node.accept(candidate => {
 			if (candidate.type === nodes.NodeType.SequenceNumber) {
 				const nnode = (<nodes.SequenceNumber>candidate).getNumber();
