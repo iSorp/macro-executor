@@ -109,8 +109,8 @@ Build settings:
 * `macro.build.makeFile`: The path to the makefile
 * `macro.project.exportPath`: The path to the directory for the memory card file (.mem)
 * `macro.project.sourcePath`: The path to the directory for the source files (.src)
-* `macro.project.linkPath`: The path to the directory for the build files
-* `macro.project.buildPath`: The path to the directory for the link files (.lnk) and the library (.mex)
+* `macro.project.buildPath`: The path to the directory for the build files
+* `macro.project.linkPath`: The path to the directory for the link files (.lnk) and the library (.mex)
 
 ## Building
 

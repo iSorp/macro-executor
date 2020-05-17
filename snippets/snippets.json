@@ -68,19 +68,19 @@
 	"atan": {
 		"prefix": "atan",
 		"body": "ATAN[${1:value}]",
-		"description": "Arc tangent (one argument), ATN can also be used.",
+		"description": "Arc tangent (one parameter), ATN can also be used.",
 		"scope": "source.macro"
 	},
 	"atan2": {
 		"prefix": "atan",
 		"body": "ATAN[${1:value1}]/[${2:value2}]",
-		"description": "Arc tangent (two arguments), ATN can also be used.",
+		"description": "Arc tangent (two parameters), ATN can also be used.",
 		"scope": "source.macro"
 	},
 	"atan3": {
 		"prefix": "atan",
 		"body": "ATAN[${1:name1},${2:name2}]",
-		"description": "Arc tangent (two arguments), ATN can also be used.",
+		"description": "Arc tangent (two parameters), ATN can also be used.",
 		"scope": "source.macro"
 	},
 	"sqrt": {
