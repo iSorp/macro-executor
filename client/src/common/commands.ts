@@ -126,7 +126,9 @@ function build() {
 			}
 			bscript 			+= link_string;
 			bscript 			+= mmcard_string;
-			bscript 			+= 'copy *.mem ' + exportPath;
+			if (exportPath){
+				bscript 			+= 'copy *.mem ' + exportPath;
+			}
 
 			let def = { type: 'shell', id: 'shell'};
 			let t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Make', 'macro', new vscode.ShellExecution(bscript), '$macro');

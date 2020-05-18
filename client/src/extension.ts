@@ -91,10 +91,10 @@ export function activate(context: ExtensionContext) {
 					
 					if (Window.activeTextEditor) {
 						if (command === 'macro.action.addsequeces' && increment) {
-							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start, increment]);
 						} 
 						else if (command === 'macro.action.refactorsequeces' && start && increment) {
-							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start]);
+							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start, start, increment]);
 						}
 					}
 				}
