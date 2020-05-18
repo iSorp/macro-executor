@@ -318,6 +318,11 @@ function command (params: ExecuteCommandParams) {
 		if (params.arguments) {
 			const textDocument 	= documents.get(params.arguments[0]);
 			const position 		= params.arguments[1];
+			const start 		= params.arguments[2];
+			const inc 			= params.arguments[3];
+
+			let localsettings:LanguageSettings = {}; 
+			Object.assign(localsettings, settings);
 
 			if (textDocument && position) {
 				let repo = getParsedDocument(textDocument.uri, macroLanguageService.parseMacroFile);
@@ -326,7 +331,11 @@ function command (params: ExecuteCommandParams) {
 				}
 
 				if (params.command === 'macro.action.refactorsequeces') {
-					const edit = macroLanguageService.doRefactorSequences(repo.document, position, repo.macrofile, settings);
+					if (localsettings.sequence){
+						localsettings.sequence.base  = start;
+						localsettings.sequence.increment  = inc;
+					}
+					const edit = macroLanguageService.doRefactorSequences(repo.document, position, repo.macrofile, localsettings);
 					if (edit) {
 						connection.workspace.applyEdit({
 							documentChanges: [edit]
@@ -335,7 +344,10 @@ function command (params: ExecuteCommandParams) {
 					}
 				}
 				else if (params.command === 'macro.action.addsequeces'){
-					const edit = macroLanguageService.doCreateSequences(repo.document, position, repo.macrofile, settings);
+					if (localsettings.sequence){
+						localsettings.sequence.increment  = inc;
+					}
+					const edit = macroLanguageService.doCreateSequences(repo.document, position, repo.macrofile, localsettings);
 					if (edit) {
 						connection.workspace.applyEdit({
 							documentChanges: [edit]

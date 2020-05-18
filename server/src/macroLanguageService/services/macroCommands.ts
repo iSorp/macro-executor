@@ -66,7 +66,6 @@ export class MacroCommand {
 							}
 
 							seq = seq + inc;
-							return false;
 						}
 					}
 					return true;
