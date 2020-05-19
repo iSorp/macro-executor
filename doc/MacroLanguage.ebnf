@@ -8,7 +8,7 @@ digit	= '0' | … | '9'
 char	= 'A' | … | 'Z' | 'a' | … | 'z'
 
 condOp 	= 'eq' | 'ne' | 'le' | 'ge' | 'lt' | 'gt'
-logOp	= '||' | '&&''
+logOp	= '||' | '&&'
 binOp	= 'and' | 'or' | 'xor' | '/' | '*' | '+' | '-'
 unOp	= '+' | '-'
 fFunc	= 'sin' | 'cos' | ...
@@ -55,7 +55,7 @@ else	= 'ELSE', macroSt, nwl								# then var = 123
 goto 	= 'GOTO', (label | var | nNumber), nwl
 
 if		= 'IF', conExpr, goto
-		= 'IF', conExpr, then, [nwl, else ]
+		= 'IF', conExpr, then, [ else ]
 		= 'IF', conExpr, 'THEN', nwl, fbody, nwl, else
 		= 'IF', conExpr, 'THEN', nwl, fbody, [nwl, 'ELSE', nwl, fbody ] nwl, 'ENDIF'
 
