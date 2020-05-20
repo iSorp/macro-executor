@@ -41,9 +41,9 @@ Report issues to https://github.com/iSorp/macro-executor/issues
 ![Implementations](./resources/implementations.gif)
 
 ## Supported display languages
-* English en
-* Deutsch de
-* 中文 zh-hans
+* English `en`
+* Deutsch `de`
+* 中文 `zh-cn`
 
 ## Required file extensions
 * Macro files`.src`
