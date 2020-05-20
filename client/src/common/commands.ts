@@ -28,8 +28,8 @@ const BUILD_SYSTEMS:Systems = {
 	'MCOMP15I': {compiler: 'MCOMP15I', linker: 'MLINK15I', card: 'MCARD15I' }
 }
 
-const CONTROL_TYPE = ['', '-0', '-30', '-PM', '-0F'];
-const build_ext_glob = 'ref,REL,PRG,LST,ROM,MEM,MAP,tmp.lnk';
+const CONTROL_TYPE = ['', '0', '30', 'PM', '0F'];
+const build_ext_glob = 'ref,REL,PRG,ROM,MEM,MAP,tmp.lnk';
 
 
 export default function registerCommands() : CompositeDisposable {
@@ -129,21 +129,7 @@ class ProjectService {
 
 	constructor () {
 		this.workspace = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath + '/' : '';
-		this.workspacePath = path.normalize(this.workspace + '/').toLocaleLowerCase();
-	}
-
-	private getRelPath(pathAbs:string) : string | undefined {
-		let pathRel:string | undefined;
-		if (pathAbs){
-			pathRel = pathAbs;
-			if (path.isAbsolute(pathAbs)) {
-				const p = String(path.normalize(pathRel).toLocaleLowerCase()).split(this.workspacePath).pop();
-				if (p) {
-					pathRel = p;
-				}
-			}
-		}		
-		return pathRel;
+		this.workspacePath = path.dirname(path.normalize(this.workspace + '/').toLocaleLowerCase());
 	}
 
 	private getAbsPath(relPath:string) : string | undefined {
@@ -172,57 +158,58 @@ class ProjectService {
 
 		const fileDir = path.dirname(currentFile);
 		
-		let build = this.getAbsPath(settings.MacroSettings.getInstance().macroBuildPath);
-		if (!build) {
-			build = '';
+		let buildPath = this.getAbsPath(settings.MacroSettings.getInstance().macroBuildPath);
+		if (!buildPath) {
+			buildPath = this.workspacePath;;
 		}
 
 		let arg = '';
 		if (type !== undefined && type !== ''){
-			arg = type;
+			arg = '-'+type;
 		}
 
 		let bscript = compiler + ' ' + currentFile + ' ' + arg;
-		bscript = bscript + ' -Fo'+ build  +' -Fr'+ build  +' -Fp'+ build;
+		if (buildPath){
+			bscript = bscript + ' -Fo'+ buildPath  +' -Fr'+ buildPath  +' -Fp'+ buildPath;
+		}
 		bscript = bscript + ' -Fl'+ fileDir;
 		
 		const t = new vscode.Task({type:'shell'}, vscode.TaskScope.Workspace, 'Compile','macro', new vscode.ShellExecution(bscript));
-		await vscode.tasks.executeTask(t);
+		vscode.tasks.executeTask(t);
 	}
 
 	/**
 	 * Compile and link workspace
 	 */
 	public async link() {
-		const makeFile 	= settings.MacroSettings.getInstance().macroMakeFile;
+		let makeFile 	= settings.MacroSettings.getInstance().macroMakeFile;
 		const exportPath = settings.MacroSettings.getInstance().macroExportPath;
 		const compiler 	= settings.MacroSettings.getInstance().macroCompilerPath;
 		const type = settings.MacroSettings.getInstance().macroControlType;
 
 		let arg = '';
 		if (type !== undefined && type !== ''){
-			arg = type;
+			arg = '-'+type;
 		}
 
 		// Execute internal build script
 		if (makeFile === undefined || makeFile === '') {
-			const link = this.getRelPath(settings.MacroSettings.getInstance().macroLinkPath);
-			let buildPath = this.getAbsPath(settings.MacroSettings.getInstance().macroBuildPath);
+			let link = vscode.workspace.asRelativePath(settings.MacroSettings.getInstance().macroLinkPath);
+			if (link){
+				link = path.join(link, '/');
+			}
+			else {
+				link = '';
+			}
 
-			const lnkFiles = await new Promise<vscode.Uri[]>(async (resolve, reject) => {
-				vscode.workspace.findFiles('**/'+link+'/**/*.{[lL][nN][kK]}').then(files => {
-					resolve(files);
-				});
-			});
+			const lnkFiles = await vscode.workspace.findFiles(link+'**/*.{[lL][nN][kK]}');
 			if (!lnkFiles){return;}
 	
+			const buildPath = this.getAbsPath(settings.MacroSettings.getInstance().macroBuildPath);
 			if (buildPath){
 				await vscode.workspace.fs.createDirectory(vscode.Uri.file(buildPath));
 			}
-			else {
-				buildPath = '';
-			}
-	
+
 			let bscript = ''; 
 			let link_string = '';
 			let mmcard_string = '';
@@ -234,21 +221,33 @@ class ProjectService {
 				mmcard_string = mmcard_string + BUILD_SYSTEMS[compiler].card +' ' + path.parse(filename).name +'\n\r'; // remove extension
 			}
 
-			const srcFiles = await new Promise<vscode.Uri[]>(async (resolve, reject) => {
-				const source = this.getRelPath(settings.MacroSettings.getInstance().macroSourcePath);
-				vscode.workspace.findFiles('**/'+source+'/**/*.{[sS][rR][cC]}').then(files => {
-					resolve(files);
-				});
-			});
+			let source = vscode.workspace.asRelativePath(settings.MacroSettings.getInstance().macroSourcePath);
+			if (source){
+				source = path.join(source, '/');
+			}
+			else {
+				source = '';
+			}
+
+			const srcFiles = await vscode.workspace.findFiles(source+'**/*.{[sS][rR][cC]}');
 			if (!srcFiles){return;}
 
-			for (const file of srcFiles) {
-				const dir = path.dirname(file.fsPath);
-				mcomp_string += BUILD_SYSTEMS[compiler].compiler +' ' + file.fsPath +' ' + arg +' -Fl'+ dir + ' -Fo'+buildPath+' -Fr'+buildPath+' -Fp'+buildPath +'\n\r';
+			// filter file directories to compile all files in a directory at once
+			let dirs:string[] = srcFiles.map(a => path.dirname(a.fsPath))
+			dirs = dirs.filter((v,i) => dirs.indexOf(v) === i);
+	
+			for (const dir of dirs) {
+				const filesPattern = path.join(dir,'/', '*.src');
+				if (buildPath){
+					mcomp_string += BUILD_SYSTEMS[compiler].compiler +' ' + filesPattern +' ' + arg +' -Fl'+ dir + ' -Fo'+buildPath+' -Fr'+buildPath+' -Fp'+buildPath +'\n\r';
+				}
+				else {
+					mcomp_string += BUILD_SYSTEMS[compiler].compiler +' ' + filesPattern +' ' + arg +' -Fl'+ dir + '\n\r';
+				}
 			}
 
 			bscript 		+= mcomp_string;
-			bscript 		+= 'cd ' + buildPath +'\n\r';
+			bscript 		+= buildPath ? 'cd ' + buildPath +'\n\r' : '';
 			bscript 		+= link_string;
 			bscript 		+= mmcard_string;
 			bscript 		+= exportPath ? 'copy *.mem ' + exportPath : '';
@@ -259,6 +258,7 @@ class ProjectService {
 		} 
 		else {
 			// External Make file
+			makeFile = this.getAbsPath(makeFile);
 			const args = [exportPath, 'make', compiler, arg];
 			const def = { type: 'shell'};
 			const t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Make', 'macro', new vscode.ShellExecution(makeFile + ' ' + args));
@@ -269,38 +269,59 @@ class ProjectService {
 	/**
 	 * Cleanup workspace
 	 */
-	public clean() {
-		const makeFile = settings.MacroSettings.getInstance().macroMakeFile;
+	public async clean() {
+		let makeFile = settings.MacroSettings.getInstance().macroMakeFile;
 		// Execute internal build script
 		if (makeFile === undefined || makeFile === '') {
 
-			const source = this.getRelPath(settings.MacroSettings.getInstance().macroSourcePath);
-			vscode.workspace.findFiles('**/'+source+'/**/*.{'+build_ext_glob+'}', ).then(files => { 
+			let source = vscode.workspace.asRelativePath(settings.MacroSettings.getInstance().macroSourcePath);
+			if (source){
+				source += '/';
+			}
+			else {
+				source = '';
+			}
+			vscode.workspace.findFiles(source+'**/*.LST').then(files => { 
 				files.forEach(file => {
 					vscode.workspace.fs.delete(file, {useTrash:false});
 				});
 			});
 
-			const build = this.getRelPath(settings.MacroSettings.getInstance().macroBuildPath);
-			vscode.workspace.findFiles('**/'+build+'/**/*.{'+build_ext_glob+'}', ).then(files => { 
-				files.forEach(file => {
-					vscode.workspace.fs.delete(file, {useTrash:false});
-				});
-			});
+			let build = vscode.workspace.asRelativePath(settings.MacroSettings.getInstance().macroBuildPath);
+			if (build){
+				build += '/';
+			}
+			else {
+				build = '';
+			}
+			const files = await vscode.workspace.findFiles(build+'**/*.{'+build_ext_glob+'}');
+			for (const file of files){
+				vscode.workspace.fs.delete(file, {useTrash:false});
+			}
 		}
 		else {
+			makeFile = this.getAbsPath(makeFile);
+
+			let dir = vscode.workspace.asRelativePath(path.dirname(makeFile), false);
+			if (path.isAbsolute(dir)){
+				dir = '';
+			}
+			else {
+				dir = path.join(dir, '/');
+			}
+
+			const files = await vscode.workspace.findFiles(dir + '**/{[cC][lL][eE][aA][nN]}.*');
+
 			const def = { type: 'shell' };
-			vscode.workspace.findFiles('clean').then(value => { 
-				if (value.length > 0) {					
-					const t = new vscode.Task(def, 'Clean', 'Workspace', new vscode.ShellExecution('.\\clean'));
-					vscode.tasks.executeTask(t);
-				}
-				else {
-					const args = ['0', 'clean'];
-					const t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Clean', 'macro', new vscode.ShellExecution('.\\'+ makeFile + ' ' + args));
-					vscode.tasks.executeTask(t);
-				}
-			});
+			if (files.length > 0) {					
+				const t = new vscode.Task(def, 'Clean', 'Workspace', new vscode.ShellExecution(files[0].fsPath));
+				vscode.tasks.executeTask(t);
+			}
+			else {
+				const args = ['0', 'clean'];
+				const t = new vscode.Task(def, vscode.TaskScope.Workspace, 'Clean', 'macro', new vscode.ShellExecution(makeFile + ' ' + args));
+				vscode.tasks.executeTask(t);
+			}
 		}
 	}
 }

@@ -10,7 +10,7 @@
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
 ## News
-* The build sytem supports now a source directory tree with more than one level. [Internal build system](#internalbuild)
+* The build system supports now a source directory tree with more than one level. [Internal build system](#internalbuild)
 * Additional compiler selections
 
 ## Features
@@ -77,6 +77,9 @@ Three levels are supported: `error`, `warning` and `ignore`.
             "duplicateLabelSequence":   "warning",
             "unknownSymbol":            "error",
             "whileLogicOperator":       "error",
+            "doEndNumberTooBig":        "error",
+            "doEndNumberNotEqual":      "error",
+            "nestingTooDeep":           "error",
             "mixedConditionals":        "error",
             "tooManyConditionals":      "error",
             "incompleteParameter":      "error",
@@ -84,7 +87,6 @@ Three levels are supported: `error`, `warning` and `ignore`.
             "assignmentConstant":       "warning"
        }
 ```
-
 
 ## Default Commands
 
@@ -133,8 +135,8 @@ If `macro.build.makeFile` is empty the internal system is used.
 >- The compiler must be available over the system path
 >- All `.src` files under the folder` macro.project.sourcePath` and its subfolders will be compiled
 >- There are two ways to define a libray path in a link file:
->      1. Absolut: *CNC=C:/somelib.mex*
->      2. Relativ: *CNC=../lnk/somelib.mex* (relative to `macro.project.buildPath`)
+>      1. Absolut: *CNC=C:\lib.mex*
+>      2. Relativ: *CNC=..\lnk\lib.mex* (relative to `macro.project.buildPath`)
 
 ### Example
 
@@ -142,11 +144,11 @@ If `macro.build.makeFile` is empty the internal system is used.
 ```
 project 
 │
-└───src1
+└───src
 │   │   file1.src
 │   │   file2.src  
 │   │ 
-│   └───src2
+│   └───sub
 │           file3.src
 │           file4.src 
 └───def
@@ -154,9 +156,14 @@ project
 │      file2.def
 │ 
 └───lnk
-       file1.lnk
-       file2.lnk
-       F30iA_01.MEX
+│      file1.lnk
+│      file2.lnk
+│      F30iA_01.MEX
+│
+└───bin
+       .rom
+       .ref
+       .prg
 ```
 
 #### Settings
@@ -170,14 +177,20 @@ The path settings could also be empty if no further directory tree is needed
 
 #### Link file
 
-```macro-executor
-CNC= ../F30iA_01.MEX
+```
+CNC=..\lnk\F30iA_01.MEX
 ```
 
 #### Source file
 
 ```
-$INCLUDE def/file1.def
+/* file1.src
+$INCLUDE def\file1.def
+```
+
+```  
+/* file3.src
+$INCLUDE def\file2.def
 ```
 
 -----------------------------------------------------------------------------------------------------------

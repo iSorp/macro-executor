@@ -170,22 +170,16 @@
 				"macro.build.compiler": {
 					"type": "string",
 					"scope": "window",
-					"enum": [
-						"MCOMPI",
-						"MCOMP0"
-					],
+					"enum": ["MCOMPI", "MCOMP0", "MCOMP30I", "MCOMP15", "MCOMP15I"],
 					"default": "MCOMPI",
 					"description": "%macro.build.compiler.description%",
 					"$id": "1"
 				},
 				"macro.build.controlType": {
-					"type": "integer",
+					"type": "string",
 					"scope": "window",
-					"enum": [
-						0,
-						30
-					],
-					"default": 0,
+					"enum": ["", "0", "30", "PM", "0F"],
+					"default": "",
 					"description": "%macro.build.controlType.description%",
 					"$id": "2"
 				},
