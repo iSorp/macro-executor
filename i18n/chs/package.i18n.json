@@ -4,7 +4,7 @@
 	"macro.clean": "清除项目",
 	"macro.setCompiler": "选择宏编译器",
 	"macro.setExportPath": "选择输出路径",
-	"macro.setControlType": "选择控制类型",
+	"macro.setControlType": "选择NC系统类型",
 	"macro.action.addsequeces": "添加缺失的顺序号",
 	"macro.action.refactorsequeces": "重排顺序号",
 
@@ -15,7 +15,7 @@
     "macro.validate.enable.description": "代码校验",
     "macro.validate.workspace.description": "环境校验",
     "macro.build.compiler.description": "选择宏编译器",
-    "macro.build.controlType.description": "选择控制类型",
+    "macro.build.controlType.description": "选择NC系统类型",
     "macro.build.makeFile.description": "生成文件路径。使用以下参数：输出路径、 [make,  clean]、编译器、控制类型。若路径下未发现Clean.bat，则自动调用参数clean。若未指定路径，则使用内部生成系统。",
     "macro.project.exportPath.description": "存储卡文件(.mem) 路径",
     "macro.project.sourcePath.description": "源文件 (.src)路径",

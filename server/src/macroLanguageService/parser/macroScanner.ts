@@ -145,6 +145,8 @@ export const _RAN = '>'.charCodeAt(0);
 export const _PIP = '|'.charCodeAt(0);
 export const _AMD = '&'.charCodeAt(0);
 export const _QUM = '?'.charCodeAt(0);
+export const _PRC = '%'.charCodeAt(0);
+export const _BNG = '!'.charCodeAt(0);
 export const _ATS = '@'.charCodeAt(0);
 export const _HSH = '#'.charCodeAt(0);
 export const _DLR = '$'.charCodeAt(0);
@@ -602,6 +604,9 @@ export class Scanner {
 		const ch = this.stream.peekChar();
 		if (ch === _USC || // _
 			ch === _DOT || // .
+			ch === _QUM || // ?
+			ch === _PRC || // %
+			ch === _BNG || // !
 			ch >= _a && ch <= _z || // a-z
 			ch >= _A && ch <= _Z || // A-Z
 			ch >= _0 && ch <= _9 || // 0/9

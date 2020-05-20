@@ -1,4 +1,12 @@
-## 0.1.9 ()
+## 0.1.11 (May 20, 2020)
+- Text fixes
+- Directory tree with more than one level
+- Additional compiler selections
+
+## 0.1.10 (May 18, 2020)
+-  Sequence number deep search
+
+## 0.1.9 (May 18, 2020)
 - Lint settings
 - Label-Sequence number overlap check
 - Duplicate value check

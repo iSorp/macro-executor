@@ -10,8 +10,8 @@
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
 ## News
-* Supported display languages (English, Deutsch, 中文)
-* Lint configuration
+* The build system supports now a source directory tree with more than one level. [Internal build system](#internalbuild)
+* Additional compiler selections
 
 ## Features
 * Compiling and linking
@@ -40,6 +40,10 @@ Report issues to https://github.com/iSorp/macro-executor/issues
 ### Implementations
 ![Implementations](./resources/implementations.gif)
 
+## Supported display languages
+* English `en`
+* Deutsch `de`
+* 中文 `zh-cn`
 
 ## Required file extensions
 * Macro files`.src`
@@ -73,6 +77,9 @@ Three levels are supported: `error`, `warning` and `ignore`.
             "duplicateLabelSequence":   "warning",
             "unknownSymbol":            "error",
             "whileLogicOperator":       "error",
+            "doEndNumberTooBig":        "error",
+            "doEndNumberNotEqual":      "error",
+            "nestingTooDeep":           "error",
             "mixedConditionals":        "error",
             "tooManyConditionals":      "error",
             "incompleteParameter":      "error",
@@ -80,7 +87,6 @@ Three levels are supported: `error`, `warning` and `ignore`.
             "assignmentConstant":       "warning"
        }
 ```
-
 
 ## Default Commands
 
@@ -103,53 +109,89 @@ This extension contributes the following settings:
 * `macro.validate.workspace`: Enables or disables the workspace validation
 
 Build settings:
-* `macro.build.compiler`: Selection of the macro compiler [MCOMPI, MCOMP0]
-* `macro.build.controlType`: Selection of the control type [0, 30]
+* `macro.build.compiler`: Selection of the macro compiler
+* `macro.build.controlType`: Selection of the control type
 * `macro.build.makeFile`: The path to the makefile
 * `macro.project.exportPath`: The path to the directory for the memory card file (.mem)
 * `macro.project.sourcePath`: The path to the directory for the source files (.src)
 * `macro.project.buildPath`: The path to the directory for the build files
 * `macro.project.linkPath`: The path to the directory for the link files (.lnk) and the library (.mex)
 
-## Building
 
-### External build system
+## External build system
 The building process can be performed by using an external script or the internal system. If an external script is used,
-just set the path in `macro.build.makeFile`. If a `Clean.bat` in the same directory exists, it is used for the cleaning process.
-The following parameters are passed to the script: 
+just set the path in `macro.build.makeFile`. If a `clean` script in the same directory exists, it is used for the cleaning process.
+The following parameters are passed to the external script: 
 
 1. Export directory
 2. Option [make, clean].
-3. Compiler [MCOMP0, MCOMPI]
-4. Control type [0, 30]
+3. Compiler
+4. Control type parameter
 
+<a name="internalbuild"></a>
 
-### Internal build system
+## Internal build system
 If `macro.build.makeFile` is empty the internal system is used.
 >- The compiler must be available over the system path
->- The library (mex) must be located in `macro.project.linkPath` path 
+>- All `.src` files under the folder` macro.project.sourcePath` and its subfolders will be compiled
+>- There are two ways to define a libray path in a link file:
+>      1. Absolut: *CNC=C:\lib.mex*
+>      2. Relativ: *CNC=..\lnk\lib.mex* (relative to `macro.project.buildPath`)
 
-Currently only a flat folder tree is supported e.g.:
+### Example
 
+#### Directory tree
 ```
 project 
 │
 └───src
-│      file1.src
-│      file2.src
-│   
+│   │   file1.src
+│   │   file2.src  
+│   │ 
+│   └───sub
+│           file3.src
+│           file4.src 
 └───def
 │      file1.def
 │      file2.def
 │ 
 └───lnk
-       file1.lnk
-       file2.lnk
-       F30iA_01.MEX
+│      file1.lnk
+│      file2.lnk
+│      F30iA_01.MEX
+│
+└───bin
+       .rom
+       .ref
+       .prg
 ```
 
+#### Settings
 
+![Implementations](./resources/projectsetting.png)
 
+The path settings could also be empty if no further directory tree is needed
+* `macro.project.exportPath`
+* `macro.project.sourcePath`
+* `macro.project.buildPath`
+
+#### Link file
+
+```
+CNC=..\lnk\F30iA_01.MEX
+```
+
+#### Source file
+
+```
+/* file1.src
+$INCLUDE def\file1.def
+```
+
+```  
+/* file3.src
+$INCLUDE def\file2.def
+```
 
 -----------------------------------------------------------------------------------------------------------
 

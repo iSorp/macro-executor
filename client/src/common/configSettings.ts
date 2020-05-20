@@ -6,7 +6,6 @@
 'use strict';
 const vscode = require('vscode');
 const events = require('events');
-const IS_TEST_EXECUTION = false;
 
 export class MacroSettings extends events.EventEmitter {
 	constructor() {
@@ -24,8 +23,6 @@ export class MacroSettings extends events.EventEmitter {
 		return MacroSettings.macroSettings;
 	}
 	initializeSettings() {
-		const workspaceRoot = (IS_TEST_EXECUTION || typeof vscode.workspace.rootPath !== 'string') ? __dirname : vscode.workspace.rootPath;
-   
 		let macroSettings = vscode.workspace.getConfiguration('macro');
 		this.macroCompilerPath = macroSettings.build.compiler;
 		this.macroControlType = macroSettings.build.controlType;
