@@ -30,8 +30,12 @@ export const Rules = {
 
 	UnknownSymbol: new Rule('unknownSymbol', localize('rule.unknownSymbol', 'Unknown symbol.'), Error),
 	WhileLogicOperator: new Rule('whileLogicOperator', localize('rule.whileLogicOperator', 'Logic operator in WHILE statement [&&, ||]'), Error),
+	DoEndNumberTooBig: new Rule('doEndNumberTooBig', localize('rule.doEndNumberTooBig', 'DO or END number too big'), Error),
+	DoEndNumberNotEqual: new Rule('doEndNumberNotEqual', localize('rule.doEndNumberNotEqual', 'Not agree END statement number to pair of DO'), Error),
+	NestingTooDeep: new Rule('nestingTooDeep', localize('rule.nestingTooDeep', 'Nesting too deep'), Error),
 	MixedConditionals: new Rule('mixedConditionals', localize('rule.mixedConditionals', 'Mixed conditionals [&&, ||]'), Error),
 	TooManyConditionals: new Rule('tooManyConditionals', localize('rule.tooManyConditionals', 'Too many conditional statements'), Error),
+
 	IncompleteParameter: new Rule('incompleteParameter', localize('rule.incompleteParameter', 'Incomplete parameter found. G-Code or M-Code may need a numeric value or a variable as parameter'), Error),
 	IncludeNotFound: new Rule('includeNotFound', localize('rule.includeNotFound', 'Include file not found'), Error),
 	AssignmentConstant: new Rule('assignmentConstant', localize('rule.assignmentConstant', 'Assignment to constant'), Warning),

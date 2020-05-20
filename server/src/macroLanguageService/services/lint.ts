@@ -21,6 +21,9 @@ const _9 = '9'.charCodeAt(0);
 const _dot = '.'.charCodeAt(0);
 
 const MAX_CONDITIONALS = 4
+const MAX_WHILE_DEPTH = 3
+const MAX_IF_DEPTH = 10
+
 
 export class LintVisitor implements nodes.IVisitor {
 
@@ -79,9 +82,9 @@ export class LintVisitor implements nodes.IVisitor {
 			case nodes.NodeType.Assignment:
 				return this.visitAssignment(<nodes.Assignment>node);
 			case nodes.NodeType.If:
-				return this.visitIfStatement(<nodes.ConditionalStatement>node);	
+				return this.visitIfStatement(<nodes.IfStatement>node);	
 			case nodes.NodeType.While:
-				return this.visitWhileStatement(<nodes.ConditionalStatement>node);
+				return this.visitWhileStatement(<nodes.WhileStatement>node);
 		}
 		return true;
 	}
@@ -273,7 +276,7 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 	
-	private visitIfStatement(node: nodes.ConditionalStatement): boolean {
+	private visitIfStatement(node: nodes.IfStatement): boolean {
 		/**
 		 * Check the logic operators of a conitional expression.
 		 * Operators (|| and && ) can not mixed up e.g. [1 EQ #var || 2 EQ #var && 3 EQ #var]
@@ -299,14 +302,72 @@ export class LintVisitor implements nodes.IVisitor {
 				conditional = conditional.getNext();
 			}
 		}
+
+		// check level from in to out
+		let level = 0;
+		const path = nodes.getNodePath(node, node.offset);
+		for (let i = path.length-1; i > -1; i--) {
+			const element = path[i];
+			if (element.type === nodes.NodeType.If) {
+				++level;
+				if (level > MAX_IF_DEPTH){
+					this.addEntry(node, Rules.NestingTooDeep);
+					return false;
+				}
+			}
+		}
 		return true;
 	}
 
-	private visitWhileStatement(node: nodes.ConditionalStatement): boolean {
+	private visitWhileStatement(node: nodes.WhileStatement): boolean {
 		// No logic operators allowed
 		const conditional = node.getConditional();
 		if (conditional && conditional.logic) {
 			this.addEntry(conditional, Rules.WhileLogicOperator);
+		}
+
+		if (node.dolabel && node.endlabel) {
+			if (node.dolabel?.getText() !== node.endlabel?.getText()) {
+				this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
+				this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
+			}
+
+			if (Number(node.dolabel.getText())) {
+				const doNumber = Number(node.dolabel.getText());
+				if (doNumber) {
+					if (doNumber > MAX_WHILE_DEPTH) {
+						this.addEntry(node.dolabel, Rules.DoEndNumberTooBig);
+					}
+				}
+	
+				const endNumber = Number(node.endlabel.getText());
+				if (endNumber) {
+					if (endNumber > MAX_WHILE_DEPTH) {
+						this.addEntry(node.endlabel, Rules.DoEndNumberTooBig);
+					}
+				}
+			}
+			else if (node.dolabel instanceof nodes.Label){
+				const value = Number((<nodes.Label>node.dolabel).declaration?.getValue()?.getText());
+				if (value > MAX_WHILE_DEPTH) {
+					this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
+					this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
+				}
+			}
+		}
+
+		// check level from in to out
+		let level = 0;
+		const path = nodes.getNodePath(node, node.offset);
+		for (let i = path.length-1; i > -1; i--) {
+			const element = path[i];
+			if (element.type === nodes.NodeType.While) {
+				++level;
+				if (level > MAX_WHILE_DEPTH){
+					this.addEntry(node, Rules.NestingTooDeep);
+					return false;
+				}
+			}
 		}
 		return true;
 	}

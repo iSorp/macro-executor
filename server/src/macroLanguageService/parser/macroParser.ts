@@ -1265,7 +1265,7 @@ export class Parser {
 			this.markError(node, ParseError.EndExpected, [], [TokenType.Symbol, TokenType.NewLine]);
 		}
 
-		if (!node.setEndLabel(this._parseDeclarationType()) && !node.setDoLabel(this._parseSymbol())) {
+		if (!node.setEndLabel(this._parseDeclarationType()) && !node.setEndLabel(this._parseSymbol())) {
 			return this.finish(node, ParseError.LabelExpected, [TokenType.NewLine]);
 		}
 
