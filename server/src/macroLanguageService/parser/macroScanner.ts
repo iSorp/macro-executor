@@ -13,8 +13,6 @@ export enum TokenType {
 	GTS,
 	LogigOr,
 	LogigAnd,
-	Address,
-	AddressPartial,
 	String,
 	BadString,
 	UnquotedString,
@@ -176,7 +174,6 @@ staticTokenTable[_BRL] = TokenType.BracketL;
 staticTokenTable[_CMA] = TokenType.Comma;
 staticTokenTable[_AMD] = TokenType.Ampersand;
 
-
 const staticKeywordTable: { [key: string]: TokenType; } = {};
 staticKeywordTable['if'] = TokenType.KeyWord;
 staticKeywordTable['then'] = TokenType.KeyWord;
@@ -263,7 +260,7 @@ export class Scanner {
 
 	public scan(): IToken {
 		// processes all whitespaces and comments
-		const triviaToken = this.trivia();
+		const triviaToken = this._trivia();
 		if (triviaToken !== null) {
 			return triviaToken;
 		}
@@ -274,10 +271,10 @@ export class Scanner {
 		if (this.stream.eos()) {
 			return this.finishToken(offset, TokenType.EOF);
 		}
-		return this.scanNext(offset);
+		return this._scanNext(offset);
 	}
 
-	protected scanNext(offset: number): IToken {
+	private _scanNext(offset: number): IToken {
 
 		let content: string[] = [];
 		
@@ -295,7 +292,7 @@ export class Scanner {
 		// @-keyword
 		if (this.stream.advanceIfChar(_ATS)) {
 			content = ['@'];
-			if (this.symbol(content)) {
+			if (this._symbol(content)) {
 				const paramText = content.join('');
 				return this.finishToken(offset, TokenType.AT, paramText);
 			} else {
@@ -306,7 +303,7 @@ export class Scanner {
 		// >-keyword
 		if (this.stream.advanceIfChar(_RAN)) {
 			content = ['>'];
-			if (this.symbol(content)) {
+			if (this._symbol(content)) {
 				const labelText = content.join('');
 				return this.finishToken(offset, TokenType.GTS, labelText);
 			} else {
@@ -336,37 +333,22 @@ export class Scanner {
 			return this.finishToken(offset, singleChToken);
 		}
 
-		// Address e.g R100.0; R100. #[...]
-		let pos = this.pos();
-		content = [];	
-		if (this._addressFirstChar(content)){
-			this._whitespace();
-			let res = this._number();
-			if (res === 1){
-				return this.finishToken(offset, TokenType.AddressPartial);
-			}
-			else if (res === 2) {
-				return this.finishToken(offset, TokenType.Address);
-			}
-		}
-		this.goBackTo(pos);
-		
 		// symbol / Static
 		content = [];
-		if (this.symbol(content)) {
+		if (this._symbol(content)) {
 			let text = content.join('');
 			let keyword = <TokenType>staticKeywordTable[text.toLocaleLowerCase()];
-			let funcion = <TokenType>staticFunctionTable[text.toLocaleLowerCase()];
 			if (typeof keyword !== 'undefined') {
 				return this.finishToken(offset, keyword);
 			}
-			else if (typeof funcion !== 'undefined') {
+
+			let funcion = <TokenType>staticFunctionTable[text.toLocaleLowerCase()];
+			if (typeof funcion !== 'undefined') {
 				return this.finishToken(offset, funcion);
-			} 
-			else {
-				return this.finishToken(offset, TokenType.Symbol);
 			}
-		}	
+
+			return this.finishToken(offset, TokenType.Symbol);
+		}
 
 		// String, BadString
 		content = [];
@@ -380,14 +362,14 @@ export class Scanner {
 		return this.finishToken(offset, TokenType.Delim);
 	}
 
-	protected trivia(): IToken | null {
+	private _trivia(): IToken | null {
 		while (true) {
 			const offset = this.stream.pos();
 			if (this._whitespace(true)) {
 				if (!this.ignoreWhitespace) {
 					return this.finishToken(offset, TokenType.Whitespace);
 				}
-			} else if (this.comment()) {
+			} else if (this._comment()) {
 				if (!this.ignoreComment) {
 					return this.finishToken(offset, TokenType.Comment);
 				}
@@ -397,69 +379,24 @@ export class Scanner {
 		}
 	}
 
-	protected comment(): boolean {
+	private _comment(): boolean {
 		if (this.stream.advanceIfChars([_FSL, _MUL]) || this.stream.advanceIfChar(_SEM)) {
-			let success = false;
 			this.stream.advanceWhileChar((ch) => {
-				if (ch === _NWL) {
-					success = true;
+				if (this._newline(ch)) {
 					return false;
 				}
 				return true;
 			});
-			/*if (success) {
-				this.stream.advance(1);
-			}*/
 			return true;
 		}
 		return false;
 	}
 
-	private _number(): number {
-		let ret, ch: number;
-		ret = 0;
-		ch = this.stream.peekChar(0);
-		if (ch >= _0 && ch <= _9) {
-			this.stream.advance(1);
-			//this._whitespace();
-			this.stream.advanceWhileChar((ch) => {
-				if (ch >= _0 && ch <= _9){
-					//this._whitespace();
-					return true;
-				} else {return false;}
-			});
-			//this._whitespace();
-
-			if (this.stream.peekChar(0) === _DOT) {
-				ret = 1; // incomplete number found
-				this.stream.advance(1);
-				//this._whitespace();
-				ch = this.stream.peekChar(0);
-				if (ch >= _0 && ch <= _9) {
-					this.stream.advanceWhileChar((ch) => {
-						if (ch >= _0 && ch <= _9){
-							//this._whitespace();
-							return true;
-						} else {return false;}
-					});
-					ret = 2; // complete number found
-				}
-			}
-		}
-		return ret;
-	}
-
-	private _newline(result: string[]): boolean {
-		const ch = this.stream.peekChar();
+	private _newline(ch: number): boolean {
 		switch (ch) {
 			case _CAR:
 			case _LFD:
 			case _NWL:
-				this.stream.advance(1);
-				result.push(String.fromCharCode(ch));
-				if (ch === _CAR && this.stream.advanceIfChar(_NWL)) {
-					result.push('\n');
-				}
 				return true;
 		}
 		return false;
@@ -533,7 +470,6 @@ export class Scanner {
 	}
 
 	private _unquotedChar(result: string[]): boolean {
-		// not closeQuote, not backslash, not newline
 		const ch = this.stream.peekChar();
 		if (ch !== 0 && ch !== _SQO && ch !== _DQO && ch !== _WSP && ch !== _TAB && ch !== _NWL && ch !== _LFD && ch !== _CAR) {
 			this.stream.advance(1);
@@ -543,7 +479,7 @@ export class Scanner {
 		return false;
 	}
 
-	protected _unquotedString(result: string[]): boolean {
+	private _unquotedString(result: string[]): boolean {
 		let hasContent = false;
 		while (this._unquotedChar(result)) {
 			hasContent = true;
@@ -572,7 +508,7 @@ export class Scanner {
 		return matched;
 	}
 
- 	protected symbol(result: string[]): boolean {
+	private _symbol(result: string[]): boolean {
 		const pos = this.stream.pos();
 		if (this._symbolFirstChar(result) ) {
 			while (this._symbolChar(result)) {
@@ -581,18 +517,6 @@ export class Scanner {
 			return true;
 		}
 		this.stream.goBackTo(pos);
-		return false;
-	}
-
-	private _addressFirstChar(result: string[]): boolean {
-		const ch = this.stream.peekChar();
-		if (ch === _a || ch === _a || // a-z
-			ch >= _A && ch <= _Z || // A-Z
-			ch >= 0x80 && ch <= 0xFFFF) { // nonascii
-			this.stream.advance(1);
-			result.push(String.fromCharCode(ch));
-			return true;
-		}
 		return false;
 	}
 
