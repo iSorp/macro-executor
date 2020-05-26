@@ -50,7 +50,7 @@ export function activate(context: ExtensionContext) {
 
 		synchronize: {
 			// Notify the server about file changes 
-			fileEvents: workspace.createFileSystemWatcher('**/*.{src,def,lnk}')
+			fileEvents: workspace.createFileSystemWatcher('**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}')
 		},		
 		diagnosticCollectionName: 'macro',
 		progressOnInitialization: true,
