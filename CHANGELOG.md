@@ -1,3 +1,9 @@
+## 0.1.12 (May , 2020)
+- Rename provider
+- Block skip support
+- clean up
+- while control statement do/end number check (nesting)
+
 ## 0.1.11 (May 20, 2020)
 - Text fixes
 - Directory tree with more than one level
