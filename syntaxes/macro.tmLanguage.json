@@ -30,8 +30,12 @@
 	"repository": {
   	"line_ops": {
 			"patterns": [
+
 				{
 					"include": "#line_comments"
+        },
+        {
+					"include": "#line_block_skip"
         },
         {
 					"include": "#line_string"
@@ -44,7 +48,7 @@
 				},
 				{
 					"include": "#line_string_c"
-				},
+        },
 				{
 					"match": "(?i)(?<=[^\\w]|\\d|^)(?=[^GMNO])([A-Z]\\s*)(?=\\-|\\#|\\[|[0-9])(?-i)",
 					"name": "support.parameter.macro"
@@ -59,20 +63,28 @@
 				},
 				{
 					"name": "keyword.command.macro",
-					"match": "(?i)(?<=^|\\d|\\s)(REVERSE|BLINK|NOBLINK|NORMAL|CLEARCRT|CLEAR|PRINT|WRITE|READ|DELAY|CALLP|CALL|RETURN|JUMP)(?-i)"
+					"match": "(?i)(?<=^|\\d|\\s|\\/)(REVERSE|BLINK|NOBLINK|NORMAL|CLEARCRT|CLEAR|PRINT|WRITE|READ|DELAY|CALLP|CALL|RETURN|JUMP)(?-i)"
 				},
 				{
 					"name": "keyword.command.m-code.macro",
-					"match": "(?i)(?<=^|\\d|\\s)(M[0-9]+)(?-i)"
+					"match": "(?i)(?<=^|\\d|\\s|\\/)(M[0-9]+)(?-i)"
 				},
 				{
 					"name": "keyword.command.g-code.macro",
-					"match": "(?i)(?<=^|\\d|\\s)G[0-9]+(?-i)"
+					"match": "(?i)(?<=^|\\d|\\s|\\/)G[0-9]+(?-i)"
 				},
 				{
 					"name": "constant.other.macro",
-					"match": "(?i)^\\s*N\\s*[0-9]+(?-i)"
-				}
+					"match": "(?i)(?<=^|\\d|\\s|\\/)N[0-9]+(?-i)"
+        },
+        {
+          "name" :  "keyword.control.conditional.macro",
+          "match": "(?i)(?<=^|\\W|\\d)(IF|ELSE|THEN|ENDIF|WHILE)(?!\\w)(?-i)"
+        },
+        {
+          "name" :  "keyword.control.conditional.macro",
+          "match": "(?i)(?<=^|\\W|\\d)(END|DO|GOTO)(?![a-zA-Z])(?-i)"
+        }
 			]
 		},
 		"line_sub": {
@@ -103,211 +115,13 @@
         "include": "#line_brackets"
       },
       {
-        "include": "#line_if_then_endif"
-      },
-      {
-        "include": "#line_if_then"
-      },
-      {
-        "include": "#line_if_goto"
-      },
-      {
-        "include": "#line_while"
-      },
-      {
-        "include": "#line_conditional_constant"
-      },
-      {
         "include": "#line_ops"
       },
       {
         "include": "#line_sub"
       }
 		]
-	},
-  "line_if_then_endif": {
-    "begin": "(?i)(\\d*\\s*IF)(?=\\s*\\[.*\\]\\s*THEN(?:(?!\\w*)|(?=\\s*(?:(?:(?:\\/\\*.*)|(?:\\;.*)|(?:\\n))))))(?-i)",
-    "beginCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "end": "(?i)(ENDIF)(?-i)",
-    "endCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "patterns": [
-      {
-        "match": "(?i)(ELSE)(?-i)",
-        "name": "keyword.control.conditional.macro"
-      },
-      {
-        "match": "(?i)(THEN)((?!\\s*\\w)|(\\s*\\n{1,}))(?-i)",
-        "name": "keyword.control.conditional.macro"
-      },
-      {
-        "include": "#line_if_then_endif"
-      },
-      {
-        "include": "#line_if_then"
-      },
-      {
-        "include": "#line_if_goto"
-      },
-      {
-        "include": "#line_while"
-      },
-      {
-        "include": "#line_brackets"
-      },
-      {
-        "include": "#line_variable_value"
-      },
-      {
-        "include": "#line_conditional_constant"
-      },
-      {
-        "include": "#line_ops"
-      }
-    ]
-	},
-  "line_if_then": {
-    "begin": "(?i)(\\d*\\s*IF)(?=\\s*\\[.*\\]\\s*THEN[^\\n*]*\\#*\\w{1,})(?-i)",
-    "beginCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "end": "(?i)(THEN)(?=\\s*\\#*\\w*)(?-i)",
-    "endCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "patterns": [
-      {
-        "include": "#line_brackets"
-      },
-      {
-        "include": "#line_variable_value"
-      }
-		]
-	},
-  "line_if_goto": {
-    "begin": "(?i)(\\d*\\s*IF)(?=\\s*\\[.*\\]\\s*GOTO[^\\n*]*\\#*\\w{1,})(?-i)",
-    "beginCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "end": "(?i)(GOTO)(\\s*\\#*\\w*)(?-i)",
-    "endCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			},
-      "2": {
-				"name": "constant.language.macro"
-			}
-		},
-    "patterns": [
-      {
-        "include": "#line_brackets"
-      },
-      {
-        "include": "#line_variable_value"
-      }
-    ]
-	},
-  "line_conditional_constant": {
-    "begin": "(?i)(GOTO)(?-i)",
-    "beginCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "end": "\\n",
-    "endCaptures": {
-      "1": {
-				"name": "constant.language.macro"
-			}
-		},
-    "patterns": [
-      {
-        "include": "#line_variable_value"
-      },
-      {
-        "include": "#line_brackets"
-      }
-		]
-	},
-  "line_while": {
-    "begin": "(?i)^\\s*(WHILE)(?-i)",
-    "beginCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			}
-		},
-    "end": "(?i)^\\s*(END)\\s*(\\w{1,})(?-i)",
-    "endCaptures": {
-      "1": {
-				"name": "keyword.control.conditional.macro"
-			},
-      "2": {
-				"name": "constant.language.macro"
-			}
-		},
-    "patterns": [
-      {
-        "include": "#line_while"
-      },
-      {
-        "include": "#line_if_then_endif"
-      },
-      {
-        "include": "#line_if_then"
-      },
-      {
-        "include": "#line_if_goto"
-      },
-      {
-        "include": "#line_brackets"
-      },
-      {
-        "include": "#line_variable_value"
-      },
-      {
-        "include": "#line_ops"
-      },
-      {
-        "begin": "(?i)(?<=WHILE)(?-i)",
-        "end": "(?i)(DO)(\\s\\w+|\\d+)(?-i)",
-        "endCaptures": {
-          "1": {
-						"name": "keyword.control.conditional.macro"
-					},
-          "2": {
-						"name": "constant.language.macro"
-					}
-				},
-        "patterns": [
-          {
-            "include": "#line_brackets"
-          },
-          {
-            "include": "#line_variable_value"
-          },
-          {
-            "include": "#line_ops"
-          },
-          {
-            "include": "#line_while"
-          }
-        ]
-      }
-    ]
-	},
+  },
   "line_brackets": {
     "begin": "\\[",
     "beginCaptures": {
@@ -396,18 +210,22 @@
           "include": "#line_comments"
         }
 			]
+    },
+    "line_block_skip": {
+      "match": "(^\\/)",
+      "name": "markup.italic.block_skip.macro"
 		},
 		"line_comments": {
-			"begin": "(^[ \\t]+)?(?=\\/|\\;)",
+			"begin": "((\\/\\*)|(\\;))(?=\\.*)",
 			"beginCaptures" : {
 				"1": {
 					"name": "comment.macro"
 				}
 			},
-			"end": "(?!\\G)",
+			"end": "\\Z",
 			"patterns": [
 				{
-					"begin": "(\\/\\*)|(\\;)",
+					"begin": "(\\.*)",
 					"beginCaptures": {
 						"1": {
 							"name": "comment.begin.macro"
@@ -433,7 +251,7 @@
 					"name": "variable.language"
 				}
 			},
-			"end": "(?i)(\\$LIST)(?-i)",
+			"end": "(\\$LIST)",
 			"endCaptures": {
 				"1": {
 					"name": "variable.language"

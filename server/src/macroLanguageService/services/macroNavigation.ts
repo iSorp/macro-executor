@@ -7,7 +7,8 @@
 import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
 	Position, Range, SymbolInformation, SymbolKind, TextEdit, 
-	MacroCodeLensCommand, TextDocument, DocumentContext, MacroFileProvider, MacroFileType
+	MacroCodeLensCommand, TextDocument, DocumentContext, MacroFileProvider, 
+	WorkspaceEdit
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols, Symbol } from '../parser/macroSymbolScope';
@@ -26,6 +27,10 @@ class FunctionMap {
 	public get(key:string) : string[] | undefined {
 		return this.elements.get(key);
 	}
+}
+
+type EditEntries = {
+	[key:string]:TextEdit[];
 }
 
 export class MacroNavigation {
@@ -174,12 +179,18 @@ export class MacroNavigation {
 					entry.kind = SymbolKind.Event;
 				} 
 			} 
-			else if (node.type === nodes.NodeType.SequenceNumber) {
+			else if (node.type === nodes.NodeType.BlockSkip) {
 				entry.name = node.getText();
 				entry.kind = SymbolKind.Field;
 			} 
+			else if (node.type === nodes.NodeType.SequenceNumber && node.getChildren().length > 1) {
+				if (node.getParent()?.type !== nodes.NodeType.BlockSkip){
+					entry.name = node.getText();
+					entry.kind = SymbolKind.Field;
+				}
+			}
 			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
-				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber){
+				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip){
 					entry.name = node.getText();
 					entry.kind = SymbolKind.Field;
 				}
@@ -287,6 +298,22 @@ export class MacroNavigation {
 		return codeLenses;
 	}
 	
+	public doRename(document: TextDocument, position: Position, newName: string, macroFile: nodes.MacroFile): WorkspaceEdit {
+		const locations = this.findReferences(document, position, macroFile);
+		const edits:EditEntries = {};
+		const allUris = locations.map(a => a.uri);
+		const uniqueUris = allUris.filter((v,i) => allUris.indexOf(v) === i);
+
+		for (const uri of uniqueUris) {
+			const fileLocations = locations.filter(a => uri === a.uri);
+			edits[uri] = fileLocations.map(h => TextEdit.replace(h.range, newName));
+		}
+
+		return {
+			changes: edits
+		};
+	}
+
 	private uriLiteralNodeToDocumentLink(document: TextDocument, uriLiteralNode: nodes.Node, documentContext: DocumentContext): DocumentLink | null {
 		if (uriLiteralNode.getChildren().length === 0) {
 			return null;

@@ -454,6 +454,7 @@ export enum NodeType {
 	Parameter,
 	Code,
 	SequenceNumber,
+	BlockSkip
 }
 
 export class LnkFile extends Node {

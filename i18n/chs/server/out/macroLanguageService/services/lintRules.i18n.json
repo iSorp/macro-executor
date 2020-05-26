@@ -13,6 +13,7 @@
     "rule.nestingTooDeep": "嵌套太深",
 	"rule.mixedConditionals": "一个IF语句中不可同时使用&&与||运算符",
 	"rule.tooManyConditionals": "条件过多",
+	"duplicateDoEndNumber" : "Duplicate DO or END number",
 	"rule.incompleteParameter": "参数不完整，G代码或M代码需要数值或变量做参数",
 	"rule.includeNotFound": "预加载文件未找到",
 	"rule.assignmentConstant": "常数已赋值"

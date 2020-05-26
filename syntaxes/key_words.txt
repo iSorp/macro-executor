@@ -2,6 +2,12 @@ comment.begin.macro
 comment.end.macro
 comment.macro
 
+blockskip.begin.macro
+blockskip.end.macro
+blockskip.macro
+
+
+
 file.macro
 
 variable.value.macro

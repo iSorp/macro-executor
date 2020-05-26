@@ -423,9 +423,7 @@ export class Parser {
 				node.valueType = nodes.ValueType.Numeric;
 			}
 		} 
-		else if (this.peekRegExp(TokenType.Symbol, /\w\d+/i) 
-			|| this.peekOneOf([TokenType.Address, TokenType.AddressPartial]) 
-			|| this.peek(TokenType.Ampersand)) {
+		else if (this.peekRegExp(TokenType.Symbol, /\w\d+/i) || this.peek(TokenType.Ampersand)) {
 
 			node.valueType = nodes.ValueType.Address; 
 			const statement = this._parseNcStatement();
@@ -503,7 +501,7 @@ export class Parser {
 		if (type === 'def'){
 			return this.internalParse(text, this._parseDefFile, this.textProvider);
 		}
-		else if (type === 'src'){
+		else if (type === 'src') {
 			return this.internalParse(text, this._parseMacroFile, this.textProvider);
 		}	
 		else if (type === 'lnk'){
@@ -758,13 +756,15 @@ export class Parser {
 			return null;
 		}
 
+		const blockSkip = this._parseBlockSkip();
+		
 		// Sequence number and Label may leading a statement
-		let sequence:nodes.Node | null = null;
 		const declaration = this.declarations.get(this.token.text);
+		let sequence:nodes.Node | null = null;
 		if (!declaration){
 			sequence = this._parseSequenceNumber();
 		} 
-		else if (declaration.type === nodes.NodeType.labelDef){
+		else if (declaration.type === nodes.NodeType.labelDef) {
 			sequence = this._parseLabel(declaration);
 		}
 
@@ -773,17 +773,32 @@ export class Parser {
 			|| this._parseNcStatement()
 			|| this.parseString();
 
-		// a statement is always a child of an existing sequence number
-		if (statement) {
-			if (sequence){
+
+		// Form e.g: / N100 G01
+		if (blockSkip) {
+			if (statement) {
+				if (sequence){
+					sequence.addChild(statement);
+				}
+				else {
+					blockSkip.addChild(statement)
+				}
+			}
+			if (sequence) {
+				blockSkip.addChild(sequence);
+			}
+			return blockSkip;
+		}
+		// Form e.g: N100 G01
+		else if (sequence){
+			if (statement) {
 				sequence.addChild(statement);
-				return sequence;
 			}
-			else {
-				return statement;
-			}
-		} else if (sequence){
 			return sequence;
+		}
+		// Form e.g: G01
+		else if (statement){
+			return statement;
 		}
 
 		// Variable and label declaratio within a function
@@ -859,6 +874,17 @@ export class Parser {
  		return this.finish(node);
 	}
 
+	public _parseBlockSkip() : nodes.Node | null {
+
+		if (!this.peekDelim('/')) {
+			return null;
+		}
+
+		const node = this.createNode(nodes.NodeType.BlockSkip);		
+ 		this.consumeToken();
+ 		return this.finish(node);
+	}
+
 	/**
 	 * The NC Parser works as follows:
 	 * 
@@ -876,8 +902,6 @@ export class Parser {
 		
 		if (!this.peekOneOf([
 			TokenType.Symbol, 
-			TokenType.Address, 
-			TokenType.AddressPartial, 
 			TokenType.Ampersand])) {
 			return null;
 		}
@@ -1443,29 +1467,8 @@ export class Parser {
 	public _parseAddress() : nodes.Node | null {
 		const node = <nodes.Address>this.create(nodes.Address);
 
-		// e.g: R100.0 [1]; R100.#[1] 	
-		if (this.peek(TokenType.Address) || this.peek(TokenType.AddressPartial)) {
-
-			if (this.accept(TokenType.Address)){
-				if (this.peek(TokenType.Symbol)){
-					let expression = this._parseSymbol();
-					node.addChild(expression);
-				}
-				return this.finish(node);
-			}		
-			else if (this.accept(TokenType.AddressPartial)) {
-				if (this.peek(TokenType.BracketL) || this.peek(TokenType.Hash) || this.peek(TokenType.Symbol)){
-					let expression = this._parseBinaryExpr();
-					node.addChild(expression);
-				}
-				else {
-					return this.finish(node, ParseError.TermExpected, [TokenType.BracketL, TokenType.Hash]);
-				} 
-				return this.finish(node);
-			}
-		} 
-		// e.g: R100.0  [1]; R100.#[1] 
-		else if (this.peekRegExp(TokenType.Symbol, /(^[a-z]$)/i)){
+		// Address e.g: R[1], R#1, R1.#[1]
+		if (this.peekRegExp(TokenType.Symbol, /(^([a-z])(\d*\.)?$)/i)) {
 			let mark = this.mark();
 			this.consumeToken();
 			if (this.peek(TokenType.BracketL) || this.peek(TokenType.Hash)){
@@ -1476,10 +1479,12 @@ export class Parser {
 			}
 			this.restoreAtMark(mark); 
 		}
-		else if (this.peekRegExp(TokenType.Symbol, /(^[a-z]\d+$)/i)){
+		// Address  e.g: R100, R100.1
+		else if (this.peekRegExp(TokenType.Symbol, /(^([a-z]\d+)(\.\d+)?$)/i)){
 			this.consumeToken();
 			return this.finish(node);
 		}
+
 		return null;
 	}
 
@@ -1549,17 +1554,10 @@ export class Parser {
 
 	public _parseSymbol(referenceTypes?: nodes.ReferenceType[]): nodes.Symbol | null {
 
-		// TODO if Reference type undefined, try to find type:
-		//
-		// Adress: R100.0 is fixed
-		// Symbol R100 is Address, Variable or NC Code
-		// Symbol 100.0 is fixed
-		// Symbol 100 is Number or Variable
-
 		if (!this.peek(TokenType.Symbol)){
 			return null;
 		}
-		
+
 		const node = <nodes.Symbol>this.create(nodes.Symbol);
 		if (referenceTypes) {
 			node.referenceTypes = referenceTypes;

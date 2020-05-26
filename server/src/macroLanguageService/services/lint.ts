@@ -320,56 +320,87 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitWhileStatement(node: nodes.WhileStatement): boolean {
-		// No logic operators allowed
-		const conditional = node.getConditional();
-		if (conditional && conditional.logic) {
-			this.addEntry(conditional, Rules.WhileLogicOperator);
-		}
 
-		if (node.dolabel && node.endlabel) {
-			if (node.dolabel?.getText() !== node.endlabel?.getText()) {
-				this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
-				this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
-			}
+		let depth = 0;
+		let depthIssue = false;
+		let leaf:nodes.Node = node;
+		const numbers:number[] = []
 
-			if (Number(node.dolabel.getText())) {
-				const doNumber = Number(node.dolabel.getText());
-				if (doNumber) {
-					if (doNumber > MAX_WHILE_DEPTH) {
-						this.addEntry(node.dolabel, Rules.DoEndNumberTooBig);
-					}
-				}
-	
-				const endNumber = Number(node.endlabel.getText());
-				if (endNumber) {
-					if (endNumber > MAX_WHILE_DEPTH) {
-						this.addEntry(node.endlabel, Rules.DoEndNumberTooBig);
-					}
-				}
+		// Traverse to the leaf (while child) 
+		while (true){
+			const next = leaf.getChildren().filter(a => a.type === nodes.NodeType.While);
+			if (next.length > 0){
+				leaf = next[0];
 			}
-			else if (node.dolabel instanceof nodes.Label){
-				const value = Number((<nodes.Label>node.dolabel).declaration?.getValue()?.getText());
-				if (value > MAX_WHILE_DEPTH) {
-					this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
-					this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
-				}
+			else {
+				break;
 			}
 		}
 
-		// check level from in to out
-		let level = 0;
-		const path = nodes.getNodePath(node, node.offset);
-		for (let i = path.length-1; i > -1; i--) {
+		const path = nodes.getNodePath(leaf, leaf.offset);
+		for (let i = 0; i < path.length; i++) {
 			const element = path[i];
-			if (element.type === nodes.NodeType.While) {
-				++level;
-				if (level > MAX_WHILE_DEPTH){
-					this.addEntry(node, Rules.NestingTooDeep);
-					return false;
+			if (element.type !== nodes.NodeType.While) {
+				continue;
+			}
+
+			const child = <nodes.WhileStatement>element;
+
+			// Check no logic operators allowed
+			const conditional = child.getConditional();
+			if (conditional && conditional.logic) {
+				this.addEntry(conditional, Rules.WhileLogicOperator);
+			}
+
+			// Check while depth
+			if (!depthIssue && depth >= MAX_WHILE_DEPTH) {
+				depthIssue = true;
+				this.addEntry(child, Rules.NestingTooDeep);
+			}
+
+			// Check duplicate DO number
+			let childDoNumber = -1;
+			if (child.dolabel instanceof nodes.Label) {
+				childDoNumber = Number(child.dolabel.declaration?.getValue()?.getText());
+			}
+			else {
+				childDoNumber = Number(child.dolabel?.getText());
+			}
+			if (childDoNumber > 0 && numbers.indexOf(childDoNumber) > -1) {
+				this.addEntry(child.dolabel!, Rules.DuplicateDoEndNumber);
+			}
+
+			// Check DO END label/number agreement
+			if (child.dolabel && child.endlabel) {
+				if (child.dolabel?.getText() !== child.endlabel?.getText()) {
+					this.addEntry(child.dolabel, Rules.DoEndNumberNotEqual);
+					this.addEntry(child.endlabel, Rules.DoEndNumberNotEqual);
+				}
+
+				if (Number(child.dolabel.getText())) {
+					const doNumber = Number(child.dolabel.getText());
+					numbers.push(doNumber);
+					if (doNumber && doNumber > MAX_WHILE_DEPTH) {
+						this.addEntry(child.dolabel, Rules.DoEndNumberTooBig);
+					}
+
+					const endNumber = Number(child.endlabel.getText());
+					if (endNumber && endNumber > MAX_WHILE_DEPTH) {
+						this.addEntry(child.endlabel, Rules.DoEndNumberTooBig);
+					}
+				}
+				else if (child.dolabel instanceof nodes.Label){
+					const doNumber = Number((<nodes.Label>child.dolabel).declaration?.getValue()?.getText());
+					numbers.push(doNumber);
+					if (doNumber > MAX_WHILE_DEPTH) {
+						this.addEntry(child.dolabel, Rules.DoEndNumberNotEqual);
+						this.addEntry(child.endlabel, Rules.DoEndNumberNotEqual);
+					}
 				}
 			}
+			++depth;
 		}
-		return true;
+		return false;
 	}
 
 	private isNumeric(text:string) : boolean {

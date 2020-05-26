@@ -10,8 +10,9 @@
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
 ## News
-* The build system supports now a source directory tree with more than one level. [Internal build system](#internalbuild)
-* Additional compiler selections
+- Rename provider
+- Block skip support "/"
+
 
 ## Features
 * Compiling and linking
@@ -68,23 +69,24 @@ Three levels are supported: `error`, `warning` and `ignore`.
 ```json
 "macro.lint": {
        "rules" : {
-            "duplicateInclude":         "error",
-            "duplicateDeclaration":     "error",
-            "duplicateFunction":        "warning",
-            "duplicateAddress":         "ignore",
-            "duplicateSequence":        "warning",
-            "duplicateLabel":           "warning",
-            "duplicateLabelSequence":   "warning",
-            "unknownSymbol":            "error",
-            "whileLogicOperator":       "error",
-            "doEndNumberTooBig":        "error",
-            "doEndNumberNotEqual":      "error",
-            "nestingTooDeep":           "error",
-            "mixedConditionals":        "error",
-            "tooManyConditionals":      "error",
-            "incompleteParameter":      "error",
-            "includeNotFound":          "error",
-            "assignmentConstant":       "warning"
+              "duplicateInclude":         "error",
+              "duplicateDeclaration":     "error",
+              "duplicateFunction":        "warning",
+              "duplicateAddress":         "ignore",
+              "duplicateSequence":        "warning",
+              "duplicateLabel":           "warning",
+              "duplicateLabelSequence":   "warning",
+              "unknownSymbol":            "error",
+              "whileLogicOperator":       "error",
+              "doEndNumberTooBig":        "error",
+              "doEndNumberNotEqual":      "error",
+              "nestingTooDeep":           "error",
+              "duplicateDoEndNumber":     "warning",
+              "mixedConditionals":        "error",
+              "tooManyConditionals":      "error",
+              "incompleteParameter":      "error",
+              "includeNotFound":          "error",
+              "assignmentConstant":       "warning"
        }
 ```
 
@@ -133,10 +135,10 @@ The following parameters are passed to the external script:
 ## Internal build system
 If `macro.build.makeFile` is empty the internal system is used.
 >- The compiler must be available over the system path
->- All `.src` files under the folder` macro.project.sourcePath` and its subfolders will be compiled
+>- All `.src` files under the folder `macro.project.sourcePath` and its subfolders will be compiled
 >- There are two ways to define a libray path in a link file:
->      1. Absolut: *CNC=C:\lib.mex*
->      2. Relativ: *CNC=..\lnk\lib.mex* (relative to `macro.project.buildPath`)
+>      1. absolute: *CNC=C:\lib.mex*
+>      2. relative: *CNC=..\lnk\lib.mex* (relative to `macro.project.buildPath`)
 
 ### Example
 

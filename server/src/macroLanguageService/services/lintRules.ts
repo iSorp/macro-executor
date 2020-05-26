@@ -33,6 +33,7 @@ export const Rules = {
 	DoEndNumberTooBig: new Rule('doEndNumberTooBig', localize('rule.doEndNumberTooBig', 'DO or END number too big'), Error),
 	DoEndNumberNotEqual: new Rule('doEndNumberNotEqual', localize('rule.doEndNumberNotEqual', 'Not agree END statement number to pair of DO'), Error),
 	NestingTooDeep: new Rule('nestingTooDeep', localize('rule.nestingTooDeep', 'Nesting too deep'), Error),
+	DuplicateDoEndNumber: new Rule('duplicateDoEndNumber', localize('rule.duplicateDoEndNumber', 'Duplicate DO or END number'), Warning),
 	MixedConditionals: new Rule('mixedConditionals', localize('rule.mixedConditionals', 'Mixed conditionals [&&, ||]'), Error),
 	TooManyConditionals: new Rule('tooManyConditionals', localize('rule.tooManyConditionals', 'Too many conditional statements'), Error),
 
