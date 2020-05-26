@@ -42,7 +42,8 @@ import {
 	CodeLensParams, 
 	CodeLens,
 	TextDocumentChangeEvent,
-	ExecuteCommandParams
+	ExecuteCommandParams,
+	RenameParams
 } from 'vscode-languageserver';
 
 import {
@@ -247,7 +248,7 @@ connection.onInitialize((params: InitializeParams) => {
 			codeLensProvider: {
 				resolveProvider:true
 			},
-			//renameProvider: true,
+			renameProvider: true,
 			referencesProvider: true,
 			implementationProvider:true,
 			documentLinkProvider: {
@@ -259,7 +260,7 @@ connection.onInitialize((params: InitializeParams) => {
 					'macro.action.refactorsequeces',
 					'macro.action.addsequeces'
 				]
-			}
+			},
 		}
 	};
 	return result;
@@ -280,6 +281,7 @@ connection.onDidChangeWatchedFiles(watchedFiles);
 connection.onDidChangeConfiguration(configuration);
 connection.onDefinition(definition);
 connection.onReferences(references);
+connection.onRenameRequest(rename);
 connection.onImplementation(implementations);
 connection.onDocumentSymbol(documentSymbol);
 connection.onDocumentLinks(documentLinks);
@@ -419,6 +421,12 @@ function references(params: ReferenceParams) {
 	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
 	if (!repo) {return null;}
 	return macroLanguageService.findReferences(repo.document, params.position, repo.macrofile);
+}
+
+function rename(params: RenameParams) {
+	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+	if (!repo) {return null;}
+	return macroLanguageService.doRename(repo.document, params.position, params.newName, repo.macrofile);
 }
 
 function implementations(params: ImplementationParams) {

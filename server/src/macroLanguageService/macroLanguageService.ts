@@ -12,9 +12,10 @@ import { MacroCompletion } from './services/macroCompletions';
 import { MacroCommand } from './services/macroCommands';
 
 import {
-	LanguageSettings, LanguageServiceOptions, DocumentContext, DocumentLink,
-	SymbolInformation, Diagnostic, Position, Hover, Location, 
-	TextDocument, CompletionList, CodeLens, TextDocumentEdit
+	LanguageSettings, LanguageServiceOptions, DocumentContext, 
+	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
+	Location, TextDocument, CompletionList, CodeLens, 
+	TextDocumentEdit, WorkspaceEdit
 } from './macroLanguageTypes';
 
 
@@ -32,6 +33,7 @@ export interface LanguageService {
 	findDocumentLinks(document: TextDocument, macrofile: Macrofile, documentContext: DocumentContext): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, macrofile: Macrofile): SymbolInformation[];
 	findCodeLenses(document: TextDocument, macrofile: Macrofile): CodeLens[];
+	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 }
@@ -48,6 +50,7 @@ function createFacade(parser: Parser, hover: MacroHover, completion: MacroComple
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
 		findCodeLenses: navigation.findCodeLenses.bind(navigation),
+		doRename: navigation.doRename.bind(navigation),
 		doRefactorSequences: command.doRefactorSequences.bind(command),
 		doCreateSequences: command.doCreateSequences.bind(command)
 	};
