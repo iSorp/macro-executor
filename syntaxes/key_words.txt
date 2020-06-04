@@ -1,33 +1,68 @@
-comment.begin.macro
-comment.end.macro
-comment.macro
 
-blockskip.begin.macro
-blockskip.end.macro
-blockskip.macro
+// TextMate Grammars
+
+source.macro										// Scope
+
+meta.function.macro					
+storage.type.function.macro							// O
+entity.name.function.macro          				// O <Function>
+
+constant.language.macro             				// TRUE, FALSE
+
+constant.other.macro                				// N-Number, Labels
+constant.numeric.macro              				// Numbers
 
 
+keyword.operator.macro              				// EQ, LT, OR, AND, ...
+entity.name.scope-resolution.function.call.macro    // M-,G-Function
+storage.type.parameter.macro						// P, X, R, ...
+keyword.control.conditional.macro   				// IF, DO, ...
 
-file.macro
+support.function.math.macro							// SIN, COS, ...
 
-variable.value.macro
+meta.definition.label.macro
+punctuation.definition.keyword.label.macro			// >
 
-string.a.macro
-string.b.macro
-string.c.code.macro
+meta.definition.variable.macro
+punctuation.definition.keyword.variable.macro		// @
+variable.other.symbol.macro
 
-keyword.operator.macro
-keyword.operator.arithmetic.macro
+meta.symbol.macro
+keyword.operator.variable.macro						// #           
+variable.other.macro                				// Variable #,
+variable.language.macro             				// $INCLUDE, $..
 
-constant.other.macro
-constant.language.macro
+meta.brace.square.macro								// []
 
-keyword.command
-keyword.control.conditional.macro
+string.other.macro									// ()
+string.quoted.single.macro          				// ('')
+string.quoted.double.macro							// ("")
+string.quoted.other.macr							// (**)
 
-keyword.command.macro
-keyword.command.m-code.macro
-keyword.command.g-code.macro
-keyword.control.include.macro
+markup.link.macro                   				// include paths
 
-support.parameter.macro
+markup.italic.block_skip.macro      				// /
+
+comment.line.macro                  				// /*, ;
+
+
+// Semantic Tokens
+
+"number": [
+	"constant.numeric.macro"
+],
+"variable": [
+	"variable.other.symbol.macro"
+],
+"constant": [
+	"variable.other.constant.macro"
+],
+"label": [
+	"constant.other.macro"
+],
+"code": [
+	"keyword.other.macro"
+],
+"parameter": [
+	"storage.type.parameter.macro"
+]
