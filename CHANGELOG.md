@@ -1,4 +1,7 @@
-## 0.1.12 (May , 2020)
+## 0.1.13 (June , 2020)
+- Semantic colorization
+
+## 0.1.12 (May 26, 2020)
 - Rename provider
 - Block skip support
 - clean up

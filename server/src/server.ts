@@ -14,7 +14,9 @@ import {
 	LanguageSettings, 
 	MacroFileProvider, 
 	FindDocumentLinks, 
-	FileProviderParams
+	FileProviderParams,
+	TokenTypes,
+	TokenModifiers
 } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
@@ -43,7 +45,8 @@ import {
 	CodeLens,
 	TextDocumentChangeEvent,
 	ExecuteCommandParams,
-	RenameParams
+	RenameParams,
+	Proposed
 } from 'vscode-languageserver';
 
 import {
@@ -56,7 +59,6 @@ import { getMacroLanguageService,
 } from './macroLanguageService/macroLanguageService';
 import { URI } from 'vscode-uri';
 import { rejects } from 'assert';
-
 
 const maxNumberOfProblems = 1000;
 
@@ -206,10 +208,10 @@ class Links implements FindDocumentLinks {
 	}
 
 	private resolvePathCaseSensitive(file:string) {
-		let norm = path.normalize(file)
-		let root = path.parse(norm).root
-		let p = norm.slice(Math.max(root.length - 1, 0))
-		return glob.sync(p, { nocase: true, cwd: root })[0]
+		let norm = path.normalize(file);
+		let root = path.parse(norm).root;
+		let p = norm.slice(Math.max(root.length - 1, 0));
+		return glob.sync(p, { nocase: true, cwd: root })[0];
 	  }
 }
 
@@ -235,7 +237,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
 
-	const result: InitializeResult = {
+	const result: InitializeResult & { capabilities: Proposed.SemanticTokensServerCapabilities } = {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			definitionProvider: true,
@@ -261,6 +263,9 @@ connection.onInitialize((params: InitializeParams) => {
 					'macro.action.addsequeces'
 				]
 			},
+			semanticTokensProvider: {
+				legend: computeLegend()
+			}
 		}
 	};
 	return result;
@@ -288,6 +293,7 @@ connection.onDocumentLinks(documentLinks);
 connection.onHover(hower);
 connection.onCompletion(completion);
 connection.onExecuteCommand(command);
+connection.languages.semanticTokens.on(semantic);
 
 documents.onDidChangeContent(content);
 documents.listen(connection);
@@ -447,6 +453,17 @@ function documentLinks(params: DocumentLinkParams) {
 	return macroLanguageService.findDocumentLinks(repo.document, repo.macrofile, new Links());
 }
 
+function semantic(params:Proposed.SemanticTokensParams): Proposed.SemanticTokens   {
+	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+	if (!repo) {
+		return {
+			data: [0],
+			resultId: ''
+		};
+	}
+	return macroLanguageService.doSemanticColorization(repo.document, repo.macrofile);
+}
+
 function validateTextDocument(doc: MacroFileType | undefined) {
 
 	if (!doc) {return;}
@@ -530,4 +547,20 @@ function getParsedDocument(uri: string, parser:((document:TextDocument) => Macro
 		}	
 	}
 	return parsedDocuments.get(uri);
+}
+
+function computeLegend(): Proposed.SemanticTokensLegend {
+
+	const tokenTypes: string[] = [];
+	for (let i = 0; i < TokenTypes._; i++) {
+		const str = TokenTypes[i];
+		tokenTypes.push(str);
+	}
+
+	const tokenModifiers: string[] = [];
+	for (let i = 0; i < TokenModifiers._; i++) {
+		tokenModifiers.push(TokenModifiers[i]);
+	}
+
+	return { tokenTypes, tokenModifiers };
 }

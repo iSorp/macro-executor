@@ -5,12 +5,20 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
-import  { MarkupKind, TextDocument } from 'vscode-languageserver-types';
-import { type } from 'os';
+import  { TextDocument } from 'vscode-languageserver-types';
 export { TextDocument } from 'vscode-languageserver-textdocument';
+export  { Proposed } from 'vscode-languageserver';
+export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/semanticTokens.proposed';
+export { 
+	SemanticTokenModifiers,
+	SemanticTokenTypes,
+	SemanticTokensParams,
+	SemanticTokensLegend,
+	SemanticTokensServerCapabilities,
+	SemanticTokensClientCapabilities
+} from 'vscode-languageserver-protocol/lib/protocol.semanticTokens.proposed';
 
 export * from 'vscode-languageserver-types';
-
 
 export interface LanguageSettings {
 	validate? : {
@@ -32,7 +40,6 @@ export type LintSettings = {
 	}
 
 };
-
 
 export interface DocumentContext {
 	resolveReference(ref: string, base?: string): string | undefined;
@@ -78,4 +85,18 @@ export interface MacroCodeLensType {
 
 export enum MacroCodeLensCommand {
 	References
+}
+
+export enum TokenTypes {
+	number 			= 1,
+	variable 		= 2,
+	constant		= 3,
+	label			= 4,
+	code 			= 5,
+	parameter 		= 6,
+	_ 				= 7
+}
+
+export enum TokenModifiers {
+	_ 				= 0
 }
