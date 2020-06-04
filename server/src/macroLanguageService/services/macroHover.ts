@@ -18,7 +18,7 @@ export class MacroHover {
 		function getRange(node: nodes.Node) {
 			return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 		}	
-		
+
 		let navigation = new MacroNavigation(this.fileProvider);
 		let hover: Hover | null = null;
 
