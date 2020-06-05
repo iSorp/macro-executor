@@ -94,7 +94,8 @@ export enum TokenTypes {
 	label			= 4,
 	code 			= 5,
 	parameter 		= 6,
-	_ 				= 7
+	address 		= 7,
+	_ 				= 8
 }
 
 export enum TokenModifiers {
