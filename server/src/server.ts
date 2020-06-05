@@ -265,6 +265,7 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			semanticTokensProvider: {
 				legend: computeLegend()
+				//rangeProvider: true
 			}
 		}
 	};
@@ -294,6 +295,7 @@ connection.onHover(hower);
 connection.onCompletion(completion);
 connection.onExecuteCommand(command);
 connection.languages.semanticTokens.on(semantic);
+//connection.languages.semanticTokens.onRange(semanticRange);
 
 documents.onDidChangeContent(content);
 documents.listen(connection);
@@ -461,7 +463,18 @@ function semantic(params:Proposed.SemanticTokensParams): Proposed.SemanticTokens
 			resultId: ''
 		};
 	}
-	return macroLanguageService.doSemanticColorization(repo.document, repo.macrofile);
+	return macroLanguageService.doSemanticColorization(repo.document, repo.macrofile, undefined);
+}
+
+function semanticRange(params:Proposed.SemanticTokensRangeParams): Proposed.SemanticTokens   {
+	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+	if (!repo) {
+		return {
+			data: [0],
+			resultId: ''
+		};
+	}
+	return macroLanguageService.doSemanticColorization(repo.document, repo.macrofile, params.range);
 }
 
 function validateTextDocument(doc: MacroFileType | undefined) {

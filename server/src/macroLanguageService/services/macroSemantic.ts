@@ -6,7 +6,7 @@
 
 import {
 	TextDocument, MacroFileProvider, 
-	Proposed, SemanticTokensBuilder, TokenTypes
+	Proposed, SemanticTokensBuilder, TokenTypes, Range
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 
@@ -14,10 +14,27 @@ import * as nodes from '../parser/macroNodes';
 export class MacroSemantic {
 	constructor() {}
 	
-	public doSemanticColorization(document: TextDocument, macroFile: nodes.MacroFile) : Proposed.SemanticTokens {
+	public doSemanticColorization(document: TextDocument, macroFile: nodes.MacroFile, range:Range | undefined) : Proposed.SemanticTokens {
 
-		const builder = this.getTokenBuilder(document);
+		const builder = new SemanticTokensBuilder();
+		let start:number;
+		let end:number;
+		if (range){
+			start = document.offsetAt(range.start);
+			end = document.offsetAt(range.end);
+		}
+
+		// const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(range.start));
 		macroFile.accept(candidate => {
+			if (range) {
+				if (candidate.offset < start){
+					return true;
+				}
+				if (candidate.offset > end){
+					return false;
+				} 
+			}
+		
 			if (candidate.type === nodes.NodeType.label) {
 				const pos = document.positionAt(candidate.offset);
 				builder.push(pos.line, pos.character, candidate.length, TokenTypes.label, 0);
@@ -34,7 +51,7 @@ export class MacroSemantic {
 						builder.push(pos.line, pos.character, candidate.length, TokenTypes.code, 0);
 					}
 					else if (type === nodes.ValueType.Address) {
-						builder.push(pos.line, pos.character, candidate.length, TokenTypes.parameter, 0);
+						builder.push(pos.line, pos.character, candidate.length, TokenTypes.address, 0);
 					}
 					else if (!type && !Number.isNaN(Number(variable.getName()))) {
 						builder.push(pos.line, pos.character, candidate.length, TokenTypes.number, 0);
@@ -44,22 +61,8 @@ export class MacroSemantic {
 					}
 				}
 			}
-
 			return true;
 		});
-
 		return builder.build();
-	}
-
-	private tokenBuilders: Map<string, SemanticTokensBuilder> = new Map();
-	private getTokenBuilder(document: TextDocument): SemanticTokensBuilder {
-		let result = this.tokenBuilders.get(document.uri);
-		this.tokenBuilders = new Map();
-		if (result !== undefined) {
-			return result;
-		}
-		result = new SemanticTokensBuilder();
-		this.tokenBuilders.set(document.uri, result);
-		return result;
 	}
 }
