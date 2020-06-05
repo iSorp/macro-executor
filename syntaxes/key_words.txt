@@ -14,7 +14,7 @@ constant.numeric.macro              				// Numbers
 
 
 keyword.operator.macro              				// EQ, LT, OR, AND, ...
-entity.name.scope-resolution.function.call.macro    // M-,G-Function
+support.function.other.macro    					// M-,G-Function
 storage.type.parameter.macro						// P, X, R, ...
 keyword.control.conditional.macro   				// IF, DO, ...
 
@@ -29,7 +29,8 @@ variable.other.symbol.macro
 
 meta.symbol.macro
 keyword.operator.variable.macro						// #           
-variable.other.macro                				// Variable #,
+variable.other.readwrite               				// Variable #,
+variable.other.address.macro						// R1000.0
 variable.language.macro             				// $INCLUDE, $..
 
 meta.brace.square.macro								// []
@@ -52,7 +53,7 @@ comment.line.macro                  				// /*, ;
 	"constant.numeric.macro"
 ],
 "variable": [
-	"variable.other.symbol.macro"
+	"variable.other.readwrite.macro"
 ],
 "constant": [
 	"variable.other.constant.macro"
@@ -61,8 +62,21 @@ comment.line.macro                  				// /*, ;
 	"constant.other.macro"
 ],
 "code": [
-	"keyword.other.macro"
+	"support.function.macro"
 ],
 "parameter": [
 	"storage.type.parameter.macro"
+],
+"address": [
+	"variable.other.address.macro"
 ]
+
+
+
+
+
+'variable.parameter.function
+
+variable.parameter
+entity.name.variable.parameter
+'parameter.variable.function',

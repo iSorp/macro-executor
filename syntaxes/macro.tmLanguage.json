@@ -202,7 +202,7 @@
                 }
             },
             "end" : "(?=\\W)",
-            "name":"variable.other.macro",
+            "name":"variable.other.readwrite",
             "patterns":[
                 {
                     "include":"#line_operators"
@@ -261,16 +261,16 @@
             "match":"(\\(\\*)(.*)(\\*\\))"
         },
         "line_block_skip":{
-            "match":"(^\\/)",
-            "name":"markup.italic.block_skip.macro"
+            "name":"markup.italic.block_skip.macro",
+            "match":"(^\\/)"
         },
         "line_nc_code": {	
-			"name":"entity.name.scope-resolution.function.call.macro",
+			"name":"support.function.other.macro",
 			"match":"(?i)([MG]\\d{1,4})(\\.\\d)?"
         },
         "line_parameter": {
-			"match":"(?i)(?<![A-Z]\\s)(?<=^|(?:\\d|\\W))([A-Z])(?=(?:\\-|\\+|\\#|\\[|\\d|\\s)|(?:\\s+\\w))",
-			"name":"storage.type.parameter.macro"
+            "name":"storage.type.parameter.macro",
+			"match":"(?i)(?<![A-Z])(?<=^|(?:\\d|\\W))([A-Z])(?=(?:\\-|\\+|\\#|\\[|\\d|\\s)|(?:\\s+\\w))"
         },
         "line_label_def":{
             "begin":"(\\>)(\\w+)",
