@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.12",
+	"version": "0.1.13",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -287,7 +287,7 @@
 						"constant.numeric.macro"
 					],
 					"variable": [
-						"variable.other.symbol.macro"
+						"variable.other.readwrite.macro"
 					],
 					"constant": [
 						"variable.other.constant.macro"
@@ -296,10 +296,13 @@
 						"constant.other.macro"
 					],
 					"code": [
-						"keyword.other.macro"
+						"support.function.macro"
 					],
 					"parameter": [
 						"storage.type.parameter.macro"
+					],
+					"address": [
+						"variable.other.address.macro"
 					]
 				}
 			}
