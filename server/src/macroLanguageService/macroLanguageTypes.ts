@@ -6,6 +6,7 @@
 
 import { Macrofile } from './macroLanguageService';
 import  { TextDocument } from 'vscode-languageserver-types';
+import { stringify } from 'querystring';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
 export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/semanticTokens.proposed';
@@ -90,12 +91,13 @@ export enum MacroCodeLensCommand {
 export enum TokenTypes {
 	number 			= 1,
 	variable 		= 2,
-	constant		= 3,
-	label			= 4,
-	code 			= 5,
-	parameter 		= 6,
-	address 		= 7,
-	_ 				= 8
+	symbol			= 3,
+	constant		= 4,
+	label			= 5,
+	code 			= 6,
+	parameter 		= 7,
+	address 		= 8,
+	_ 				= 9
 }
 
 export enum TokenModifiers {

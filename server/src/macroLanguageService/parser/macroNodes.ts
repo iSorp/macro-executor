@@ -997,7 +997,7 @@ export enum ValueType {
 	String = 'string',
 	Numeric = 'numeric',
 	Constant = 'constant', // same as numeric in capital
-	MacroValue = 'value',
+	Variable = 'variable',
 	Address = 'address',
 	NcCode = 	'code'
 }

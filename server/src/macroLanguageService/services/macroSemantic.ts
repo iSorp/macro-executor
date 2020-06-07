@@ -14,7 +14,7 @@ import * as nodes from '../parser/macroNodes';
 export class MacroSemantic {
 	constructor() {}
 	
-	public doSemanticColorization(document: TextDocument, macroFile: nodes.MacroFile, range:Range | undefined) : Proposed.SemanticTokens {
+	public doSemanticHighlighting(document: TextDocument, macroFile: nodes.MacroFile, range:Range | undefined) : Proposed.SemanticTokens {
 
 		const builder = new SemanticTokensBuilder();
 		let start:number;
@@ -23,8 +23,6 @@ export class MacroSemantic {
 			start = document.offsetAt(range.start);
 			end = document.offsetAt(range.end);
 		}
-
-		// const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(range.start));
 		macroFile.accept(candidate => {
 			if (range) {
 				if (candidate.offset < start){
@@ -44,20 +42,23 @@ export class MacroSemantic {
 				if (variable.symbol) {
 					const pos = document.positionAt(variable.symbol.offset);
 					const type = variable.declaration?.valueType;
-					if (type === nodes.ValueType.Constant){
-						builder.push(pos.line, pos.character, candidate.length, TokenTypes.constant, 0);
+					if (type === nodes.ValueType.Variable) {
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.variable, 0);
 					}
+					if (type === nodes.ValueType.Constant || type === nodes.ValueType.Numeric) {
+						if (!RegExp(/(true)|(false)/i).test(variable.symbol.getText())) {
+							builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.constant, 0);
+						}
+					}
+					
 					else if (type === nodes.ValueType.NcCode) {
-						builder.push(pos.line, pos.character, candidate.length, TokenTypes.code, 0);
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.code, 0);
 					}
 					else if (type === nodes.ValueType.Address) {
-						builder.push(pos.line, pos.character, candidate.length, TokenTypes.address, 0);
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.address, 0);
 					}
 					else if (!type && !Number.isNaN(Number(variable.getName()))) {
-						builder.push(pos.line, pos.character, candidate.length, TokenTypes.number, 0);
-					}
-					else {
-						builder.push(pos.line, pos.character, candidate.length, TokenTypes.variable, 0);
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.number, 0);
 					}
 				}
 			}

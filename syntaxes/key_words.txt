@@ -9,29 +9,30 @@ entity.name.function.macro          				// O <Function>
 
 constant.language.macro             				// TRUE, FALSE
 
-constant.other.macro                				// N-Number, Labels
 constant.numeric.macro              				// Numbers
+punctuation.section.tag.macro						// N-Number
 
-
-keyword.operator.macro              				// EQ, LT, OR, AND, ...
-support.function.other.macro    					// M-,G-Function
-storage.type.parameter.macro						// P, X, R, ...
+keyword.operator.arithmetic.macro					// +, -, *, /
+keyword.operator.assignment.macro					// =
+keyword.other.macro              					// EQ, LT, OR, AND, ...
 keyword.control.conditional.macro   				// IF, DO, ...
 
 support.function.math.macro							// SIN, COS, ...
+keyword.other.macro    								// M-,G-Function
+storage.type.parameter.macro						// P, X, R, ...
+
 
 meta.definition.label.macro
+entity.name.label.macro                				// Labels
 punctuation.definition.keyword.label.macro			// >
 
 meta.definition.variable.macro
 punctuation.definition.keyword.variable.macro		// @
-variable.other.symbol.macro
+variable.other.symbol.macro							// @<symbol>
 
-meta.symbol.macro
-keyword.operator.variable.macro						// #           
-variable.other.readwrite               				// Variable #,
-variable.other.address.macro						// R1000.0
-variable.language.macro             				// $INCLUDE, $..
+meta.symbol.macro  									// any symbol
+
+variable.language.macro             				// $LIST, $INCLUDE, $, %, #, ..
 
 meta.brace.square.macro								// []
 
@@ -48,35 +49,27 @@ comment.line.macro                  				// /*, ;
 
 
 // Semantic Tokens
-
 "number": [
-	"constant.numeric.macro"
+	"constant.numeric"
 ],
 "variable": [
-	"variable.other.readwrite.macro"
+	"variable.other.readwrite"
+],
+"symbol": [
+	"variable.other.constant"
 ],
 "constant": [
-	"variable.other.constant.macro"
+	"constant.other.numeric"
 ],
 "label": [
-	"constant.other.macro"
+	"entity.name.label"
 ],
 "code": [
-	"support.function.macro"
+	"keyword.other"
 ],
 "parameter": [
-	"storage.type.parameter.macro"
+	"storage.type.parameter"
 ],
 "address": [
-	"variable.other.address.macro"
+	"support.variable.property"
 ]
-
-
-
-
-
-'variable.parameter.function
-
-variable.parameter
-entity.name.variable.parameter
-'parameter.variable.function',

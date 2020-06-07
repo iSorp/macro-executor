@@ -157,7 +157,7 @@ export class MacroNavigation {
 						case nodes.ValueType.Constant:
 							entry.kind = SymbolKind.Constant;
 							break;
-						case nodes.ValueType.MacroValue:
+						case nodes.ValueType.Variable:
 							entry.kind = SymbolKind.Variable;
 							break;
 						case nodes.ValueType.Numeric:

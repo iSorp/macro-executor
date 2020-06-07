@@ -24,7 +24,7 @@ import { getComment } from '../parser/macroScanner';
 let macroStatementTypes:nodes.ValueType[] = [
 	nodes.ValueType.Address, 
 	nodes.ValueType.Constant, 
-	nodes.ValueType.MacroValue, 
+	nodes.ValueType.Variable, 
 	nodes.ValueType.Numeric
 ];
 
@@ -205,7 +205,7 @@ export class MacroCompletion {
 							sort = Sort.Constant;
 							kind = CompletionItemKind.Constant;
 							break;
-						case nodes.ValueType.MacroValue:
+						case nodes.ValueType.Variable:
 							sort = Sort.Value;
 							kind = CompletionItemKind.Value;
 							break;

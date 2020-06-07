@@ -8,53 +8,50 @@
     ],
 	"patterns": [
         {
-            "include": "#line_language_keywords" 
-        },
-        {
-			"include": "#line_file"
+			"include": "#file"
         }
 	],
     "repository":{
-        "line_file":{
+        "file":{
             "begin":"\\A",
             "end":"(?=\\%)",
             "patterns": [
                 {
-                    "include": "#line_comments"
+                    "include": "#comments"
                 },
                 {
-                    "include":"#line_string_a"
+                    "include":"#string_a"
                 },
                 {
-                    "include":"#line_string_b"
+                    "include":"#string_b"
                 },
                 {
-                    "include":"#line_string_c"
+                    "include":"#string_c"
                 },
                 {
-                    "include":"#line_string"
+                    "include":"#string"
                 },
                 {
-                    "include": "#line_language_keywords" 
+                    "include": "#language_keywords" 
                 },
                 {
-                    "include":"#line_filecontrol"
+                    "include":"#filecontrol"
                 },
                 {
-                    "include":"#line_include"
+                    "include":"#include"
                 },
                 {
-                    "include":"#line_var_def"
+                    "include":"#var_def"
                 },
                 {
-                    "include":"#line_label_def"
+                    "include":"#label_def"
                 },
                 {
-                    "include":"#line_sub"
+                    "include":"#sub"
                 }
             ]
         },
-        "line_sub" : {
+        "sub" : {
             "begin" : "(?i)(^\\s*O{1})(?:(\\s+\\w+)|(\\d+))",
             "name":"meta.function.macro",
             "beginCaptures" : {
@@ -63,73 +60,82 @@
                 },
                 "2": {
                     "name":"entity.name.function.macro"
+                },
+                "3": {
+                    "name":"entity.name.function.macro"
                 }
             },
             "end":"(?=(?i)(^\\s*O{1})(?:(\\s+\\w+)|(\\d+)))|(?=\\%)",
             "patterns" : [
                 {
-                    "include":"#line_comments"
+                    "include":"#comments"
                 },
                 {
-                    "include":"#line_string_a"
+                    "include":"#string_a"
                 },
                 {
-                    "include":"#line_string_b"
+                    "include":"#string_b"
                 },
                 {
-                    "include":"#line_string_c"
+                    "include":"#string_c"
                 },
                 {
-                    "include":"#line_string"
+                    "include":"#string"
                 },
                 {
-                    "include":"#line_var_def"
+                    "include": "#language_keywords" 
                 },
                 {
-                    "include":"#line_label_def"
+                    "include":"#var_def"
                 },
                 {
-					"include":"#line_functions"	
+                    "include":"#label_def"
                 },
                 {
-                    "include":"#line_conditionals_1"	
+					"include":"#functions"	
+                },
+                {
+                    "include":"#conditionals_1"	
                 },  
                 {             
-                    "include":"#line_conditionals_2"	
+                    "include":"#conditionals_2"	
                 },
                 {
-					"include":"#line_operators"	
+					"include":"#keyword_operator"	
                 },
                 {
-                    "include":"#line_arithmetic_operator"
+                    "include":"#keyword_operator_arithmetic"
                 },
                 {
-                    "include":"#line_language_var"
+                    "include":"#keyword_operator_assignment"
                 },
                 {
-                    "include":"#line_sequence"
+                    "include":"#boolean"
                 },
                 {
-					"include":"#line_number"	
+                    "include":"#sequence"
                 },
                 {
-					"include":"#line_nc_code"	
+					"include":"#number"	
                 },
                 {
-					"include":"#line_parameter"
+                    "include":"#assignment"
                 },
                 {
-					"include":"#line_variable"	
+					"include":"#nc_code"	
                 },
                 {
-					"include":"#line_symbol"	
+					"include":"#parameter"
                 },
                 {
-                    "include":"#line_brackets"
+					"include":"#symbol"	
+                },
+                {
+                    "include":"#brackets"
                 }
             ]
         },
-        "line_filecontrol" : {
+        "filecontrol" : {
             "patterns": [
                 {        
                     "name":"variable.language.macro",
@@ -141,7 +147,7 @@
                 }
             ]
         },
-        "line_include":{
+        "include":{
             "begin" : "(?i)(?=\\$INCLUDE)",
             "end":"\\Z",
             "patterns":[
@@ -154,76 +160,59 @@
                     "name":"markup.link.macro"
                 },
                 {
-                    "include":"#line_comments"
+                    "include":"#cmments"
                 }
             ]
         },
-        "line_language_keywords" : {
+        "language_keywords" : {
             "name":"variable.language.macro",
-            "match":"(%)"
+            "match":"%|#"
         },
-        "line_brackets":{
+        "brackets":{
             "name" : "meta.brace.square.macro",
             "match":"\\[|\\]"
         },
-        "line_language_var" : {
+        "boolean" : {
             "name":"constant.language.macro",
             "match":"(?i)(?<=\\W|\\d)(TRUE|FALSE)(?=\\d*\\W)"
         },
-        "line_conditionals_1" : {
+        "conditionals_1" : {
             "name":"keyword.control.conditional.macro",
             "match":"(?i)(?<=^|\\W|\\d)(IF|ELSE|THEN|ENDIF|WHILE)(?=\\W)"
         },
-        "line_conditionals_2" : {
+        "conditionals_2" : {
             "name":"keyword.control.conditional.macro",
             "match":"(?i)(?<=^|\\W|\\d)(END|DO|GOTO)(?![a-zA-Z])"
         },
-        "line_functions" : {
+        "functions" : {
             "name":"support.function.math.macro",
             "match":"(?i)(?<=\\W|\\d)(SIN|COS|TAN|ASIN|ACOS|ATAN|SQRT|ABS|BIN|BCD|ROUND|FIX|FUP|LN|EXP|POW|ADP|PRM)(?=\\s*\\[)"
         },
-        "line_operators": {
+        "keyword_operator": {
             "match":"(?i)(?<=\\W|\\d|\\w)(EQ|NE|LT|LE|GE|GT|OR|XOR|AND|MOD|\\&\\&|\\|\\||\\/)(?-i)(?=\\d|\\W|[A-Z]\\d)",
-            "name":"keyword.operator.macro"
+            "name":"keyword.other.macro"
         },
-        "line_arithmetic_operator": {
-            "match":"(\\+|\\-|\\/|\\*|=)",
-            "name":"keyword.operator.macro"
+        "keyword_operator_arithmetic": {
+            "match":"(\\+|\\-|\\/|\\*)",
+            "name":"keyword.operator.arithmetic.macro"
         },
-        "line_symbol" : {
+        "keyword_operator_assignment": {
+            "match":"=",
+            "name":"keyword.operator.assignment.macro"
+        },
+        "symbol" : {
             "name":"meta.symbol.macro",
             "match":"\\b([\\w\\_])*(?=[a-zA-Z])([\\w\\_])+\\b"
         },
-        "line_variable":{
-            "begin":"(#)",
-            "beginCaptures":{
-                "1":{
-                    "name":"keyword.operator.variable.macro"
-                }
-            },
-            "end" : "(?=\\W)",
-            "name":"variable.other.readwrite",
-            "patterns":[
-                {
-                    "include":"#line_operators"
-                },
-                {
-                    "include":"#line_number"
-                },
-                {        
-                    "include":"#line_symbol"
-                }
-            ]
-        },
-        "line_sequence" : {
-            "name":"constant.other.macro",
+        "sequence" : {
+            "name":"punctuation.section.tag.macro",
             "match":"(?i)^\\s*N\\d+"
         },
-		"line_number": {	
+		"number": {	
 			"name":"constant.numeric.macro",
 			"match":"(\\d+)(\\.\\d+)*"
         },
-        "line_comments":{
+        "comments":{
             "begin":"(\\/\\*)|(\\;)",
             "beginCaptures":{
                 "1":{
@@ -240,60 +229,94 @@
                         }
                     },
                     "end":"\\n",
-                    "name":"comment.end.macro"
+                    "name":"comment.line.macro"
                 }
             ]
         },
-        "line_string":{
+        "string":{
             "name":"string.other.macro",
             "match":"(\\()(.*)(\\))"
         },
-        "line_string_a":{
+        "string_a":{
             "name":"string.quoted.single.macro",
             "match":"(\\(\\')(.*)(\\'\\))"
         },
-        "line_string_b":{
+        "string_b":{
             "name":"string.quoted.double.macro",
             "match":"(\\(\")(.*)(\"\\))"
         },
-        "line_string_c":{
+        "string_c":{
             "name":"string.quoted.other.macro",
             "match":"(\\(\\*)(.*)(\\*\\))"
         },
-        "line_block_skip":{
+        "block_skip":{
             "name":"markup.italic.block_skip.macro",
             "match":"(^\\/)"
         },
-        "line_nc_code": {	
-			"name":"support.function.other.macro",
+        "nc_code": {	
+			"name":"keyword.other.macro",
 			"match":"(?i)([MG]\\d{1,4})(\\.\\d)?"
         },
-        "line_parameter": {
+        "parameter": {
             "name":"storage.type.parameter.macro",
 			"match":"(?i)(?<![A-Z])(?<=^|(?:\\d|\\W))([A-Z])(?=(?:\\-|\\+|\\#|\\[|\\d|\\s)|(?:\\s+\\w))"
         },
-        "line_label_def":{
+        "assignment":{
+            "begin" : "(?=#?\\w+\\s*\\=)|(?<=\\=)(\\w*)",
+            "end" : "(?=\\(|\/|\\,)|$",
+            "name":"meta.var.expr.macro",
+            "patterns":[
+                {
+                    "include": "#language_keywords" 
+                },
+                {
+					"include":"#functions"	
+                },
+                {
+					"include":"#keyword_operator"	
+                },
+                {
+                    "include":"#keyword_operator_arithmetic"
+                },
+                {
+                    "include":"#keyword_operator_assignment"
+                },
+                {
+                    "include":"#boolean"
+                },
+                {
+					"include":"#number"	
+                },
+                {
+					"include":"#symbol"	
+                },
+                {
+                    "include":"#brackets"
+                }
+            ]
+        },
+        "label_def":{
             "begin":"(\\>)(\\w+)",
             "beginCaptures":{
                 "1":{
                     "name":"punctuation.definition.keyword.label.macro"
                 },
                 "2":{
-                    "name":"constant.other.macro"
+                    "name":"entity.name.label.macro"
                 }
             },
             "end":"\\Z",
             "name":"meta.definition.label.macro",
 			"patterns":[
 				{
-					"include":"#line_number"	
+					"include":"#number"	
 				},
 				{
-					"include":"#line_comments"
+					"include":"#comments"
 				}
 			]
 		},
-		"line_var_def": {
+		"var_def": {
             "begin":"(\\@)(\\w+)",
             "beginCaptures":{
                 "1":{
@@ -307,20 +330,21 @@
             "name":"meta.definition.variable.macro",
 
 			"patterns":[
+                {
+                    "name":"variable.language.macro",
+                    "match":"#"                   
+                },
 				{
-					"include":"#line_comments"
+					"include":"#comments"
 				},
 				{
-					"include":"#line_number"	
-                },
-				{
-					"include":"#line_variable"	
+					"include":"#number"	
                 },
                 {
-                    "include":"#line_nc_code"	
+                    "include":"#nc_code"	
                 },
                 {
-					"include":"#line_parameter"
+					"include":"#parameter"
                 }
 			]
         }

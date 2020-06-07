@@ -396,7 +396,7 @@ export class Parser {
 		}		
 		else if (this.accept(TokenType.Hash)){
 			if (node.setValue(this._parseNumeric(true))) {
-				node.valueType = nodes.ValueType.MacroValue;
+				node.valueType = nodes.ValueType.Variable;
 			}
 			else{
 				return this.finish(node, ParseError.IntegerExpected);
@@ -1053,7 +1053,7 @@ export class Parser {
 		const node = this.create(nodes.Assignment);	
 		let declaration = this.declarations.get(this.token.text);
 		if (this.peek(TokenType.Symbol)) {		
-			if (!declaration || declaration.valueType !== nodes.ValueType.MacroValue) {
+			if (!declaration || declaration.valueType !== nodes.ValueType.Variable) {
 				if (test){
 					return null;
 				}
@@ -1064,13 +1064,13 @@ export class Parser {
 		}
 
 		// ##var is invalid
-		if (this.peek(TokenType.Hash) && declaration && declaration.valueType === nodes.ValueType.MacroValue){
+		if (this.peek(TokenType.Hash) && declaration && declaration.valueType === nodes.ValueType.Variable){
 			return this.finish(node, ParseError.InvalidStatement, [TokenType.NewLine]);
 		} 
 
 		if (this.accept(TokenType.Hash)) {
 			declaration = this.declarations.get(this.token.text);
-			if (declaration && declaration.valueType === nodes.ValueType.MacroValue){
+			if (declaration && declaration.valueType === nodes.ValueType.Variable){
 				return this.finish(node, ParseError.InvalidStatement, [TokenType.NewLine]);
 			} 
 		}
@@ -1414,7 +1414,7 @@ export class Parser {
 		}
 
 		let declaration = this.declarations.get(this.token.text);
-		if (declaration instanceof nodes.VariableDeclaration || this.peek(TokenType.Hash)){
+		if (this.peek(TokenType.Hash) || declaration instanceof nodes.VariableDeclaration){
 			return this._parseVariable(declaration);
 		}
 		else if (declaration instanceof nodes.LabelDeclaration) {
@@ -1434,7 +1434,9 @@ export class Parser {
 		}
 
 		const node = <nodes.Variable>this.create(nodes.Variable);
-		this.accept(TokenType.Hash);
+		if (this.accept(TokenType.Hash)) {
+			declaration = this.declarations.get(this.token.text);
+		}
 		
 		let referenceTypes = [nodes.ReferenceType.Variable];
 		if (referenceType){
