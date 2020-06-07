@@ -13,6 +13,16 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 - [Semantic highlighting](#highlighting)
 - [Additional compiler parameters](#ExtensionSettings)
        
+To enable the semantic highlighting add the following property to your settings
+
+```
+"editor.semanticTokenColorCustomizations": {
+       "enabled": true,
+}
+```
+
+***
+       
 
 ## Features
 * Compiling and linking
@@ -63,6 +73,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 <a name="highlighting"></a>
 
 ## Semantic highlighting
+
 Semantic highlighting is used to highlight the represented type of a symbol. Following types are supported:
 * M-Code and G-Code
 * PMC Address
@@ -70,12 +81,18 @@ Semantic highlighting is used to highlight the represented type of a symbol. Fol
 * Constant
 * Label
 
+To enable the semantic highlighting add the following property to your settings
+
+```
+"editor.semanticTokenColorCustomizations": {
+       "enabled": true,
+}
+```
+
+
 ![References](./resources/semantic.gif)
 
 *The color theme used in screenshot →* ***[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)***
-
-
-
 
 
 ## Lint
