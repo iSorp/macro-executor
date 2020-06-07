@@ -26,7 +26,7 @@ const BUILD_SYSTEMS:Systems = {
 	'MCOMP0': {compiler: 'MCOMP0', linker: 'MLINK', card: 'MMCARD' },
 	'MCOMP15': {compiler: 'MCOMP15', linker: 'MLINK', card: 'MMCARD15' },
 	'MCOMP15I': {compiler: 'MCOMP15I', linker: 'MLINK15I', card: 'MCARD15I' }
-}
+};
 
 const CONTROL_TYPE = ['', '0', '30', 'PM', '0F'];
 const build_ext_glob = 'ref,REL,PRG,ROM,MEM,MAP,tmp.lnk';
@@ -151,6 +151,7 @@ class ProjectService {
 
 		const compiler = settings.MacroSettings.getInstance().macroCompilerPath;
 		const type = settings.MacroSettings.getInstance().macroControlType;
+		const prm = settings.MacroSettings.getInstance().macroCompilerParams;
 		const currentFile = vscode.window.activeTextEditor?.document.uri.fsPath;
 		if (!currentFile){
 			return;
@@ -160,13 +161,14 @@ class ProjectService {
 		
 		let buildPath = this.getAbsPath(settings.MacroSettings.getInstance().macroBuildPath);
 		if (!buildPath) {
-			buildPath = this.workspacePath;;
+			buildPath = this.workspacePath;
 		}
 
 		let arg = '';
 		if (type !== undefined && type !== ''){
 			arg = '-'+type;
 		}
+		arg += ' ' + prm;
 
 		let bscript = compiler + ' ' + currentFile + ' ' + arg;
 		if (buildPath){
@@ -233,7 +235,7 @@ class ProjectService {
 			if (!srcFiles){return;}
 
 			// filter file directories to compile all files in a directory at once
-			let dirs:string[] = srcFiles.map(a => path.dirname(a.fsPath))
+			let dirs:string[] = srcFiles.map(a => path.dirname(a.fsPath));
 			dirs = dirs.filter((v,i) => dirs.indexOf(v) === i);
 	
 			for (const dir of dirs) {

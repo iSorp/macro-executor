@@ -196,40 +196,47 @@
 					"description": "%macro.build.controlType.description%",
 					"$id": "2"
 				},
+				"macro.build.compilerParams": {
+					"type": "string",
+					"scope": "window",
+					"default": "",
+					"description": "%macro.build.compilerParams.description%",
+					"$id": "3"
+				},
 				"macro.build.makeFile": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.build.makeFile.description%",
-					"$id": "3"
+					"$id": "4"
 				},
 				"macro.project.exportPath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.exportPath.description%",
-					"$id": "4"
+					"$id": "5"
 				},
 				"macro.project.sourcePath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.sourcePath.description%",
-					"$id": "5"
+					"$id": "6"
 				},
 				"macro.project.buildPath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.buildPath.description%",
-					"$id": "6"
+					"$id": "7"
 				},
 				"macro.project.linkPath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.linkPath.description%",
-					"$id": "7"
+					"$id": "8"
 				}
 			}
 		},
@@ -261,6 +268,10 @@
 			},
 			{
 				"id": "variable",
+				"description": "Style for compile-time # variable symbol"
+			},
+			{
+				"id": "symbol",
 				"description": "Style for compile-time variable symbol"
 			},
 			{
@@ -284,25 +295,28 @@
 				"language": "macro",
 				"scopes": {
 					"number": [
-						"constant.numeric.macro"
+						"constant.numeric"
 					],
 					"variable": [
-						"variable.other.readwrite.macro"
+						"variable.other.readwrite"
+					],
+					"symbol": [
+						"variable.other.constant"
 					],
 					"constant": [
-						"variable.other.constant.macro"
+						"constant.other.numeric"
 					],
 					"label": [
-						"constant.other.macro"
+						"entity.name.label"
 					],
 					"code": [
-						"support.function.macro"
+						"keyword.other"
 					],
 					"parameter": [
-						"storage.type.parameter.macro"
+						"storage.type.parameter"
 					],
 					"address": [
-						"variable.other.address.macro"
+						"support.variable.property"
 					]
 				}
 			}
