@@ -30,7 +30,7 @@ meta.definition.variable.macro
 punctuation.definition.keyword.variable.macro		// @
 variable.other.symbol.macro							// @<symbol>
 
-meta.symbol.macro  									// any symbol
+variable.macro 										// any symbol
 
 variable.language.macro             				// $LIST, $INCLUDE, $, %, #, ..
 
@@ -53,10 +53,10 @@ comment.line.macro                  				// /*, ;
 	"constant.numeric"
 ],
 "variable": [
-	"variable.other.readwrite"
+	"variable.other.field"
 ],
 "symbol": [
-	"variable.other.constant"
+	"variable.other.numeric"
 ],
 "constant": [
 	"constant.other.numeric"

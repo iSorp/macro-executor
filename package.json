@@ -298,10 +298,10 @@
 						"constant.numeric"
 					],
 					"variable": [
-						"variable.other.readwrite"
+						"variable.other.field"
 					],
 					"symbol": [
-						"variable.other.constant"
+						"variable.other.numeric"
 					],
 					"constant": [
 						"constant.other.numeric"

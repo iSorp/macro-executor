@@ -201,7 +201,7 @@
             "name":"keyword.operator.assignment.macro"
         },
         "symbol" : {
-            "name":"meta.symbol.macro",
+            "name":"variable.macro",
             "match":"\\b([\\w\\_])*(?=[a-zA-Z])([\\w\\_])+\\b"
         },
         "sequence" : {
@@ -263,7 +263,7 @@
         },
         "assignment":{
             "begin" : "(?=#?\\w+\\s*\\=)|(?<=\\=)(\\w*)",
-            "end" : "(?=\\(|\/|\\,)|$",
+            "end" : "(?=\\(|\/|\\;)|$",
             "name":"meta.var.expr.macro",
             "patterns":[
                 {

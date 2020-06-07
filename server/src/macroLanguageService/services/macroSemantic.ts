@@ -45,12 +45,14 @@ export class MacroSemantic {
 					if (type === nodes.ValueType.Variable) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.variable, 0);
 					}
-					if (type === nodes.ValueType.Constant || type === nodes.ValueType.Numeric) {
+					else if (type === nodes.ValueType.Constant) {
 						if (!RegExp(/(true)|(false)/i).test(variable.symbol.getText())) {
 							builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.constant, 0);
 						}
 					}
-					
+					else if (type === nodes.ValueType.Numeric) {
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.symbol, 0);
+					}
 					else if (type === nodes.ValueType.NcCode) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.code, 0);
 					}
