@@ -37,7 +37,7 @@ export interface LanguageService {
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
-	doSemanticColorization(document: TextDocument, macrofile: Macrofile, range:Range | undefined) : Proposed.SemanticTokens;
+	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, range:Range | undefined) : Proposed.SemanticTokens;
 }
 
 function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand, semantic:MacroSemantic): LanguageService {
@@ -55,7 +55,7 @@ function createFacade(parser: Parser, hover: MacroHover, completion: MacroComple
 		doRename: navigation.doRename.bind(navigation),
 		doRefactorSequences: command.doRefactorSequences.bind(command),
 		doCreateSequences: command.doCreateSequences.bind(command),
-		doSemanticColorization: semantic.doSemanticColorization.bind(semantic)
+		doSemanticHighlighting: semantic.doSemanticHighlighting.bind(semantic)
 	};
 }
 

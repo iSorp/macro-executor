@@ -463,7 +463,7 @@ function semantic(params:Proposed.SemanticTokensParams): Proposed.SemanticTokens
 			resultId: ''
 		};
 	}
-	return macroLanguageService.doSemanticColorization(repo.document, repo.macrofile, undefined);
+	return macroLanguageService.doSemanticHighlighting(repo.document, repo.macrofile, undefined);
 }
 
 function semanticRange(params:Proposed.SemanticTokensRangeParams): Proposed.SemanticTokens   {
@@ -474,7 +474,7 @@ function semanticRange(params:Proposed.SemanticTokensRangeParams): Proposed.Sema
 			resultId: ''
 		};
 	}
-	return macroLanguageService.doSemanticColorization(repo.document, repo.macrofile, params.range);
+	return macroLanguageService.doSemanticHighlighting(repo.document, repo.macrofile, params.range);
 }
 
 function validateTextDocument(doc: MacroFileType | undefined) {
