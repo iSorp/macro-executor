@@ -15,8 +15,9 @@ import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
 	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
 	Location, TextDocument, CompletionList, CodeLens, 
-	TextDocumentEdit, WorkspaceEdit
+	TextDocumentEdit, WorkspaceEdit, Range, Proposed
 } from './macroLanguageTypes';
+import { MacroSemantic } from './services/macroSemantic';
 
 
 export type Macrofile = {};
@@ -36,9 +37,10 @@ export interface LanguageService {
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
+	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, range:Range | undefined) : Proposed.SemanticTokens;
 }
 
-function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand): LanguageService {
+function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand, semantic:MacroSemantic): LanguageService {
 	return {
 		doValidation: validation.doValidation.bind(validation),
 		parseMacroFile: parser.parseMacroFile.bind(parser),
@@ -52,7 +54,8 @@ function createFacade(parser: Parser, hover: MacroHover, completion: MacroComple
 		findCodeLenses: navigation.findCodeLenses.bind(navigation),
 		doRename: navigation.doRename.bind(navigation),
 		doRefactorSequences: command.doRefactorSequences.bind(command),
-		doCreateSequences: command.doCreateSequences.bind(command)
+		doCreateSequences: command.doCreateSequences.bind(command),
+		doSemanticHighlighting: semantic.doSemanticHighlighting.bind(semantic)
 	};
 }
 
@@ -65,5 +68,6 @@ export function getMacroLanguageService(options: LanguageServiceOptions): Langua
 		new MacroNavigation(options && options.fileProvider),
 		new MacroValidation(options && options.fileProvider),
 		new MacroCommand(options && options.fileProvider),
+		new MacroSemantic()
 	);
 }

@@ -18,7 +18,7 @@ export class MacroHover {
 		function getRange(node: nodes.Node) {
 			return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 		}	
-		
+
 		let navigation = new MacroNavigation(this.fileProvider);
 		let hover: Hover | null = null;
 
@@ -42,7 +42,7 @@ export class MacroHover {
 						};
 					} 
 					else if (node.parent?.type === nodes.NodeType.Variable) {
-						let text = this.getMarkedStringForDeclaration('variable', <nodes.Node>declaration!.macrofile, declaration!.document, location);
+						let text = this.getMarkedStringForDeclaration('symbol', <nodes.Node>declaration!.macrofile, declaration!.document, location);
 						hover = {
 							contents: text,
 							range: getRange(node)

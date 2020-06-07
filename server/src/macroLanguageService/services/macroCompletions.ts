@@ -24,7 +24,7 @@ import { getComment } from '../parser/macroScanner';
 let macroStatementTypes:nodes.ValueType[] = [
 	nodes.ValueType.Address, 
 	nodes.ValueType.Constant, 
-	nodes.ValueType.MacroValue, 
+	nodes.ValueType.Variable, 
 	nodes.ValueType.Numeric
 ];
 
@@ -177,7 +177,7 @@ export class MacroCompletion {
 		let kind:CompletionItemKind = CompletionItemKind.Variable; 
 
 		if (this.currentWord === '#') {
-			if (referenceType != nodes.ReferenceType.Variable){
+			if (referenceType !== nodes.ReferenceType.Variable){
 				return result;
 			}
 			types = [nodes.ValueType.Numeric];
@@ -205,7 +205,7 @@ export class MacroCompletion {
 							sort = Sort.Constant;
 							kind = CompletionItemKind.Constant;
 							break;
-						case nodes.ValueType.MacroValue:
+						case nodes.ValueType.Variable:
 							sort = Sort.Value;
 							kind = CompletionItemKind.Value;
 							break;
@@ -213,7 +213,7 @@ export class MacroCompletion {
 							sort = Sort.Variable;
 							kind = CompletionItemKind.Variable;
 							break;
-						case nodes.ValueType.Nc:
+						case nodes.ValueType.NcCode:
 							sort = Sort.Nc;
 							kind = CompletionItemKind.Event;
 							break;
@@ -293,7 +293,7 @@ export class MacroCompletion {
 					const nnode = (<nodes.SequenceNumber>candidate).getNumber();
 					if (nnode) {
 						const number = nnode.getText().toLocaleLowerCase().split('n').pop();
-						seq = Math.max(seq, Number(number) + this.inc)
+						seq = Math.max(seq, Number(number) + this.inc);
 						return false;
 					}
 				}

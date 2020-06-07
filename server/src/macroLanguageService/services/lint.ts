@@ -20,9 +20,9 @@ const _0 = '0'.charCodeAt(0);
 const _9 = '9'.charCodeAt(0);
 const _dot = '.'.charCodeAt(0);
 
-const MAX_CONDITIONALS = 4
-const MAX_WHILE_DEPTH = 3
-const MAX_IF_DEPTH = 10
+const MAX_CONDITIONALS = 4;
+const MAX_WHILE_DEPTH = 3;
+const MAX_IF_DEPTH = 10;
 
 
 export class LintVisitor implements nodes.IVisitor {
@@ -160,7 +160,7 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitVariables(node: nodes.Variable) : boolean {
-		if (this.duplicateList.indexOf(node.getName()) != -1) {
+		if (this.duplicateList.indexOf(node.getName()) !== -1) {
 			this.addEntry(node, Rules.DuplicateDeclaration);
 		}
 		return true;
@@ -212,7 +212,7 @@ export class LintVisitor implements nodes.IVisitor {
 				const value = def.getValue()?.getText();
 				for (const element of this.declarations.values()){
 					if ((def.valueType ===  nodes.ValueType.Address 
-						|| def.valueType ===  nodes.ValueType.Nc 
+						|| def.valueType ===  nodes.ValueType.NcCode 
 						|| def.valueType ===  nodes.ValueType.Numeric) 
 						&& (def.type ===  element.type &&  element.getValue()?.getText() === value)) {
 						this.addEntry(def, Rules.DuplicateAddress);
@@ -296,7 +296,7 @@ export class LintVisitor implements nodes.IVisitor {
 				if (!op) {
 					break;
 				}
-				if (op.getText() != first) {
+				if (op.getText() !== first) {
 					this.addEntry(op, Rules.MixedConditionals);
 				}
 				conditional = conditional.getNext();
@@ -323,22 +323,43 @@ export class LintVisitor implements nodes.IVisitor {
 
 		let depth = 0;
 		let depthIssue = false;
-		let leaf:nodes.Node = node;
-		const numbers:number[] = []
+		let doNumber:number = 0;
 
-		// Traverse to the leaf (while child) 
-		while (true){
-			const next = leaf.getChildren().filter(a => a.type === nodes.NodeType.While);
-			if (next.length > 0){
-				leaf = next[0];
+		// Check no logic operators allowed
+		const conditional = node.getConditional();
+		if (conditional && conditional.logic) {
+			this.addEntry(conditional, Rules.WhileLogicOperator);
+		}
+
+		// Check DO END label/number agreement
+		if (node.dolabel && node.endlabel) {
+			if (node.dolabel?.getText() !== node.endlabel?.getText()) {
+				this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
+				this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
 			}
-			else {
-				break;
+
+			if (Number(node.dolabel.getText())) {
+				doNumber = Number(node.dolabel.getText());
+				if (doNumber && doNumber > MAX_WHILE_DEPTH) {
+					this.addEntry(node.dolabel, Rules.DoEndNumberTooBig);
+				}
+
+				const endNumber = Number(node.endlabel.getText());
+				if (endNumber && endNumber > MAX_WHILE_DEPTH) {
+					this.addEntry(node.endlabel, Rules.DoEndNumberTooBig);
+				}
+			}
+			else if (node.dolabel instanceof nodes.Label){
+				doNumber = Number((<nodes.Label>node.dolabel).declaration?.getValue()?.getText());
+				if (doNumber > MAX_WHILE_DEPTH) {
+					this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
+					this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
+				}
 			}
 		}
 
-		const path = nodes.getNodePath(leaf, leaf.offset);
-		for (let i = 0; i < path.length; i++) {
+		const path = nodes.getNodePath(node, node.offset);
+		for (let i = path.length-1; i > -1; i--) {
 			const element = path[i];
 			if (element.type !== nodes.NodeType.While) {
 				continue;
@@ -346,61 +367,28 @@ export class LintVisitor implements nodes.IVisitor {
 
 			const child = <nodes.WhileStatement>element;
 
-			// Check no logic operators allowed
-			const conditional = child.getConditional();
-			if (conditional && conditional.logic) {
-				this.addEntry(conditional, Rules.WhileLogicOperator);
-			}
-
 			// Check while depth
 			if (!depthIssue && depth >= MAX_WHILE_DEPTH) {
 				depthIssue = true;
-				this.addEntry(child, Rules.NestingTooDeep);
+				this.addEntry(node, Rules.NestingTooDeep);
 			}
 
 			// Check duplicate DO number
-			let childDoNumber = -1;
-			if (child.dolabel instanceof nodes.Label) {
-				childDoNumber = Number(child.dolabel.declaration?.getValue()?.getText());
-			}
-			else {
-				childDoNumber = Number(child.dolabel?.getText());
-			}
-			if (childDoNumber > 0 && numbers.indexOf(childDoNumber) > -1) {
-				this.addEntry(child.dolabel!, Rules.DuplicateDoEndNumber);
-			}
-
-			// Check DO END label/number agreement
-			if (child.dolabel && child.endlabel) {
-				if (child.dolabel?.getText() !== child.endlabel?.getText()) {
-					this.addEntry(child.dolabel, Rules.DoEndNumberNotEqual);
-					this.addEntry(child.endlabel, Rules.DoEndNumberNotEqual);
+			if (depth > 0) {
+				let childDoNumber = -1;
+				if (child.dolabel instanceof nodes.Label) {
+					childDoNumber = Number(child.dolabel.declaration?.getValue()?.getText());
 				}
-
-				if (Number(child.dolabel.getText())) {
-					const doNumber = Number(child.dolabel.getText());
-					numbers.push(doNumber);
-					if (doNumber && doNumber > MAX_WHILE_DEPTH) {
-						this.addEntry(child.dolabel, Rules.DoEndNumberTooBig);
-					}
-
-					const endNumber = Number(child.endlabel.getText());
-					if (endNumber && endNumber > MAX_WHILE_DEPTH) {
-						this.addEntry(child.endlabel, Rules.DoEndNumberTooBig);
-					}
+				else {
+					childDoNumber = Number(child.dolabel?.getText());
 				}
-				else if (child.dolabel instanceof nodes.Label){
-					const doNumber = Number((<nodes.Label>child.dolabel).declaration?.getValue()?.getText());
-					numbers.push(doNumber);
-					if (doNumber > MAX_WHILE_DEPTH) {
-						this.addEntry(child.dolabel, Rules.DoEndNumberNotEqual);
-						this.addEntry(child.endlabel, Rules.DoEndNumberNotEqual);
-					}
+				if (doNumber === childDoNumber) {
+					this.addEntry(child.dolabel!, Rules.DuplicateDoEndNumber);
 				}
 			}
 			++depth;
 		}
-		return false;
+		return true;
 	}
 
 	private isNumeric(text:string) : boolean {

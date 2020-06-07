@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.12",
+	"version": "0.1.13",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -19,8 +19,9 @@
 	},
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.43.0"
+		"vscode": "^1.45.1"
 	},
+	"enableProposedApi": true,
 	"activationEvents": [
 		"onLanguage:macro"
 	],
@@ -170,7 +171,13 @@
 				"macro.build.compiler": {
 					"type": "string",
 					"scope": "window",
-					"enum": ["MCOMPI", "MCOMP0", "MCOMP30I", "MCOMP15", "MCOMP15I"],
+					"enum": [
+						"MCOMPI",
+						"MCOMP0",
+						"MCOMP30I",
+						"MCOMP15",
+						"MCOMP15I"
+					],
 					"default": "MCOMPI",
 					"description": "%macro.build.compiler.description%",
 					"$id": "1"
@@ -178,45 +185,58 @@
 				"macro.build.controlType": {
 					"type": "string",
 					"scope": "window",
-					"enum": ["", "0", "30", "PM", "0F"],
+					"enum": [
+						"",
+						"0",
+						"30",
+						"PM",
+						"0F"
+					],
 					"default": "",
 					"description": "%macro.build.controlType.description%",
 					"$id": "2"
+				},
+				"macro.build.compilerParams": {
+					"type": "string",
+					"scope": "window",
+					"default": "",
+					"description": "%macro.build.compilerParams.description%",
+					"$id": "3"
 				},
 				"macro.build.makeFile": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.build.makeFile.description%",
-					"$id": "3"
+					"$id": "4"
 				},
 				"macro.project.exportPath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.exportPath.description%",
-					"$id": "4"
+					"$id": "5"
 				},
 				"macro.project.sourcePath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.sourcePath.description%",
-					"$id": "5"
+					"$id": "6"
 				},
 				"macro.project.buildPath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.buildPath.description%",
-					"$id": "6"
+					"$id": "7"
 				},
 				"macro.project.linkPath": {
 					"type": "string",
 					"scope": "window",
 					"default": "",
 					"description": "%macro.project.linkPath.description%",
-					"$id": "7"
+					"$id": "8"
 				}
 			}
 		},
@@ -240,6 +260,66 @@
 			{
 				"type": "shell"
 			}
+		],
+		"semanticTokenTypes": [
+			{
+				"id": "number",
+				"description": "Style for compile-time number"
+			},
+			{
+				"id": "variable",
+				"description": "Style for compile-time # variable symbol"
+			},
+			{
+				"id": "symbol",
+				"description": "Style for compile-time variable symbol"
+			},
+			{
+				"id": "constant",
+				"description": "Style for compile-time constant symbol"
+			},
+			{
+				"id": "code",
+				"description": "Style for compile-time M-Code/G-Code"
+			},
+			{
+				"id": "parameter",
+				"description": "Style for compile-time parameter NC-Parameter/Address"
+			}
+		],
+		"semanticTokenModifiers": [
+
+		],
+		"semanticTokenScopes": [
+			{
+				"language": "macro",
+				"scopes": {
+					"number": [
+						"constant.numeric"
+					],
+					"variable": [
+						"variable.other.field"
+					],
+					"symbol": [
+						"variable.other.numeric"
+					],
+					"constant": [
+						"constant.other.numeric"
+					],
+					"label": [
+						"entity.name.label"
+					],
+					"code": [
+						"keyword.other"
+					],
+					"parameter": [
+						"storage.type.parameter"
+					],
+					"address": [
+						"support.variable.property"
+					]
+				}
+			}
 		]
 	},
 	"scripts": {
@@ -255,13 +335,13 @@
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.1",
-		"@types/node": "^12.11.7",
-		"@typescript-eslint/parser": "^2.3.0",
-		"eslint": "^6.4.0",
-		"mocha": "^7.0.1",
-		"typescript": "^3.8.3",
-		"del": "^4.1.1",
+		"@types/mocha": "^7.0.2",
+		"@types/node": "^14.0.9",
+		"@typescript-eslint/parser": "^3.1.0",
+		"eslint": "^7.1.0",
+		"mocha": "^7.2.0",
+		"typescript": "^3.9.3",
+		"del": "^5.1.0",
 		"run-sequence": "^2.2.1",
 		"event-stream": "^4.0.1",
 		"vsce": "^1.75.0",

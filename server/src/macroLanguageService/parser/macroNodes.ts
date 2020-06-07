@@ -627,7 +627,7 @@ export class Symbol extends Node {
 }
 
 export class DeclarationType<T extends AbstractDeclaration> extends Node {
-
+	
 	public declaration: T | undefined;
 	public symbol?: Symbol;
 
@@ -997,9 +997,9 @@ export enum ValueType {
 	String = 'string',
 	Numeric = 'numeric',
 	Constant = 'constant', // same as numeric in capital
-	MacroValue = 'value',
+	Variable = 'variable',
 	Address = 'address',
-	Nc = 'nc'
+	NcCode = 	'code'
 }
 
 export class AbstractDeclaration extends Node {

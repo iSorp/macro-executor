@@ -1,11 +1,17 @@
 import * as path from 'path';
-import { ExtensionContext, workspace, commands, window as Window, Selection } from 'vscode';
+import { ExtensionContext, workspace, commands, window as Window, 
+	Selection, languages, TextDocument, CancellationToken 
+} from 'vscode';
+
+
 import { 
 	LanguageClient, LanguageClientOptions, 
 	ServerOptions, TransportKind, RevealOutputChannelOn,
+	ExecuteCommandSignature
 } from 'vscode-languageclient';
-import registerCommands from './common/commands';
 
+import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/semanticTokens.proposed';
+import registerCommands from './common/commands';
 
 import CompositeDisposable from './common/CompositeDisposable';
 import { downloadAndUnzipVSCode } from 'vscode-test';
@@ -24,15 +30,8 @@ export function activate(context: ExtensionContext) {
 	let serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
 	);
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
 
-	// The debug options for the server
-	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
 	let debugOptions = { execArgv: ['--nolazy', '--inspect=6011'], cwd: process.cwd() };
-
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
 		run: { module: serverModule, transport: TransportKind.ipc, options: { cwd: process.cwd() } },
 		debug: {
@@ -41,22 +40,24 @@ export function activate(context: ExtensionContext) {
 			options: debugOptions
 		}
 	};
-	const selector = { language: 'macro', scheme: 'file' };
 
-	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
-		// Register the server for plain text documents
-		documentSelector: [selector],
-
+		documentSelector: [{ language: 'macro', scheme: 'file' }],
+		initializationOptions: workspace.getConfiguration('macro'),
 		synchronize: {
-			// Notify the server about file changes 
 			fileEvents: workspace.createFileSystemWatcher('**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}')
 		},		
 		diagnosticCollectionName: 'macro',
 		progressOnInitialization: true,
-		revealOutputChannelOn: RevealOutputChannelOn.Never,
+		revealOutputChannelOn: RevealOutputChannelOn.Never,	
 		middleware: {
-			executeCommand: async (command, args, next) => {
+			// Workaround for https://github.com/microsoft/vscode-languageserver-node/issues/576
+			async provideDocumentSemanticTokens(document: TextDocument, token: CancellationToken, next: DocumentSemanticsTokensSignature) {
+				const res = await next(document, token);
+				if (res === undefined) {throw new Error('busy');}
+				return res;
+			},
+			executeCommand: async (command:string, args:any[], next:ExecuteCommandSignature) => {
 				if (command === 'macro.codelens.references') {
 					let line = Number(args[0]);
 					let char = Number(args[1]);
@@ -86,9 +87,7 @@ export function activate(context: ExtensionContext) {
 						value: config.sequence.increment,
 						validateInput: validate
 					});
-	
-				
-					
+
 					if (Window.activeTextEditor) {
 						if (command === 'macro.action.addsequeces' && increment) {
 							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start, increment]);
@@ -99,8 +98,9 @@ export function activate(context: ExtensionContext) {
 					}
 				}
 			}
-		}
+		} as any
 	};
+
 	// Create the language client and start the client.
 	client = new LanguageClient(
 		'macroLanguageServer',
@@ -109,13 +109,11 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 
+	client.registerFeature(new SemanticTokensFeature(client));
 
-	client.registerProposedFeatures();
 	disposables.add(registerCommands());
 	context.subscriptions.push(disposables);
-	
-	// Start the client. This will also launch the server
-	client.start();
+	context.subscriptions.push(client.start());
 }
 
 export function deactivate(): Thenable<void> | undefined {

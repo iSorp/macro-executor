@@ -10,23 +10,20 @@
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
 ## News
-- Rename provider
-- Block skip support "/"
-
+- [Semantic highlighting](#highlighting)
+- [Additional compiler parameters](#ExtensionSettings)
+       
 
 ## Features
 * Compiling and linking
 * Compiler problem matcher
-* Syntax highlighting
+* Syntax/Semantic highlighting
 * Syntax validation
 * Symbol provider
 * Completion provider
 * CodeLens
 * Lint features
 * Sequence number refactoring
-
-**The program parsing is not yet complete implemented. There are cases where mistakes are not appropriate or not detected.** <br>
-Report issues to https://github.com/iSorp/macro-executor/issues
 
 
 ### Validation
@@ -54,13 +51,32 @@ Report issues to https://github.com/iSorp/macro-executor/issues
 ## Coding conventions
 * `$Include` paths must be absolute or relative to the workspace folder
 * Uppercase for constants: `@MY_CONSTANT 100`
-* Space between statements: `O SUB_PROBGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
+* Space between statements: `O SUB_PROGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
 * A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
 
 ## Sequence number refactoring for functions
 * Consecutive numbering on completion (snippet N-Number)
 * Command for renumbering sequences (incl. GOTOs)
 * Command for adding missing sequences (for NC statements)
+
+
+<a name="highlighting"></a>
+
+## Semantic highlighting
+Semantic highlighting is used to highlight the represented type of a symbol. Following types are supported:
+* M-Code and G-Code
+* PMC Address
+* Macro variable
+* Constant
+* Label
+
+![References](./resources/semantic.gif)
+
+*The color theme used in screenshot →* ***[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)***
+
+
+
+
 
 ## Lint
 The Lint is configurable by changing the following rules in the settings (user or workspace).
@@ -95,9 +111,11 @@ Three levels are supported: `error`, `warning` and `ignore`.
 | Command | Key          |
 |---------|--------------|
 | Build   | Ctrl+Shift+B |
-| Link    | Ctrl+Shift+L |
+| Link / build all    | Ctrl+Shift+L |
 | Clean   | Ctrl+Shift+C |
 
+
+<a name="settings"></a>
 
 ## Extension Settings
 
@@ -113,6 +131,7 @@ This extension contributes the following settings:
 Build settings:
 * `macro.build.compiler`: Selection of the macro compiler
 * `macro.build.controlType`: Selection of the control type
+* `macro.build.compilerParams`: Additional compiler parameters: -NR, -L1, -L2, -L3, -PR
 * `macro.build.makeFile`: The path to the makefile
 * `macro.project.exportPath`: The path to the directory for the memory card file (.mem)
 * `macro.project.sourcePath`: The path to the directory for the source files (.src)
@@ -130,7 +149,7 @@ The following parameters are passed to the external script:
 3. Compiler
 4. Control type parameter
 
-<a name="internalbuild"></a>
+<a name="ExtensionSettings"></a>
 
 ## Internal build system
 If `macro.build.makeFile` is empty the internal system is used.

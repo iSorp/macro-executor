@@ -17,6 +17,7 @@
 	"macro.validate.workspace.description": "Aktiviert oder deaktiviert die Überprüfung des gesamten Arbeitsbereichs",
 	"macro.build.compiler.description": "Auswahl des Macro-Compilers",
 	"macro.build.controlType.description": "Auswahl des Steuerungstyps",
+	"macro.build.compilerParams.description": "Zusätzliche Compilerparameter: -NR, -L1, -L2, -L3, -PR",
 	"macro.build.makeFile.description": "Der Pfad zum Makefile. Folgende Argumente werden übergeben: Exportverzeichnis, [make,  clean], Compiler, Steuerungstyp. Wenn im Verzeichnis kein Clean.bat gefunden wird, wird als Argument 'clean' verwendet. Wenn kein Pfad angegeben wird, wird das interne Buildsystem verwendet.",
 	"macro.project.exportPath.description": "Der Pfad zu dem Verzeichnis für die Speicherkartendatein (.mem)",
 	"macro.project.sourcePath.description": "Der Pfad zu dem Verzeichnis wo die Source-Dateien (.src) liegen",

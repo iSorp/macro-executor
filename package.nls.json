@@ -16,6 +16,7 @@
 	"macro.validate.workspace.description": "Enables or disables the workspace validation",
 	"macro.build.compiler.description": "Selection of the macro compiler",
 	"macro.build.controlType.description": "Selection of the control type",
+	"macro.build.compilerParams.description": "Additional compiler parameters: -NR, -L1, -L2, -L3, -PR",
 	"macro.build.makeFile.description": "The path to the makefile. The following parameters are passed: Export directory, [make,  clean], Compiler, Control type. If in the directory no Clean.bat is found, the parameter 'clean' is used. If no path is specified, the internal build system is used.",
 	"macro.project.exportPath.description": "The path to the directory for the memory card file (.mem)",
 	"macro.project.sourcePath.description": "The path to the directory for the source files (.src)",

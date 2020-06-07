@@ -1,33 +1,75 @@
-comment.begin.macro
-comment.end.macro
-comment.macro
 
-blockskip.begin.macro
-blockskip.end.macro
-blockskip.macro
+// TextMate Grammars
+
+source.macro										// Scope
+
+meta.function.macro					
+storage.type.function.macro							// O
+entity.name.function.macro          				// O <Function>
+
+constant.language.macro             				// TRUE, FALSE
+
+constant.numeric.macro              				// Numbers
+punctuation.section.tag.macro						// N-Number
+
+keyword.operator.arithmetic.macro					// +, -, *, /
+keyword.operator.assignment.macro					// =
+keyword.other.macro              					// EQ, LT, OR, AND, ...
+keyword.control.conditional.macro   				// IF, DO, ...
+
+support.function.math.macro							// SIN, COS, ...
+keyword.other.macro    								// M-,G-Function
+storage.type.parameter.macro						// P, X, R, ...
 
 
+meta.definition.label.macro
+entity.name.label.macro                				// Labels
+punctuation.definition.keyword.label.macro			// >
 
-file.macro
+meta.definition.variable.macro
+punctuation.definition.keyword.variable.macro		// @
+variable.other.symbol.macro							// @<symbol>
 
-variable.value.macro
+variable.macro 										// any symbol
 
-string.a.macro
-string.b.macro
-string.c.code.macro
+variable.language.macro             				// $LIST, $INCLUDE, $, %, #, ..
 
-keyword.operator.macro
-keyword.operator.arithmetic.macro
+meta.brace.square.macro								// []
 
-constant.other.macro
-constant.language.macro
+string.other.macro									// ()
+string.quoted.single.macro          				// ('')
+string.quoted.double.macro							// ("")
+string.quoted.other.macr							// (**)
 
-keyword.command
-keyword.control.conditional.macro
+markup.link.macro                   				// include paths
 
-keyword.command.macro
-keyword.command.m-code.macro
-keyword.command.g-code.macro
-keyword.control.include.macro
+markup.italic.block_skip.macro      				// /
 
-support.parameter.macro
+comment.line.macro                  				// /*, ;
+
+
+// Semantic Tokens
+"number": [
+	"constant.numeric"
+],
+"variable": [
+	"variable.other.field"
+],
+"symbol": [
+	"variable.other.numeric"
+],
+"constant": [
+	"constant.other.numeric"
+],
+"label": [
+	"entity.name.label"
+],
+"code": [
+	"keyword.other"
+],
+"parameter": [
+	"storage.type.parameter"
+],
+"address": [
+	"support.variable.property"
+]

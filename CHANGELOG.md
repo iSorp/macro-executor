@@ -1,4 +1,10 @@
-## 0.1.12 (May , 2020)
+## 0.1.13 (June 7, 2020)
+- Syntax highlighting
+- Semantic highlighting
+- Bug fixes Parser (% eof sign added)
+- Additional compiler parameter
+
+## 0.1.12 (May 26, 2020)
 - Rename provider
 - Block skip support
 - clean up

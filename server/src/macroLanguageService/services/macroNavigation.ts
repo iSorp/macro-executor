@@ -157,13 +157,13 @@ export class MacroNavigation {
 						case nodes.ValueType.Constant:
 							entry.kind = SymbolKind.Constant;
 							break;
-						case nodes.ValueType.MacroValue:
+						case nodes.ValueType.Variable:
 							entry.kind = SymbolKind.Variable;
 							break;
 						case nodes.ValueType.Numeric:
 							entry.kind = SymbolKind.Variable;
 							break;
-						case nodes.ValueType.Nc:
+						case nodes.ValueType.NcCode:
 							entry.kind = SymbolKind.Event;
 							break;
 						case nodes.ValueType.Undefinded:
@@ -174,7 +174,7 @@ export class MacroNavigation {
 							break;
 					}
 				} 	
-				else if (variable.declaration?.valueType === nodes.ValueType.Nc){
+				else if (variable.declaration?.valueType === nodes.ValueType.NcCode){
 					entry.name = variable.getName();
 					entry.kind = SymbolKind.Event;
 				} 
@@ -231,9 +231,9 @@ export class MacroNavigation {
 			macroFile.accept(candidate => {
 				if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
 					const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
-						if (node) {
-							declarations.add(node.getText(), node.getText());
-						}
+					if (node) {
+						declarations.add(node.getText(), node.getText());
+					}
 					return false;
 				}			
 				return true;
@@ -451,7 +451,7 @@ export class MacroNavigation {
 	 * @param macroFile 
 	 */
 	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
-		let includes:string[] = []
+		let includes:string[] = [];
 		const uris = this.getIncludeUris(macroFile, this.fileProvider);
 		if (uris) {
 			includes = uris;

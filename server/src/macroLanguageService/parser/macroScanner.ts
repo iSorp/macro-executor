@@ -529,7 +529,6 @@ export class Scanner {
 		if (ch === _USC || // _
 			ch === _DOT || // .
 			ch === _QUM || // ?
-			ch === _PRC || // %
 			ch === _BNG || // !
 			ch >= _a && ch <= _z || // a-z
 			ch >= _A && ch <= _Z || // A-Z
@@ -550,7 +549,7 @@ export class Scanner {
  */
 export function getComment(pos:number, text:string) : string {
 
-	const comments = [[_FSL, _MUL], [_SEM]]
+	const comments = [[_FSL, _MUL], [_SEM]];
 	const stream = new MultiLineStream(text);
 	stream.goBackTo(pos);
 	
