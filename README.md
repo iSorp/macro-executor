@@ -18,16 +18,6 @@ Fanuc Macro Executor syntax highlighting, validating and project building
        
 ***
        
-To enable the semantic highlighting add the following property to your settings
-
-```
-"editor.semanticTokenColorCustomizations": {
-       "enabled": true,
-}
-```
-
-***
-       
 
 ## Features
 * Compiling and linking
