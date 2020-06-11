@@ -11,6 +11,7 @@ export enum TokenType {
 	Hash,
 	AT,
 	GTS,
+	LTS,
 	LogigOr,
 	LogigAnd,
 	String,
@@ -22,6 +23,7 @@ export enum TokenType {
 	Whitespace,
 	Symbol,
 	Ffunc,
+	Fcommand,
 	KeyWord,
 	Comment,
 	Ampersand,		// axis number command
@@ -139,6 +141,7 @@ export const _n = 'n'.charCodeAt(0);
 export const _MIN = '-'.charCodeAt(0);
 export const _USC = '_'.charCodeAt(0);
 export const _MUL = '*'.charCodeAt(0);
+export const _LAN = '<'.charCodeAt(0);
 export const _RAN = '>'.charCodeAt(0);
 export const _PIP = '|'.charCodeAt(0);
 export const _AMD = '&'.charCodeAt(0);
@@ -195,6 +198,19 @@ staticKeywordTable['xor'] = TokenType.KeyWord;
 staticKeywordTable['mod'] = TokenType.KeyWord;
 
 const staticFunctionTable: { [key: string]: TokenType; } = {};
+staticFunctionTable['popen'] = TokenType.Fcommand;
+staticFunctionTable['pclos'] = TokenType.Fcommand;
+staticFunctionTable['dprnt'] = TokenType.Fcommand;
+staticFunctionTable['bprnt'] = TokenType.Fcommand;
+staticFunctionTable['setvn'] = TokenType.Fcommand;
+staticFunctionTable['fgen'] = TokenType.Fcommand;
+staticFunctionTable['fdel'] = TokenType.Fcommand;
+staticFunctionTable['fopen'] = TokenType.Fcommand;
+staticFunctionTable['fclos'] = TokenType.Fcommand;
+staticFunctionTable['fpset'] = TokenType.Fcommand;
+staticFunctionTable['fread'] = TokenType.Fcommand;
+staticFunctionTable['fwrit'] = TokenType.Fcommand;
+
 staticFunctionTable['sin'] = TokenType.Ffunc;
 staticFunctionTable['cos'] = TokenType.Ffunc;
 staticFunctionTable['tan'] = TokenType.Ffunc;
@@ -214,7 +230,6 @@ staticFunctionTable['pow'] = TokenType.Ffunc;
 staticFunctionTable['adp'] = TokenType.Ffunc;
 staticFunctionTable['prm'] = TokenType.Ffunc;
 
-
 export class Scanner {
 
 	constructor() {}
@@ -222,6 +237,7 @@ export class Scanner {
 	public stream: MultiLineStream = new MultiLineStream('');
 	public ignoreComment = true;
 	public ignoreWhitespace = true;
+	public inFunction = false;
 
 
 	public setSource(input: string): void {
@@ -310,7 +326,6 @@ export class Scanner {
 				return this.finishToken(offset, TokenType.Delim);
 			}
 		}
-
 		// #-keyword
 		if (this.stream.advanceIfChar(_HSH)) {
 			return this.finishToken(offset, TokenType.Hash);
@@ -336,13 +351,13 @@ export class Scanner {
 		// symbol / Static
 		content = [];
 		if (this._symbol(content)) {
-			let text = content.join('');
-			let keyword = <TokenType>staticKeywordTable[text.toLocaleLowerCase()];
+			let text = content.join('').toLocaleLowerCase();
+			let keyword = <TokenType>staticKeywordTable[text];
 			if (typeof keyword !== 'undefined') {
 				return this.finishToken(offset, keyword);
 			}
 
-			let funcion = <TokenType>staticFunctionTable[text.toLocaleLowerCase()];
+			let funcion = <TokenType>staticFunctionTable[text];
 			if (typeof funcion !== 'undefined') {
 				return this.finishToken(offset, funcion);
 			}
@@ -351,10 +366,12 @@ export class Scanner {
 		}
 
 		// String, BadString
-		content = [];
-		let tokenType = this._string(content);
-		if (tokenType !== null) {
-			return this.finishToken(offset, tokenType, content.join(''));
+		if (!this.inFunction){
+			content = [];
+			let tokenType = this._string(content);
+			if (tokenType !== null) {
+				return this.finishToken(offset, tokenType, content.join(''));
+			}
 		}
 		
 		// Delim
@@ -566,7 +583,6 @@ export function getComment(pos:number, text:string) : string {
 	})(a) &&  a !== _NWL);
 
 	// Check all other comment char
-	let start = stream.pos();
 	if (comment.length > 0) {
 		stream.advanceWhileChar(a => ((ch:number) : boolean => {
 			for (const char of comment) {
@@ -578,6 +594,8 @@ export function getComment(pos:number, text:string) : string {
 		})(a) &&  a !== _NWL);
 	}
 
+	stream.advance(comment.length);
+	let start = stream.pos();
 	stream.advanceWhileChar(a => a !== _NWL);
 	let end = stream.pos();
 	return text.substr(start, end-start); 

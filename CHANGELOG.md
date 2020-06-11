@@ -1,3 +1,8 @@
+## 0.1.14 (June 11, 2020)
+- Signatures for build-in functions
+- Array support
+- Custom macro commands
+
 ## 0.1.13 (June 7, 2020)
 - Syntax highlighting
 - Semantic highlighting

@@ -34,8 +34,11 @@ export class MacroSemantic {
 			}
 		
 			if (candidate.type === nodes.NodeType.label) {
-				const pos = document.positionAt(candidate.offset);
-				builder.push(pos.line, pos.character, candidate.length, TokenTypes.label, 0);
+				const label = <nodes.Label>candidate;
+				if (label.symbol){
+					const pos = document.positionAt(label.symbol.offset);
+					builder.push(pos.line, pos.character, label.symbol.length, TokenTypes.label, 0);
+				}
 			}
 			else if (candidate.type === nodes.NodeType.Variable && candidate.getParent()?.type !== nodes.NodeType.Function) {	
 				const variable = <nodes.Variable>candidate;

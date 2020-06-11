@@ -10,6 +10,7 @@ import { stringify } from 'querystring';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
 export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/semanticTokens.proposed';
+export * from './languageFacts/builtinData';
 export { 
 	SemanticTokenModifiers,
 	SemanticTokenTypes,
@@ -100,6 +101,19 @@ export enum TokenTypes {
 	_ 				= 9
 }
 
+
 export enum TokenModifiers {
 	_ 				= 0
+}
+
+export type FunctionSignatureParam = {
+	_bracket? : string;
+	_escape?: string;
+	_param?: {[name:string]:any}[];
+}
+
+export type FunctionSignature = {
+	description?:string,
+	delimiter?:string, 
+	param:FunctionSignatureParam[]
 }

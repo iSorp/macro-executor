@@ -46,6 +46,7 @@ import {
 	TextDocumentChangeEvent,
 	ExecuteCommandParams,
 	RenameParams,
+	SignatureHelpParams,
 	Proposed
 } from 'vscode-languageserver';
 
@@ -250,6 +251,10 @@ connection.onInitialize((params: InitializeParams) => {
 			codeLensProvider: {
 				resolveProvider:true
 			},
+			signatureHelpProvider: {
+				triggerCharacters: ['(', '[', ','],
+				retriggerCharacters : [',']
+			},
 			renameProvider: true,
 			referencesProvider: true,
 			implementationProvider:true,
@@ -294,6 +299,7 @@ connection.onDocumentLinks(documentLinks);
 connection.onHover(hower);
 connection.onCompletion(completion);
 connection.onExecuteCommand(command);
+connection.onSignatureHelp(signature);
 connection.languages.semanticTokens.on(semantic);
 //connection.languages.semanticTokens.onRange(semanticRange);
 
@@ -368,6 +374,12 @@ function command (params: ExecuteCommandParams) {
 			}
 		}
 	}
+}
+
+function signature(params:SignatureHelpParams ) {
+	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
+	if (!repo) {return null;}
+	return macroLanguageService.doSignature(repo.document, params.position, repo.macrofile, settings);
 }
 
 function content(change:TextDocumentChangeEvent<TextDocument>) {

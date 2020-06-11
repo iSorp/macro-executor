@@ -35,7 +35,7 @@
                     "include": "#language_keywords" 
                 },
                 {
-                    "include":"#filecontrol"
+                    "include":"#control_statement"
                 },
                 {
                     "include":"#include"
@@ -86,13 +86,19 @@
                     "include": "#language_keywords" 
                 },
                 {
+                    "include": "#control_statement"  
+                },
+                {
                     "include":"#var_def"
                 },
                 {
                     "include":"#label_def"
                 },
                 {
-					"include":"#functions"	
+					"include":"#functions_math"	
+                },
+                {
+					"include":"#functions_command"	
                 },
                 {
                     "include":"#conditionals_1"	
@@ -135,7 +141,7 @@
                 }
             ]
         },
-        "filecontrol" : {
+        "control_statement" : {
             "patterns": [
                 {        
                     "name":"variable.language.macro",
@@ -144,6 +150,10 @@
                 {
                     "name":"variable.language.macro",
                     "match":"\\$LIST"
+                },
+                {
+                    "name":"variable.language.macro",
+                    "match":"\\$EJECT"
                 }
             ]
         },
@@ -184,9 +194,13 @@
             "name":"keyword.control.conditional.macro",
             "match":"(?i)(?<=^|\\W|\\d)(END|DO|GOTO)(?![a-zA-Z])"
         },
-        "functions" : {
+        "functions_math" : {
             "name":"support.function.math.macro",
-            "match":"(?i)(?<=\\W|\\d)(SIN|COS|TAN|ASIN|ACOS|ATAN|SQRT|ABS|BIN|BCD|ROUND|FIX|FUP|LN|EXP|POW|ADP|PRM)(?=\\s*\\[)"
+            "match":"(?i)(?<=^|\\W|\\d)(SIN|COS|TAN|ASIN|ACOS|ATAN|SQRT|ABS|BIN|BCD|ROUND|FIX|FUP|LN|EXP|POW|ADP|PRM)(?=\\s*\\[)"
+        },
+        "functions_command" : {
+            "name":"support.function.macro",
+            "match":"(?i)(?<=^|\\W|\\d)(POPEN|PCLOS|DPRNT|BPRNT|SETVN|FGEN|FDEL|FOPEN|FCLOS|FPSET|FREAD|FWRIT)"
         },
         "keyword_operator": {
             "match":"(?i)(?<=\\W|\\d|\\w)(EQ|NE|LT|LE|GE|GT|OR|XOR|AND|MOD|\\&\\&|\\|\\||\\/)(?-i)(?=\\d|\\W|[A-Z]\\d)",
@@ -270,7 +284,7 @@
                     "include": "#language_keywords" 
                 },
                 {
-					"include":"#functions"	
+					"include":"#functions_math"	
                 },
                 {
 					"include":"#keyword_operator"	

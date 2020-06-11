@@ -15,7 +15,7 @@ import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
 	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
 	Location, TextDocument, CompletionList, CodeLens, 
-	TextDocumentEdit, WorkspaceEdit, Range, Proposed
+	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, Proposed
 } from './macroLanguageTypes';
 import { MacroSemantic } from './services/macroSemantic';
 
@@ -28,6 +28,7 @@ export interface LanguageService {
 	parseMacroFile(document: TextDocument): Macrofile;
 	doHover(document: TextDocument, position: Position, macroFile: Macrofile):Hover | null;
 	doComplete(document: TextDocument, position: Position, stylesheet: Macrofile, documentSettings: LanguageSettings): CompletionList;
+	doSignature(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings):SignatureHelp | null;
 	findDefinition(document: TextDocument, position: Position, macroFile: Macrofile): Location | null;
 	findReferences(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
 	findImplementations(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
@@ -46,6 +47,7 @@ function createFacade(parser: Parser, hover: MacroHover, completion: MacroComple
 		parseMacroFile: parser.parseMacroFile.bind(parser),
 		doHover: hover.doHover.bind(hover),
 		doComplete: completion.doComplete.bind(completion),
+		doSignature: completion.doSignature.bind(completion),
 		findDefinition: navigation.findDefinition.bind(navigation),
 		findReferences: navigation.findReferences.bind(navigation),
 		findImplementations: navigation.findImplementations.bind(navigation),

@@ -35,6 +35,78 @@
 		"description": "GOTO label",
 		"scope": "source.macro"
 	},
+	"popen": {
+		"prefix": "popen",
+		"body": "POPEN",
+		"description": "The POPEN command establishes a connection to an external input/output device. It must be specified before a sequence of data output commands. The CNC outputs a DC2 control code",
+		"scope": "source.macro"
+	},
+	"pclos": {
+		"prefix": "pclos",
+		"body": "PCLOS",
+		"description": "The PCLOS command releases a connection to an external input/output device. Specify this command when all data output commands have terminated. DC4 control code is output from the CNC",
+		"scope": "source.macro"
+	},
+	"dprnt": {
+		"prefix": "dprnt",
+		"body": "DPRNT[${1:data}]",
+		"description": "The DPRNT command outputs characters and each digit in the value of a variable according to the code set in the settings (ISO)",
+		"scope": "source.macro"
+	},
+	"bprnt": {
+		"prefix": "bprnt",
+		"body": "BPRNT[${1:data}]",
+		"description": "The BPRNT command outputs characters and variable values in binary",
+		"scope": "source.macro"
+	},
+	"setvn": {
+		"prefix": "setvn",
+		"body": "SETVN ${1:var}[${2:name}]",
+		"description": "This function expands number of variables to which name is set by SETVN",
+		"scope": "source.macro"
+	},
+	"fgen": {
+		"prefix": "fgen",
+		"body": "FGEN(${1:file}, ${2:size}, ${3:result})",
+		"description": "File creation command",
+		"scope": "source.macro"
+	},
+	"fdel": {
+		"prefix": "fdel",
+		"body": "FDEL(${1:line}, ${2:status})",
+		"description": "File deletion command",
+		"scope": "source.macro"
+	},
+	"fopen": {
+		"prefix": "fopen",
+		"body": "FOPEN(${1:file}, ${2:mode}, ${3:result})",
+		"description": "File opening command",
+		"scope": "source.macro"
+	},
+	"fclos": {
+		"prefix": "fclos",
+		"body": "FCLOS(${1:file})",
+		"description": "File closing command",
+		"scope": "source.macro"
+	},
+	"fpset": {
+		"prefix": "fpset",
+		"body": "FPSET(${1:file}, ${2:type},  ${3:pointer})",
+		"description": "Command for setting file pointer",
+		"scope": "source.macro"
+	},
+	"fread": {
+		"prefix": "fread",
+		"body": "FREAD(${1:file}, ${2:type},  ${3:var})",
+		"description": "Command for reading files",
+		"scope": "source.macro"
+	},
+	"fwrit": {
+		"prefix": "fwrit",
+		"body": "FWRIT(${1:file}, ${2:type},  ${3:data})",
+		"description": "Command for writing files",
+		"scope": "source.macro"
+	},
 	"sin": {
 		"prefix": "sin",
 		"body": "SIN[${1:value}]",

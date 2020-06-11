@@ -16,9 +16,11 @@ import {
 	MacroFileProvider,
 	InsertTextFormat,
 	TextEdit,
-	LanguageSettings
+	LanguageSettings,
+	functionSignatures
 } from '../macroLanguageTypes';
 import { getComment } from '../parser/macroScanner';
+import { SignatureHelp, ParameterInformation, SignatureInformation } from 'vscode-languageserver';
 
 
 let macroStatementTypes:nodes.ValueType[] = [
@@ -340,6 +342,84 @@ export class MacroCompletion {
 			}
 		}
 		return this.defaultReplaceRange;
+	}
+
+	public doSignature(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings) : SignatureHelp | null{
+
+		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
+		if (!node){
+			return null;
+		}
+
+		const path = nodes.getNodePath(node, document.offsetAt(position));
+		const paramNode = node.findAParent(nodes.NodeType.FuncParam);
+		const funcNode:nodes.Ffunc = <nodes.Ffunc>node.findAParent(nodes.NodeType.Ffunc);
+		const ident  = funcNode.getIdentifier()?.getText()?.toLocaleLowerCase();
+		const children = funcNode?.getChildren();
+		if (!ident) {
+			return null;
+		}
+
+		const signatureIndex = funcNode.getData('signature');
+		let parameterIndex = 0;
+		for (const element of children) {
+			if (element.type === nodes.NodeType.FuncParam) {
+				if (paramNode === element) {
+					break;
+				}
+				++parameterIndex;
+			}
+		}
+		
+		const signatures = functionSignatures[ident];
+		const information:SignatureInformation[] = [];
+		for (let signature of signatures) {
+			const parameters:ParameterInformation[] = [];
+			let signatureText = '';
+			let deliminator = '';
+			if (signature) {
+				signatureText += ident + ' ';
+				for (const element of signature.param) {
+	
+					if (element._bracket){
+						deliminator = '';
+						signatureText += element._bracket;
+					}
+					else if (element._escape) {
+						deliminator = '';
+						signatureText += element._escape;
+					}
+	
+					if (element._param){
+						for (const param of element._param) {
+							if (signature.delimiter) {
+								signatureText += deliminator;
+							}
+							const key = Object.keys(param)[0];
+							signatureText +=  key;
+							parameters.push( 
+								{
+									label:  key,
+									documentation: param[key]
+								});
+							deliminator = signature.delimiter + ' ';
+						}
+					}
+				}
+			}
+			information.push({
+				label: signatureText,
+				documentation: signature.description,
+				parameters: parameters
+			});
+		}
+
+	
+		return {
+			activeParameter:parameterIndex,
+			activeSignature:signatureIndex,
+			signatures: information
+		};
 	}
 }
 
