@@ -450,6 +450,8 @@ export enum NodeType {
 	Operator,
 	Identifier,
 	DeclarationValue,
+	ControlStatement,
+	FuncParam,
 	Statement,
 	Parameter,
 	Code,
@@ -690,8 +692,7 @@ export class Address extends Node {
 
 export class Ffunc extends Node {
 
-	public parameter1?:BinaryExpression;
-	public parameter2?:BinaryExpression;
+	public identifier?: Node;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -701,20 +702,12 @@ export class Ffunc extends Node {
 		return NodeType.Ffunc;
 	}
 
-	public setParameter1(node: BinaryExpression | null): node is BinaryExpression {
-		return this.setNode('parameter1', node, 0);
+	public setIdentifier(node: Node | null): node is Node {
+		return this.setNode('identifier', node, 0);
 	}
 
-	public getParameter1(): BinaryExpression | undefined {
-		return this.parameter1;
-	}
-
-	public setParameter2(node: BinaryExpression | null): node is BinaryExpression {
-		return this.setNode('parameter2', node, 0);
-	}
-
-	public getParameter2(): BinaryExpression | undefined {
-		return this.parameter2;
+	public getIdentifier(): Node | undefined {
+		return this.identifier;
 	}
 }
 

@@ -5,45 +5,55 @@
 @CALL     M98P
 @RETURN   M99
 
->LOOP_I   10
+@LOOP_I   10
 
 @FUNCTIONS    1
 @OPERATORS    2
 @CONDITIONALS 3
 @STATEMENTS   4
-
+@ARRAY        5
 @i 200
 @k 200
 @j 200
 
 
 O FUNCTIONS
-  #i=ATAN[#j]/[#k]
-  #i=ABS[#j]
-  #i=BIN[#j]
-  #i=BCD[#j]
-  #i=ROUND[#j]
-  #i=FIX[#j]
-  #i=FUP[#j]
-  #i=LN[#j]
-  #i=EXP[#j]
-  #i=ADP[#j]
-  #i=PRM[#j]
-  #i=SIN[#j]
-  #i=COS[#j]
-  #i=TAN[#j]
-  #i=ASIN[#j]
-  #i=ACOS[#j]
-  #i=ATAN[#j]
-  #i=ATAN[#j]/[#k]
-  #i=SQRT[#j]
-  #i=ATAN[#j,#k]
-  #i=PRM[#j,#k]
-  #i=POW[#j, #j]
-  IF [POW[#j, #j] EQ 3] THEN
+  popen
+  pclos
+  dprnt[abcd]
+  dprnt[X#100[3] Y#101[3] M#102[0]]
+  bprnt[X#100[3] Y#101[3] M#102[0]]
+  setvn 100[abc]
+  fgen(1,1,1)
+  fdel(1,1)
+  fopen(1,1,1)
+  fclos(1)
+  fpset(1,1,1)
+  fread(1,1,1)
+  fwrit(1,1,1)
+  #1 = sin[1]
+  #1 = cos[1]
+  #1 = tan[1]
+  #1 = asin[1]
+  #1 = acos[1]
+  #1 = atan[1]
+  #1 = ATAN[1, 2]
+  #1 = atan[1]/[1]
+  #1 = sqrt[1]
+  #1 = abs[1]
+  #1 = bin[1]
+  #1 = bcd[1]
+  #1 = round[1]
+  #1 = fix[1]
+  #1 = fup[1]
+  #1 = ln[1]
+  #1 = exp[1]
+  #1 = POW[1, 1]
+  #1 = adp[1]
+  #1 = prm[1]/[1]
+  #1 = prm[1]
+  #1 = PRM[1, var]
       
-  ENDIF
-
 O OPERATORS
   #i=#j
   #i=#j+#k
@@ -55,6 +65,8 @@ O OPERATORS
   #i=#j AND #k
   #i=#j MOD #k
 
+O ARRAY 
+var = var<1+#1<1+#1+[111]>>
 
 O CONDITIONALS
   >L_Label     10
@@ -63,17 +75,17 @@ O CONDITIONALS
 
   GOTO L_Label
 
-    IF [#var] THEN #var = 1
-    ELSE #var = 1
+    IF [var] THEN var = 1
+    ELSE var = 1
 
-    IF [#var] THEN 
-        #var = 1
-    ELSE #var = 1
+    IF [var] THEN 
+        var = 1
+    ELSE var = 1
 
-    IF [#var] THEN #var = 1
+    IF [var] THEN var = 1
 
     ELSE 
-        #var = 1
+        var = 1
     ENDIF
 
     IF [#k] THEN
@@ -82,13 +94,13 @@ O CONDITIONALS
         ENDIF
     ENDIF
 
-    WHILE [#var LT CONST] DO LOOP_I
+    WHILE [var LT CONST] DO LOOP_I
       GOTO L_Label
     END LOOP_I
 
 
 O STATEMENTS
-  N100 G01 G4.1 G[1] G#var X1 Y-[#1+1] F360.
+  N100 G01 G4.1 G[1] G var X1 Y-[#1+1] F360.
   N110 G01 X-#1 F360.1 
 
 RETURN

@@ -8,7 +8,7 @@ import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
 import { getComment } from '../parser/macroScanner';
 import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupContent, 
-	MacroFileProvider } from '../MacroLanguageTypes';
+	MacroFileProvider, functionSignatures } from '../MacroLanguageTypes';
 
 export class MacroHover {
 
@@ -23,15 +23,18 @@ export class MacroHover {
 		let hover: Hover | null = null;
 
 		const offset = document.offsetAt(position);
-		const node = nodes.getNodeAtOffset(macroFile, offset);
-
+		//const node = nodes.getNodeAtOffset(macroFile, offset);
+		const nodepath = nodes.getNodePath(macroFile, offset);
+		
 		let declaration = null;
 		const location = navigation.findDefinition(document, position, macroFile);
 		if (location){
 			declaration = this.fileProvider?.get(location.uri);
 		}
 
-		if (node) {
+		for (let i = 0; i < nodepath.length; i++) {
+			const node = nodepath[i];
+
 			if (location && declaration){
 				if (node.type === nodes.NodeType.Symbol) {
 					if (node.parent?.type === nodes.NodeType.label) {
@@ -63,11 +66,18 @@ export class MacroHover {
 					contents: node.getText(),
 					range: getRange(node)
 				};
+			}			
+			else if (node.type === nodes.NodeType.Ffunc) {
+				let text = this.getMarkedStringForFunction(<nodes.Ffunc>node);
+				hover = {
+					contents: text,
+					range: getRange(node),
+
+				};
 			}
 		}
 		return hover;
 	}
-
 
 	private getMarkedStringForDeclaration(type: string, macroFile: nodes.Node, document:TextDocument, location:Location) : MarkedString {
 		let node = <nodes.AbstractDeclaration>nodes.getNodeAtOffset(macroFile, document.offsetAt(location.range.start));		
@@ -77,11 +87,57 @@ export class MacroHover {
 		let valueType = node.valueType?.toString();
 
 		let text = '';
-		if (comment){
-			text += `${comment}`+'\n';
-		}
 		text += `(${type}:${valueType}) ` + `@${name} `+` ${address}`;
 
+		if (comment){
+			text += '\n\n' + `${comment}`;
+		}
+
+		return {
+			language: 'macro',
+			value: text
+		};
+	}
+
+	private getMarkedStringForFunction(node: nodes.Ffunc) : MarkedString {
+		const func:nodes.Ffunc = <nodes.Ffunc>node;
+		const ident = func.getIdentifier()?.getText().toLocaleLowerCase();
+		if (!ident){
+			return {
+				language: 'macro',
+				value: ''
+			};
+		}
+		const signatureIndex = func.getData('signature');
+		const signature = functionSignatures[ident][signatureIndex];
+		let text = '(function) ';
+		let deliminator = '';
+		if (signature) {
+			text += ident + ' ';
+			for (const element of signature.param) {
+
+				if (element._bracket){
+					deliminator = '';
+					text += element._bracket;
+				}
+				else if (element._escape){
+					deliminator = '';
+					text += element._escape;
+				}
+
+				if (element._param) {
+					for (const param of element._param) {
+						if (signature.delimiter) {
+							text += deliminator;
+						}
+						const key = Object.keys(param)[0];
+						text +=  key;
+						deliminator = signature.delimiter + ' ';
+					}
+				}
+			}
+		}
+		text += '\n\n' + signature.description;
 		return {
 			language: 'macro',
 			value: text
