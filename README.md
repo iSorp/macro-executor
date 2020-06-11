@@ -9,6 +9,7 @@
 
 Fanuc Macro Executor syntax highlighting, validating and project building 
 
+
 ## News
 - [Semantic highlighting](#highlighting)
 - [Additional compiler parameters](#ExtensionSettings)
