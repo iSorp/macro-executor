@@ -110,10 +110,10 @@ export class MacroHover {
 		}
 		const signatureIndex = func.getData('signature');
 		const signature = functionSignatures[ident][signatureIndex];
-		let text = '(function) ';
+		let text = '(function) ' + ident;
 		let deliminator = '';
+		let first = true;
 		if (signature) {
-			text += ident + ' ';
 			for (const element of signature.param) {
 
 				if (element._bracket){
@@ -126,6 +126,13 @@ export class MacroHover {
 				}
 
 				if (element._param) {
+
+					// Space if the first part is a parameter 
+					// e.g setvnvar[name] -> setvn var[name]
+					if (first) {
+						text += ' ';
+					}
+
 					for (const param of element._param) {
 						if (signature.delimiter) {
 							text += deliminator;
@@ -135,6 +142,7 @@ export class MacroHover {
 						deliminator = signature.delimiter + ' ';
 					}
 				}
+				first = false;
 			}
 		}
 		text += '\n\n' + signature.description;
