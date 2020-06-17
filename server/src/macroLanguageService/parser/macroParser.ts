@@ -440,6 +440,13 @@ export class Parser {
 			const statement = this._parseNcStatement();
 			node.addChild(statement);
 		}
+		// #F_param 	F
+		else if (this.peekRegExp(TokenType.Symbol, /\b([a-z]\b)/i)) {
+
+			node.valueType = nodes.ValueType.NcParam; 
+			const statement = this._parseNcStatement();
+			node.addChild(statement);
+		}
 		else {
 			return this.finish(node, ParseError.AddressExpected, [TokenType.NewLine]);
 		}
@@ -929,7 +936,9 @@ export class Parser {
 
 		// NC statement can not start with a value variable (#)
 		const declaration = this.declarations.get(this.token.text);
-		if (declaration && declaration?.valueType !== nodes.ValueType.Address && declaration?.valueType !== nodes.ValueType.NcCode) {
+		if (declaration && declaration?.valueType !== nodes.ValueType.Address 
+			&& declaration?.valueType !== nodes.ValueType.NcCode 
+			&& declaration?.valueType !== nodes.ValueType.NcParam) {
 			return this.finish(node, ParseError.InvalidStatement, [TokenType.Symbol, TokenType.NewLine]);
 		}
 

@@ -59,6 +59,9 @@ export class MacroSemantic {
 					else if (type === nodes.ValueType.NcCode) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.code, 0);
 					}
+					else if (type === nodes.ValueType.NcParam) {
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.parameter, 0);
+					}
 					else if (type === nodes.ValueType.Address) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.address, 0);
 					}
