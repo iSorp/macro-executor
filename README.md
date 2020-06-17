@@ -12,7 +12,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 ## News
 - [Semantic highlighting](#highlighting)
-- [Additional compiler parameters](#ExtensionSettings)
+- [Additional compiler parameters](#extensionSettings)
 - Array support (e.g var<#1>)
 - Custom macro commands
        
@@ -127,7 +127,7 @@ Three levels are supported: `error`, `warning` and `ignore`.
 | Clean   | Ctrl+Shift+C |
 
 
-<a name="settings"></a>
+<a name="extensionSettings"></a>
 
 ## Extension Settings
 
@@ -161,10 +161,10 @@ The following parameters are passed to the external script:
 3. Compiler
 4. Control type parameter
 
-<a name="ExtensionSettings"></a>
 
 ## Internal build system
 If `macro.build.makeFile` is empty the internal system is used.
+>- Currently only working with powershell (select default shell -> powershell)
 >- The compiler must be available over the system path
 >- All `.src` files under the folder `macro.project.sourcePath` and its subfolders will be compiled
 >- There are two ways to define a libray path in a link file:
