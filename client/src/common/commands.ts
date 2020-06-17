@@ -297,13 +297,16 @@ class ProjectService {
 		}	
 
 		if (exportPath) {
-			const exportAbs = this.getRelativePath(exportPath);
-			if (exportAbs){
-				lines.push('cd ..');
-				lines.push('\n\r');
-				lines.push('copy *.mem');
-				lines.push(exportAbs);
+			let p = '';
+			if (path.isAbsolute(exportPath)) {
+				p = path.normalize(exportPath);
 			}
+			else {
+				p = path.join('..\\',this.getRelativePath(exportPath));
+			}
+			lines.push('\n\r');
+			lines.push('copy *.mem');
+			lines.push(p);
 		}		
 		return lines.join(' ');
 	}
