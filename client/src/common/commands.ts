@@ -256,7 +256,7 @@ class ProjectService {
 				'-Fl'	+ fileDir
 			];
 		}
-		return compiler + ' '+ args.join(' ') + '\n\r';
+		return compiler + ' '+ args.join(' ');
 	}
 
 	public async getLinkCommand(dir:string|undefined=undefined) : Promise<string | undefined> {
@@ -276,10 +276,7 @@ class ProjectService {
 			return undefined;
 		}
 
-		const lines:string[] = [];
-		lines.push('\n\r');
-		
-		
+		const lines:string[] = [];		
 		let linkPath = '';
 		if (buildPath) {
 			lines.push('cd ' + buildPath);
@@ -304,7 +301,6 @@ class ProjectService {
 			else {
 				p = path.join('..\\',this.getRelativePath(exportPath));
 			}
-			lines.push('\n\r');
 			lines.push('copy *.mem');
 			lines.push(p);
 		}		
