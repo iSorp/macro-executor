@@ -419,14 +419,13 @@ function codeLensResolve(handler:CodeLens) {
 	let command:string = ''; 
 	if (data.type === MacroCodeLensCommand.References){
 		command = 'macro.codelens.references';
-	} 
-
+	}
 	return {
 		range: handler.range,
 		command: {
 			command: command,
 			title:data.title,
-			arguments: [data.line, data.character]
+			arguments: [handler.range.start, data.locations]
 		}
 	};
 }

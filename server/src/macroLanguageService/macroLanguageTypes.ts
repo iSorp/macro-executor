@@ -5,7 +5,7 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
-import  { TextDocument } from 'vscode-languageserver-types';
+import  { TextDocument, Location } from 'vscode-languageserver-types';
 import { stringify } from 'querystring';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
@@ -79,9 +79,7 @@ export interface MacroFileProvider {
 
 export interface MacroCodeLensType {
 	title: string;
-	uri:string;
-	line:number;
-	character:number;
+	locations : Location[] | undefined;
 	type:MacroCodeLensCommand;
 }	
 
