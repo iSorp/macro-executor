@@ -7,6 +7,8 @@
 
 @LOOP_I   10
 
+@PARAM    F
+​​​​​
 @FUNCTIONS    1
 @OPERATORS    2
 @CONDITIONALS 3
@@ -53,7 +55,8 @@ O FUNCTIONS
   #1 = prm[1]/[1]
   #1 = prm[1]
   #1 = PRM[1, var]
-      
+RETURN
+
 O OPERATORS
   #i=#j
   #i=#j+#k
@@ -64,9 +67,11 @@ O OPERATORS
   #i=#j/#k
   #i=#j AND #k
   #i=#j MOD #k
+RETURN
 
 O ARRAY 
-var = var<1+#1<1+#1+[111]>>
+  var = var<1+#1<1+#1+[111]>>
+RETURN
 
 O CONDITIONALS
   >L_Label     10
@@ -97,10 +102,11 @@ O CONDITIONALS
     WHILE [var LT CONST] DO LOOP_I
       GOTO L_Label
     END LOOP_I
-
+RETURN
 
 O STATEMENTS
   N100 G01 G4.1 G[1] G var X1 Y-[#1+1] F360.
   N110 G01 X-#1 F360.1 
+  PARAM 1
 
 RETURN

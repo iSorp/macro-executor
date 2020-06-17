@@ -1,13 +1,13 @@
 import * as path from 'path';
 import { ExtensionContext, workspace, commands, window as Window, 
-	Selection, languages, TextDocument, CancellationToken 
+	Selection, languages, TextDocument, CancellationToken,Range, Uri, Position, Location, WorkspaceEdit, ProviderResult
 } from 'vscode';
 
 
 import { 
 	LanguageClient, LanguageClientOptions, 
 	ServerOptions, TransportKind, RevealOutputChannelOn,
-	ExecuteCommandSignature
+	ExecuteCommandSignature, Middleware
 } from 'vscode-languageclient';
 
 import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/semanticTokens.proposed';
@@ -59,12 +59,15 @@ export function activate(context: ExtensionContext) {
 			},
 			executeCommand: async (command:string, args:any[], next:ExecuteCommandSignature) => {
 				if (command === 'macro.codelens.references') {
-					let line = Number(args[0]);
-					let char = Number(args[1]);
-					let selection = new Selection(line, char, line,char);
+
+					let position = new Position(args[0].line, args[0].character);
+					let locations = remapLocations(args[1]);
+			
+					//let selection = new Selection(line, char, line,char);
 					if (Window.activeTextEditor) {
-						Window.activeTextEditor.selection = selection;
-						commands.executeCommand('references-view.find');
+						//Window.activeTextEditor.selection = selection;
+						//commands.executeCommand('references-view.find');
+						commands.executeCommand('editor.action.showReferences', Window.activeTextEditor.document.uri, position, locations);
 					}
 				}
 				else if (command === 'macro.action.refactorsequeces' || command === 'macro.action.addsequeces') {
@@ -101,6 +104,7 @@ export function activate(context: ExtensionContext) {
 		} as any
 	};
 
+
 	// Create the language client and start the client.
 	client = new LanguageClient(
 		'macroLanguageServer',
@@ -121,4 +125,16 @@ export function deactivate(): Thenable<void> | undefined {
 		return undefined;
 	}
 	return client.stop();
+}
+
+function remapLocations(locations: any[]): ProviderResult<Location[]> {
+	const remapped = new Array<Location>();
+
+	for (const location of locations){
+		const l = new Location(Uri.parse(location.uri), 
+			new Range(new Position(location.range.start.line, location.range.start.character), 
+				new Position(location.range.end.line, location.range.end.character)));
+		remapped.push(l);
+	}
+	return remapped;
 }

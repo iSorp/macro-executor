@@ -1,3 +1,7 @@
+## 0.1.15 (June 17, 2020)
+- Bugfix Parameter symbol definition (e.g. @PARAM	F)
+- Building: Relative paths for fanuc executables (compiler, linker, formater)
+
 ## 0.1.14 (June 11, 2020)
 - Signatures for build-in functions
 - Array support

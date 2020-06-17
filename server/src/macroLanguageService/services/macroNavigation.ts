@@ -8,7 +8,7 @@ import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
 	Position, Range, SymbolInformation, SymbolKind, TextEdit, 
 	MacroCodeLensCommand, TextDocument, DocumentContext, MacroFileProvider, 
-	WorkspaceEdit
+	WorkspaceEdit, MacroCodeLensType
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols, Symbol } from '../parser/macroSymbolScope';
@@ -16,15 +16,15 @@ import { CodeLens } from 'vscode-languageserver';
 
 
 class FunctionMap {
-	private elements:Map<string, string[]> = new Map<string,string[]>();
-	public add(key:string, value:string){
+	private elements:Map<string, Location[]> = new Map<string,Location[]>();
+	public add(key:string, value:Location){
 		if (!this.elements.has(key)){
-			this.elements.set(key, new Array<string>());
+			this.elements.set(key, new Array<Location>());
 		}
 		this.elements.get(key)?.push(value);
 	}
 
-	public get(key:string) : string[] | undefined {
+	public get(key:string) : Location[] | undefined {
 		return this.elements.get(key);
 	}
 }
@@ -154,6 +154,9 @@ export class MacroNavigation {
 						case nodes.ValueType.Address:
 							entry.kind = SymbolKind.Interface;
 							break;
+						case nodes.ValueType.NcParam:
+							entry.kind = SymbolKind.Property;
+							break;
 						case nodes.ValueType.Constant:
 							entry.kind = SymbolKind.Constant;
 							break;
@@ -219,7 +222,7 @@ export class MacroNavigation {
 	}
 
 	public findCodeLenses(document: TextDocument, macroFile: nodes.MacroFile): CodeLens[] {
-		function getRange(node: nodes.Node) {
+		function getRange(node: nodes.Node, document: TextDocument) {
 			return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 		}	
 
@@ -232,7 +235,10 @@ export class MacroNavigation {
 				if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
 					const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
 					if (node) {
-						declarations.add(node.getText(), node.getText());
+						declarations.add(node.getText(), {
+							uri:document.uri,  
+							range: getRange(node, document)
+						});
 					}
 					return false;
 				}			
@@ -260,7 +266,10 @@ export class MacroNavigation {
 					if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
 						const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
 						if (node) {
-							declarations.add(node.getText(), node.getText());
+							declarations.add(node.getText(), {
+								uri:type.document.uri,  
+								range: getRange(node, type.document)
+							});
 						}
 						return false;
 					}
@@ -278,16 +287,15 @@ export class MacroNavigation {
 					const count = value?.length;
 					const pos = document.positionAt(node.offset);
 					const c = count === undefined ? 0 : count;
+					const t:MacroCodeLensType = {
+						title: c + (c !== 1 ? ' references' : ' reference'),
+						locations: value,
+						type: MacroCodeLensCommand.References
+					};
 					codeLenses.push(
 						{
-							range: getRange(node), 
-							data: {
-								title: c + (c !== 1 ? ' references' : ' reference'),
-								uri:document.uri,
-								line:pos.line,
-								character:pos.character,
-								type: MacroCodeLensCommand.References
-							}
+							range: getRange(node, document), 
+							data:t
 						});
 				}
 				return false;

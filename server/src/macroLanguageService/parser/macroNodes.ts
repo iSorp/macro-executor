@@ -992,7 +992,8 @@ export enum ValueType {
 	Constant = 'constant', // same as numeric in capital
 	Variable = 'variable',
 	Address = 'address',
-	NcCode = 	'code'
+	NcCode = 	'code',
+	NcParam = 	'param'
 }
 
 export class AbstractDeclaration extends Node {

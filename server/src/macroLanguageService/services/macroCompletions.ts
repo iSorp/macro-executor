@@ -375,28 +375,35 @@ export class MacroCompletion {
 		const information:SignatureInformation[] = [];
 		for (let signature of signatures) {
 			const parameters:ParameterInformation[] = [];
-			let signatureText = '';
+			let text = ident;
 			let deliminator = '';
+			let first = true;
 			if (signature) {
-				signatureText += ident + ' ';
 				for (const element of signature.param) {
 	
 					if (element._bracket){
 						deliminator = '';
-						signatureText += element._bracket;
+						text += element._bracket;
 					}
 					else if (element._escape) {
 						deliminator = '';
-						signatureText += element._escape;
+						text += element._escape;
 					}
 	
 					if (element._param){
+
+						// Space if the first part is a parameter 
+						// e.g setvnvar[name] -> setvn var[name]
+						if (first) {
+							text += ' ';
+						}
+
 						for (const param of element._param) {
 							if (signature.delimiter) {
-								signatureText += deliminator;
+								text += deliminator;
 							}
 							const key = Object.keys(param)[0];
-							signatureText +=  key;
+							text +=  key;
 							parameters.push( 
 								{
 									label:  key,
@@ -405,10 +412,11 @@ export class MacroCompletion {
 							deliminator = signature.delimiter + ' ';
 						}
 					}
+					first = false;
 				}
 			}
 			information.push({
-				label: signatureText,
+				label: text,
 				documentation: signature.description,
 				parameters: parameters
 			});

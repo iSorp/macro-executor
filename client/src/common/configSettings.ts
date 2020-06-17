@@ -24,7 +24,7 @@ export class MacroSettings extends events.EventEmitter {
 	}
 	initializeSettings() {
 		let macroSettings = vscode.workspace.getConfiguration('macro');
-		this.macroCompilerPath = macroSettings.build.compiler;
+		this.macroCompiler = macroSettings.build.compiler;
 		this.macroControlType = macroSettings.build.controlType;
 		this.macroCompilerParams = macroSettings.build.compilerParams;
 		this.macroMakeFile = macroSettings.build.makeFile;
