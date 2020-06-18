@@ -79,7 +79,7 @@ enum Sort {
 	Value 		= '5',
 	Address		= '6',
 	Nc			= '7',
-	Label		= '7'
+	Label		= '8'
 }
 
 export class MacroCompletion {

@@ -151,7 +151,7 @@ class ProjectService {
 	public async compile() {
 		const command = this.getCompileCommand(); 
 		if (command){
-			vscode.tasks.executeTask(new vscode.Task({type:'shell'}, vscode.TaskScope.Workspace, 'Compile','macro', new vscode.ShellExecution(command)));
+			vscode.tasks.executeTask(new vscode.Task({type:'shell'}, vscode.TaskScope.Workspace, 'Compile','macro', new vscode.ShellExecution(command),'$macro'));
 		}
 	}
 
@@ -208,7 +208,7 @@ class ProjectService {
 		}
 
 		if (result[0] && result[1]) {
-			vscode.tasks.executeTask(new vscode.Task({type:'shell'}, vscode.TaskScope.Workspace, 'Make','macro', new vscode.ShellExecution(result[0]+result[1])));
+			vscode.tasks.executeTask(new vscode.Task({type:'shell'}, vscode.TaskScope.Workspace, 'Make','macro', new vscode.ShellExecution(result[0]+result[1]),'$macro'));
 		}
 	}
 
@@ -219,7 +219,6 @@ class ProjectService {
 		const buildPath = settings.MacroSettings.getInstance().macroBuildPath;
 		const currentFile = vscode.window.activeTextEditor?.document.uri.fsPath;
 
-		let args:any[] = [];
 		let fileDir = '';
 		let filesPattern = '';
 		
@@ -235,26 +234,21 @@ class ProjectService {
 		else {
 			return undefined;
 		}
-		
+
+		let args:any[] = [];
+		args.push(filesPattern);
+		args.push('-'+type);
+		args.push(prm);
+
 		if (buildPath){
 			const buildDir = this.getRelativePath(buildPath);
-			args = [
-				filesPattern,
-				'-' 	+ type,
-				prm,
-				'-Fo'	+ buildDir,
-				'-Fr'	+ buildDir,
-				'-Fp'	+ buildDir,
-				'-Fl'	+ fileDir
-			];
+			args.push('-Fo' + buildDir);
+			args.push('-Fr' + buildDir);
+			args.push('-Fp' + buildDir);
 		}
-		else {
-			args = [
-				filesPattern,
-				'-' 	+ type,
-				prm,
-				'-Fl'	+ fileDir
-			];
+
+		if (fileDir) {
+			args.push('-Fl' + fileDir);
 		}
 		return compiler + ' '+ args.join(' ');
 	}

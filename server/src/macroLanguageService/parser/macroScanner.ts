@@ -583,18 +583,16 @@ export function getComment(pos:number, text:string) : string {
 	})(a) &&  a !== _NWL);
 
 	// Check all other comment char
+	let index = 0;
 	if (comment.length > 0) {
 		stream.advanceWhileChar(a => ((ch:number) : boolean => {
-			for (const char of comment) {
-				if (char !== ch) {
-					return false;
-				}
+			if (comment.length <= index || ch !== comment[index++]) {
+				return false;
 			}
 			return true;
 		})(a) &&  a !== _NWL);
 	}
 
-	stream.advance(comment.length);
 	let start = stream.pos();
 	stream.advanceWhileChar(a => a !== _NWL);
 	let end = stream.pos();

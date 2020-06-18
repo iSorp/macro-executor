@@ -1,3 +1,7 @@
+## 0.1.16 (June 18, 2020)
+- Bugfix -Fl export path
+- Bugfix compiler problem matcher 
+
 ## 0.1.15 (June 17, 2020)
 - Bugfix Parameter symbol definition (e.g. @PARAM	F)
 - Building: Relative paths for fanuc executables (compiler, linker, formater)
