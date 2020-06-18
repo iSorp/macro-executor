@@ -154,7 +154,9 @@
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"description": "%macro.codelens.enable.description%"
+					"description": "%macro.codelens.enable.description%",
+					"markdownDeprecationMessage": "**Deprecated**: Please use `#editor.codeLens#` instead.",
+					"deprecationMessage": "Deprecated: Please use editor.codeLens instead."
 				},
 				"macro.validate.enable": {
 					"scope": "resource",
