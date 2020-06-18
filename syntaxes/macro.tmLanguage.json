@@ -228,7 +228,7 @@
         },
         "comments":{
             "name":"comment.line.macro",
-            "match":"((\\/\\*)|(\\;)).*"
+            "match":"((\\/\\*)|(\\;)).*\\n"
         },
         "string":{
             "name":"string.other.macro",
