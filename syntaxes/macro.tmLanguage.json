@@ -331,6 +331,10 @@
                     "name":"variable.language.macro",
                     "match":"#"                   
                 },
+                {
+                    "name":"variable.language.macro",
+                    "match":"&"                   
+                },
 				{
 					"include":"#comments"
 				},
