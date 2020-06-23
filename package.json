@@ -289,9 +289,7 @@
 				"description": "Style for compile-time parameter NC-Parameter/Address"
 			}
 		],
-		"semanticTokenModifiers": [
-
-		],
+		"semanticTokenModifiers": [],
 		"semanticTokenScopes": [
 			{
 				"language": "macro",
@@ -333,24 +331,26 @@
 		"lint:client": "eslint --config ./client/.eslintrc.json ./client/src/*.ts",
 		"lint:server": "eslint --config ./server/.eslintrc.json ./server/src/*.ts",
 		"clean": "rimraf client/out && rimraf server/out",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"test": "sh ./scripts/e2e.sh",
+		"unit-test": "npm run compile && mocha"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^14.0.9",
 		"@typescript-eslint/parser": "^3.1.0",
-		"eslint": "^7.1.0",
-		"mocha": "^7.2.0",
-		"typescript": "^3.9.3",
 		"del": "^5.1.0",
-		"run-sequence": "^2.2.1",
+		"eslint": "^7.1.0",
 		"event-stream": "^4.0.1",
-		"vsce": "^1.75.0",
-		"vscode-nls-dev": "^3.3.1",
 		"gulp": "^4.0.2",
 		"gulp-filter": "^6.0.0",
 		"gulp-sourcemaps": "^2.6.5",
-		"gulp-typescript": "^5.0.1"
+		"gulp-typescript": "^5.0.1",
+		"mocha": "^7.2.0",
+		"run-sequence": "^2.2.1",
+		"typescript": "^3.9.3",
+		"vsce": "^1.75.0",
+		"vscode-nls-dev": "^3.3.1"
 	}
 }
