@@ -72,10 +72,10 @@ export class MacroCommand {
 				});
 				if (textEdits.length > 0) {
 					edit = TextDocumentEdit.create({ 
-							uri: document.uri, 
-							version: document.version 
-						}, 
-						textEdits
+						uri: document.uri, 
+						version: document.version 
+					}, 
+					textEdits
 					);
 				}
 			}
@@ -106,7 +106,7 @@ export class MacroCommand {
 							const n = 'N' + seq + ' ';
 							const start = document.positionAt(statement.offset);
 							textEdits.push(TextEdit.insert(start, n));
-							seq = seq + inc
+							seq = seq + inc;
 							return false;
 						}
 					}
@@ -115,10 +115,10 @@ export class MacroCommand {
 
 				if (textEdits.length > 0) {
 					edit = TextDocumentEdit.create({ 
-							uri: document.uri, 
-							version: document.version 
-						}, 
-						textEdits
+						uri: document.uri, 
+						version: document.version 
+					}, 
+					textEdits
 					);
 				}
 			}
@@ -133,7 +133,7 @@ export class MacroCommand {
 				const nnode = (<nodes.SequenceNumber>candidate).getNumber();
 				const number = Number(nnode?.getText().toLocaleLowerCase().split('n').pop());
 				if (nnode && !Number.isNaN(number)) {
-					seq = Math.max(seq, number)
+					seq = Math.max(seq, number);
 					return false;
 				}
 			}

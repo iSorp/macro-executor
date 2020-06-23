@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as settings from './configSettings';
-import CompositeDisposable from './CompositeDisposable';
+import CompositeDisposable from './compositeDisposable';
 import { promises } from 'fs';
 
 

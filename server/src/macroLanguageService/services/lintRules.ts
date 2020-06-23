@@ -7,7 +7,7 @@
 import * as nodes from '../parser/macroNodes';
 import * as nls from 'vscode-nls';
 import { 
-	LintSettings } from '../MacroLanguageTypes';
+	LintSettings } from '../macroLanguageTypes';
 
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 const Warning = nodes.Level.Warning;
