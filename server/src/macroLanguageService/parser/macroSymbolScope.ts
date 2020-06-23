@@ -121,11 +121,11 @@ export class Symbols {
 		let index = 0;
 		while (scope){
 			const symbols = scope.getSymbols();
-			const symbolFound:Symbol[] = []
+			const symbolFound:Symbol[] = [];
 			for (let i = 0; i < symbols.length; i++) {
 				const symbol = symbols[i];
 				if (valueTypes){
-					if (symbol.refType === referenceType && valueTypes.indexOf(symbol.valueType) != -1 && !names[symbol.name]) {
+					if (symbol.refType === referenceType && valueTypes.indexOf(symbol.valueType) !== -1 && !names[symbol.name]) {
 						symbolFound.push(symbol);
 						names[symbol.name] = true;
 					}
@@ -141,7 +141,7 @@ export class Symbols {
 			result.push({
 				symbols: symbolFound,
 				uri:scope.uri
-			})
+			});
 			scope = this.global.children[index++];
 		}
 

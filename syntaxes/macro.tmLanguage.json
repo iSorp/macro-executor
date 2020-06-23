@@ -227,25 +227,8 @@
 			"match":"(\\d+)(\\.\\d+)*"
         },
         "comments":{
-            "begin":"(\\/\\*)|(\\;)",
-            "beginCaptures":{
-                "1":{
-                    "name":"comment.line.macro"
-                }
-            },
-            "end":"\\Z",
-            "patterns":[
-                {		
-                    "begin":"(\\.*)",
-                    "beginCaptures":{
-                        "1":{
-                            "name":"comment.line.macro"
-                        }
-                    },
-                    "end":"\\n",
-                    "name":"comment.line.macro"
-                }
-            ]
+            "name":"comment.line.macro",
+            "match":"((\\/\\*)|(\\;)).*\\n"
         },
         "string":{
             "name":"string.other.macro",
@@ -347,6 +330,10 @@
                 {
                     "name":"variable.language.macro",
                     "match":"#"                   
+                },
+                {
+                    "name":"variable.language.macro",
+                    "match":"&"                   
                 },
 				{
 					"include":"#comments"

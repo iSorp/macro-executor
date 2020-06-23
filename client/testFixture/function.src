@@ -1,0 +1,37 @@
+@var    1
+O 1000
+popen
+pclos
+dprnt[abcd]
+dprnt[X#100[3] Y#101[3] M#102[0]]
+bprnt[X#100[3] Y#101[3] M#102[0]]
+setvn 100[abc]
+fgen(1,1,1)
+fdel(1,1)
+fopen(1,1,1)
+fclos(1)
+fpset(1,1,1)
+fread(1,1,1)
+fwrit(1,1,1)
+#1 = sin[1]
+#1 = cos[1]
+#1 = tan[1]
+#1 = asin[1]
+#1 = acos[1]
+#1 = atan[1]
+#1 = ATAN[1, 2]
+#1 = atan[1]/[1]
+#1 = sqrt[1]
+#1 = abs[1]
+#1 = bin[1]
+#1 = bcd[1]
+#1 = round[1]
+#1 = fix[1]
+#1 = fup[1]
+#1 = ln[1]
+#1 = exp[1]
+#1 = POW[1, 1]
+#1 = adp[1]
+#1 = prm[1]/[1]
+#1 = prm[1]
+#1 = PRM[1, var]

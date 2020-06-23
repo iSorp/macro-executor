@@ -8,7 +8,7 @@ import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
 import { getComment } from '../parser/macroScanner';
 import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupContent, 
-	MacroFileProvider, functionSignatures } from '../MacroLanguageTypes';
+	MacroFileProvider, functionSignatures } from '../macroLanguageTypes';
 
 export class MacroHover {
 

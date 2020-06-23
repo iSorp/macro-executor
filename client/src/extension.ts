@@ -13,7 +13,7 @@ import {
 import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/semanticTokens.proposed';
 import registerCommands from './common/commands';
 
-import CompositeDisposable from './common/CompositeDisposable';
+import CompositeDisposable from './common/compositeDisposable';
 import { downloadAndUnzipVSCode } from 'vscode-test';
 
 import * as nls from 'vscode-nls';

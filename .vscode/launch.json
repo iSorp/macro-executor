@@ -29,11 +29,36 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-			  "--extensionDevelopmentPath=${workspaceFolder}",
-			  "--extensionTestsPath=${workspaceFolder}/client/out/test/index"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/client/out/test/index"
 			],
 			"outFiles": ["${workspaceFolder}client/out/test/**/*.js"]
-		  }
+		},
+		{
+			"name": "Language Service Tests",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+			"stopOnEntry": false,
+			"args": [
+				"--timeout",
+				"999999",
+				"--colors"
+			],
+			"cwd": "${workspaceRoot}",
+			"runtimeExecutable": null,
+			"runtimeArgs": [],
+			"env": {},
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/server/out/**"
+			],
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"smartStep": true,
+			"preLaunchTask": "npm: watch"
+		}
 	],
 	"compounds": [
 		{

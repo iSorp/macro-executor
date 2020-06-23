@@ -9,7 +9,7 @@ import * as nodes from '../parser/macroNodes';
 import { 
 	TextDocument, 
 	MacroFileProvider, 
-} from '../MacroLanguageTypes';
+} from '../macroLanguageTypes';
 import { 
 	LintConfiguration, 
 	Rules,

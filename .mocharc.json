@@ -1,0 +1,6 @@
+{
+	"spec":"./server/out/macroLanguageService/test",
+	"extension": ["js"],
+	"recursive": true,
+	"ui" : "tdd"
+}
