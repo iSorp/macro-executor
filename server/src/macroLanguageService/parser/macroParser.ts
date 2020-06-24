@@ -482,8 +482,6 @@ export class Parser {
 		else  {
 			return this.internalParse(text, this._parseMacroFile, this.textProvider);
 		}	
-
-		return this.createNode(nodes.NodeType.Undefined);
 	}
 
 	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {
@@ -637,6 +635,7 @@ export class Parser {
 		
 		} while (!this.peek(TokenType.EOF));
 
+		// TODO 
 		node.setData(nodes.Data.Includes, this.includes);
 		return this.finish(node);
 	}
@@ -740,7 +739,7 @@ export class Parser {
 			sequence = this._parseSequenceNumber();
 		} 
 		else if (declaration.type === nodes.NodeType.labelDef) {
-			sequence = this._parseLabel(declaration);
+			sequence = this._parseLabel(declaration, nodes.ReferenceType.JumpLabel);
 		}
 
 		const statement = this._parseControlStatement(this._parseFunctionBody.bind(this))
@@ -829,20 +828,24 @@ export class Parser {
  	//#endregion
 	
 	//#region Statements
+	/**
+	 * e.g N100G01
+	 */
 	public _parseSequenceNumber() : nodes.NcStatement | null {
 
 		if (!this.peekRegExp(TokenType.Symbol, /n\d+/i)) {
 			return null;
 		}
 
-		const node = this.create(nodes.SequenceNumber);		
-		const number = this.create(nodes.Node);
-
- 		// Separates N-Number from the rest of the statement
-		this.token = this._parsePart(0, (ch) => ch === scanner._n || ch === scanner._N || ch >= scanner._0 && ch <= scanner._9);
-
- 		this.consumeToken();
-		node.setNumber(this.finish(number));
+		const node = this.create(nodes.SequenceNumber);	
+		
+ 		// Separates N from the rest of the statement
+		this.token = this._parsePart(0, (ch) => ch === scanner._n || ch === scanner._N );
+		this.consumeToken();
+		
+		// Separates the number from the rest of the statement
+		this.token = this._parsePart(0, (ch) => ch >= scanner._0 && ch <= scanner._9);
+		node.setNumber(this._parseSymbol([nodes.ReferenceType.JumpLabel, nodes.ReferenceType.Sequence]));
  		return this.finish(node);
 	}
 
@@ -1227,13 +1230,22 @@ export class Parser {
 		this.consumeToken(); // goto
 
 		if (this.peek(TokenType.BracketL) || this.peek(TokenType.Hash) ){
-			let expression = this._parseBinaryExpr();
+			const expression = this._parseBinaryExpr();
 			if (!node.setLabel(expression)) {
 				this.markError(node, ParseError.ExpressionExpected, [TokenType.NewLine]);
 			}
 		}
 		else if (this.peek(TokenType.Symbol)) {
-			let symbol = this._parseDeclarationType() || this._parseSymbol();
+			const mark =  this.mark();
+			const symbol = this._parseDeclarationType() || this._parseSymbol([nodes.ReferenceType.Sequence]);
+			if (symbol instanceof nodes.Variable) {
+				const delc = (<nodes.Variable>symbol).declaration;
+				if (delc.valueType !== nodes.ValueType.Numeric && delc.valueType !== nodes.ValueType.Constant && delc.valueType !== nodes.ValueType.Variable) {
+					this.restoreAtMark(mark);
+					this.markError(node, ParseError.LabelExpected, [TokenType.NewLine]);
+				}
+			}
+
 			if (!node.setLabel(symbol)) {
 				this.markError(node, ParseError.LabelExpected, [TokenType.NewLine]);
 			}
@@ -1391,8 +1403,8 @@ export class Parser {
 	/**
 	 * Variable: symbol, #symbol, #[symbol]
 	 */
-	public _parseVariable(declaration:nodes.VariableDeclaration | undefined = undefined, 
-		referenceType: nodes.ReferenceType | undefined=undefined): nodes.Variable | null {
+	public _parseVariable(declaration?:nodes.VariableDeclaration, 
+		referenceType?: nodes.ReferenceType): nodes.Variable | null {
 
 		if (!this.peek(TokenType.Symbol) && !this.peek(TokenType.Hash)) {
 			return null;
@@ -1427,14 +1439,18 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public _parseLabel(declaration:nodes.LabelDeclaration | undefined = undefined): nodes.Label | null {
+	public _parseLabel(declaration?:nodes.LabelDeclaration, referenceType?:nodes.ReferenceType): nodes.Label | null {
 
 		if (!this.peek(TokenType.Symbol)) {
 			return null;
 		}
 
 		const node = this.create(nodes.Label);
-		if (!node.setSymbol(this._parseSymbol([nodes.ReferenceType.Label]))){
+		const refTypes = [nodes.ReferenceType.Label];
+		if (referenceType) {
+			refTypes.push(referenceType);
+		}
+		if (!node.setSymbol(this._parseSymbol(refTypes))){
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
 		if (declaration){
