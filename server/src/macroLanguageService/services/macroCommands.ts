@@ -131,7 +131,6 @@ export class MacroCommand {
 
 	private getMaxSequenceNumber(node: nodes.Node) : number {
 		let seq = -1;
-		let skip = false;
 		node.accept(candidate => {
 			this.skip(candidate, () => {
 				if (candidate.type === nodes.NodeType.SequenceNumber) {
@@ -163,14 +162,16 @@ export class MacroCommand {
 			return result;
 		}
 
-		if (checkSkip(candidate, 'g11')) {
-			this._skip = false;
-		}
-		if (!this._skip) {
-			f();
-		}
-		if (checkSkip(candidate, 'g10')) {
-			this._skip = true;
+		if (candidate.type === nodes.NodeType.Statement || candidate.type === nodes.NodeType.SequenceNumber) {
+			if (checkSkip(candidate, 'g11')) {
+				this._skip = false;
+			}
+			if (!this._skip) {
+				f();
+			}
+			if (checkSkip(candidate, 'g10')) {
+				this._skip = true;
+			}
 		}
 	}
 }
