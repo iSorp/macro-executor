@@ -1,9 +1,21 @@
 .vscode/**/*
 **/*.ts
 **/*.map
-.gitignore
 **/tsconfig.json
 **/tsconfig.base.json
-contributing.md
+**/*.code-workspace
+**/package-lock.json
+.gitignore
+.eslintignore
+.eslintrc.json
+.mocharc.json
 .travis.yml
 
+gulpfile.js
+contributing.md
+azure-pipelines.yml
+TODO
+
+scripts/
+**/testFixture/
+doc/

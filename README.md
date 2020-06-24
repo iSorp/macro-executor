@@ -41,6 +41,9 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 ![References](./resources/references.gif)
 
 ### Implementations
+* Sub-Programs
+* Sequence numbers and labels
+
 ![Implementations](./resources/implementations.gif)
 
 ## Supported display languages
@@ -112,6 +115,7 @@ Three levels are supported: `error`, `warning` and `ignore`.
               "duplicateDoEndNumber":     "warning",
               "mixedConditionals":        "error",
               "tooManyConditionals":      "error",
+              "seqNotFound":              "error",   
               "incompleteParameter":      "error",
               "includeNotFound":          "error",
               "assignmentConstant":       "warning"
@@ -136,7 +140,7 @@ This extension contributes the following settings:
 * `macro.lint`: Lint settings and rule configuration
 * `macro.sequence.base`: Sequences start number for refactoring
 * `macro.sequence.increment`: Sequences increment for refactoring
-* `macro.codelens.enable`: Enables or disables the CodeLens function
+* `macro.codelens.enable`: Enables or disables the CodeLens function. **Deprecated**: Please use `editor.codeLens` instead.
 * `macro.validate.enable`: Enables or disables the validation
 * `macro.validate.workspace`: Enables or disables the workspace validation
 

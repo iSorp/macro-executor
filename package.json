@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.16",
+	"version": "0.1.17",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -32,8 +32,8 @@
 				"id": "macro",
 				"aliases": [
 					"Macro Executor",
-					"Fanuc Macro Executor",
-					"Fanuc CNC"
+					"Fanuc",
+					"CNC"
 				],
 				"extensions": [
 					".src",
