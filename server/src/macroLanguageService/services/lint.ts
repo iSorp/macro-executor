@@ -210,28 +210,27 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitLabels(node: nodes.Label) : boolean {
-		if (node.getParent()?.type !== nodes.NodeType.Function){
-			return true;
-		}
-
-		const value = node.declaration?.value;
-		if (value){
-			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			let list = this.sequenceList.get(func);
-			const duplicate = list?.some(a => {
-				if (a.getText() === value.getText()) {
-					if (a.type !== value.type){
-						this.addEntry(node, Rules.DuplicateLabelSequence);
+		const parentType = node.getParent().type;
+		if (parentType === nodes.NodeType.Function || parentType === nodes.NodeType.ThenEndif || parentType === nodes.NodeType.While) {
+			const value = node.declaration?.value;
+			if (value) {
+				const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+				let list = this.sequenceList.get(func);
+				const duplicate = list?.some(a => {
+					if (a.getText() === value.getText()) {
+						if (a.type !== value.type){
+							this.addEntry(node, Rules.DuplicateLabelSequence);
+						}
+						else {
+							this.addEntry(node, Rules.DuplicateLabel);
+						}
+						return true;
 					}
-					else {
-						this.addEntry(node, Rules.DuplicateLabel);
-					}
-					return true;
+					return false;
+				});
+				if (!duplicate) {
+					this.sequenceList.add(func, value);
 				}
-				return false;
-			});
-			if (!duplicate) {
-				this.sequenceList.add(func, value);
 			}
 		}
 		return true;
@@ -339,7 +338,7 @@ export class LintVisitor implements nodes.IVisitor {
 		 * Max number of statements  MAX_CONDITIONALS
 		 */
 		let conditional = node.getConditional();
-		let count = 1;
+		let count = 1;	
 		if (conditional) {
 			let first = conditional.logic?.getText();
 			while (conditional?.getNext()) {
@@ -378,9 +377,7 @@ export class LintVisitor implements nodes.IVisitor {
 	private visitWhileStatement(node: nodes.WhileStatement): boolean {
 
 		let depth = 0;
-		let depthIssue = false;
 		let doNumber:number = 0;
-
 		// Check no logic operators allowed
 		const conditional = node.getConditional();
 		if (conditional && conditional.logic) {
@@ -422,11 +419,11 @@ export class LintVisitor implements nodes.IVisitor {
 			}
 
 			const child = <nodes.WhileStatement>element;
-
+			
 			// Check while depth
-			if (!depthIssue && depth >= MAX_WHILE_DEPTH) {
-				depthIssue = true;
+			if (depth >= MAX_WHILE_DEPTH) {
 				this.addEntry(node, Rules.NestingTooDeep);
+				return false;
 			}
 
 			// Check duplicate DO number
@@ -453,7 +450,6 @@ export class LintVisitor implements nodes.IVisitor {
 		};
 		let len = 0;
 		for (; len < text.length; len++) {
-			let c = text.charCodeAt(len);
 			if (!isNumber(text.charCodeAt(len))){
 				return false;
 			}
