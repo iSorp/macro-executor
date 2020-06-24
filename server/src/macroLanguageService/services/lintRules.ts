@@ -36,7 +36,7 @@ export const Rules = {
 	DuplicateDoEndNumber: new Rule('duplicateDoEndNumber', localize('rule.duplicateDoEndNumber', 'Duplicate DO or END number'), Warning),
 	MixedConditionals: new Rule('mixedConditionals', localize('rule.mixedConditionals', 'Mixed conditionals [&&, ||]'), Error),
 	TooManyConditionals: new Rule('tooManyConditionals', localize('rule.tooManyConditionals', 'Too many conditional statements'), Error),
-
+	SeqNotFound: new Rule('seqNotFound', localize('rule.seqNotFound', 'Sequence number or label not found'), Error),
 	IncompleteParameter: new Rule('incompleteParameter', localize('rule.incompleteParameter', 'Incomplete parameter found. G-Code or M-Code may need a numeric value or a variable as parameter'), Error),
 	IncludeNotFound: new Rule('includeNotFound', localize('rule.includeNotFound', 'Include file not found'), Error),
 	AssignmentConstant: new Rule('assignmentConstant', localize('rule.assignmentConstant', 'Assignment to constant'), Warning),
