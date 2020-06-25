@@ -83,43 +83,43 @@ suite('Commands', () => {
 
 		assertEdits(service, 'O 100\nN100G01\n', 
 			[
-				{line:1,character:0},
-				{line:1,character:0}
+				{line:1,character:1},
+				{line:1,character:1}
 			], 
-			['', 'N1000'], 
+			['', '1000'], 
 			service.doRefactorSequences.bind(service));
 
 		assertEdits(service, 'O 100\nN100G01\nN100 G01\n',  
 			[
-				{line:1,character:0},
-				{line:1,character:0}, 
-				{line:2,character:0},
-				{line:2,character:0}
+				{line:1,character:1},
+				{line:1,character:1}, 
+				{line:2,character:1},
+				{line:2,character:1}
 			], 
-			['', 'N1000', '', 'N1010'], 
+			['', '1000', '', '1010'], 
 			service.doRefactorSequences.bind(service));
 
 		// Skip G10/G11
 		assertEdits(service, 'O 100\nN100G01\nN100 G10\nN10 R100\nG11',  
 			[
-				{line:1,character:0},
-				{line:1,character:0}, 
-				{line:2,character:0},
-				{line:2,character:0},
+				{line:1,character:1},
+				{line:1,character:1}, 
+				{line:2,character:1},
+				{line:2,character:1},
 			], 
-			['', 'N1000', '', 'N1010'], 
+			['', '1000', '', '1010'], 
 			service.doRefactorSequences.bind(service));
 
 		assertEdits(service, 'O 100\nGOTO 100\nN100\nGOTO 100\n',  
 			[
-				{line:2,character:0},
-				{line:2,character:0},
+				{line:2,character:1},
+				{line:2,character:1},
 				{line:1,character:5},
 				{line:1,character:5},
 				{line:3,character:5},
 				{line:3,character:5}
 			], 
-			['', 'N1000', '', '1000', '','1000'], 
+			['', '1000', '', '1000', '','1000'], 
 			service.doRefactorSequences.bind(service));
 	});
 
