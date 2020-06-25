@@ -13,6 +13,7 @@
 	"rule.nestingTooDeep": "Verschachtelung zu tief",
 	"rule.mixedConditionals": "Vermischte logische operatoren [&&, ||]",
 	"rule.tooManyConditionals": "Zu viele Bedingungen",
+	"rule.seqNotFound" : "Sequenznummer oder label nicht vorhanden",
 	"rule.duplicateDoEndNumber" : "Doppelte DO oder END Nummer",
 	"rule.incompleteParameter": "Unvollständiger Parameter gefunden. G-Code oder M-Code benötigen möglicherweise einen numerischen Wert oder eine Variable als Parameter",
 	"rule.includeNotFound": "Datei nicht gefunden",

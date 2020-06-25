@@ -8,9 +8,9 @@
 	"expected.newline": "换行符缺失",
 	"expected.lsquare": "[缺失",
 	"expected.rsquare": "]缺失",
-	"expected.lparent" : "( expected",
-	"expected.rparent" : ") expected",
-	"expected.rangle": "> expected",
+	"expected.lparent" : "(缺失",
+	"expected.rparent" : ")缺失",
+	"expected.rangle": ">缺失",
 	"expected.badstring": "分隔符缺失",
 	"expected.operator": "运算符缺失",
 	"expected.ident": "标识符缺失",
@@ -24,7 +24,7 @@
 	"expected.integer": "整数缺失",
 	"expected.parameter": "参数缺失",
 	"expected.invalidstatement": "无效的注释",
-	"expected.expression": "Expression expected",
+	"expected.expression": "语句缺失",
 	"expected.unexpectedToken": "符号缺失",
 	"expected.equalExpected": "=号缺失"
 }

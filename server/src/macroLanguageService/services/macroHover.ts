@@ -37,7 +37,7 @@ export class MacroHover {
 
 			if (location && declaration){
 				if (node.type === nodes.NodeType.Symbol) {
-					if (node.parent?.type === nodes.NodeType.label) {
+					if (node.parent?.type === nodes.NodeType.Label) {
 						let text = this.getMarkedStringForDeclaration('label', <nodes.Node>declaration!.macrofile, declaration!.document, location);
 						hover = {
 							contents: text,

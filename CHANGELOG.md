@@ -1,3 +1,12 @@
+## 0.1.17 (, 2020)
+- Language service tests 
+- Sequence number refactoring skip on G10/G11
+- Sequence number reference search
+- GOTO Label/Sequence number implementation search
+- GOTO Label/Sequence validation
+- Bug fixes Parser
+	- Error matches while statement
+
 ## 0.1.16 (June 18, 2020)
 - Bugfix -Fl export path
 - Bugfix compiler problem matcher 

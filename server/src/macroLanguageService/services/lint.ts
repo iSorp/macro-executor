@@ -30,12 +30,13 @@ export class LintVisitor implements nodes.IVisitor {
 	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider: MacroFileProvider, settings: LintConfiguration): nodes.IMarker[] {
 		const visitor = new LintVisitor(fileProvider, settings);
 		macrofile.acceptVisitor(visitor);
+		visitor.completeValidations();
 		return visitor.getEntries();
 	}
 
 	private declarations:Map<string,nodes.AbstractDeclaration> = new Map<string,nodes.AbstractDeclaration>()
-	private sequenceNumbers:FunctionMap<nodes.Function> = new FunctionMap();
-	private labelList:FunctionMap<nodes.Function> = new FunctionMap();
+	private sequenceList:FunctionMap<nodes.Function, nodes.Node> = new FunctionMap();
+	private gotoList:FunctionMap<nodes.Function, nodes.GotoStatement> = new FunctionMap();
 	private duplicateList: string[] = [];
 	private imports: string[] = [];
 
@@ -55,6 +56,48 @@ export class LintVisitor implements nodes.IVisitor {
 		this.rules.push(entry);
 	}
 
+	private completeValidations() {
+
+		// Check GOTO number occurrence
+		for (const tuple of this.gotoList.elements) {
+			const func = tuple[0];
+			const gotoStatements = tuple[1];
+			const sequences = this.sequenceList.get(func);
+			for (const node of gotoStatements) {
+				const jumpLabel = node.getLabel();
+				if (jumpLabel) {
+					let number = '';
+					if (Number(jumpLabel.getText())) {
+						number = jumpLabel.getText();
+					}
+					else if (jumpLabel instanceof nodes.Label){
+						number = (<nodes.Label>jumpLabel).declaration?.getValue()?.getText();
+					}
+					else if (jumpLabel instanceof nodes.Variable) {
+						const delc = (<nodes.Variable>jumpLabel).declaration;
+						if (delc.valueType === nodes.ValueType.Numeric || delc.valueType === nodes.ValueType.Constant) {
+							number = (<nodes.Variable>jumpLabel).declaration?.getValue()?.getText();
+						}
+						else {
+							continue;
+						}
+					}
+					else {
+						continue;
+					}
+
+					if (sequences && sequences.some(a => a.getText() === number)) {
+						continue;
+					}
+					else {
+						this.addEntry(jumpLabel, Rules.SeqNotFound);
+					}
+				}
+			}
+	
+		}
+	}
+
 	public visitNode(node: nodes.Node): boolean {
 		switch (node.type) {
 			case nodes.NodeType.MacroFile:
@@ -65,7 +108,7 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitSymbols(<nodes.Symbol>node);
 			case nodes.NodeType.Variable:
 				return this.visitVariables(<nodes.Variable>node);
-			case nodes.NodeType.label:
+			case nodes.NodeType.Label:
 				return this.visitLabels(<nodes.Label>node);
 			case nodes.NodeType.VariableDef:
 				return this.visitDeclarations(<nodes.VariableDeclaration>node, true);
@@ -75,8 +118,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitFunction(<nodes.Function>node);
 			case nodes.NodeType.Statement:
 				return this.visitStatement(<nodes.NcStatement>node);
-			/*case nodes.NodeType.Parameter:
-				return this.visitParameter(<nodes.NcParameter>node);*/
+			case nodes.NodeType.Goto:
+				return this.visitGoto(<nodes.GotoStatement>node);
 			case nodes.NodeType.SequenceNumber:
 				return this.visitSequenceNumber(<nodes.SequenceNumber>node);		
 			case nodes.NodeType.Assignment:
@@ -167,26 +210,35 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitLabels(node: nodes.Label) : boolean {
-		if (node.getParent()?.type !== nodes.NodeType.Function){
-			return true;
-		}
-
-		let value = node.declaration?.value?.getText();
-		if (value){
-			let func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			let a = this.labelList.get(func);
-			let index = a?.indexOf(value);
-			if (index !== undefined && index > -1){
-				this.addEntry(node, Rules.DuplicateLabel);
-			} 
-			else {
-				this.labelList.add(func, value);
-				const seq = this.sequenceNumbers.get(func)?.indexOf(value);
-				if (seq !== undefined && seq !== -1) {
-					this.addEntry(node, Rules.DuplicateLabelSequence);
+		const parentType = node.getParent().type;
+		if (parentType === nodes.NodeType.Function || parentType === nodes.NodeType.ThenEndif || parentType === nodes.NodeType.While) {
+			const value = node.declaration?.value;
+			if (value) {
+				const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+				let list = this.sequenceList.get(func);
+				const duplicate = list?.some(a => {
+					if (a.getText() === value.getText()) {
+						if (a.type !== value.type){
+							this.addEntry(node, Rules.DuplicateLabelSequence);
+						}
+						else {
+							this.addEntry(node, Rules.DuplicateLabel);
+						}
+						return true;
+					}
+					return false;
+				});
+				if (!duplicate) {
+					this.sequenceList.add(func, value);
 				}
 			}
 		}
+		return true;
+	}
+
+	private visitGoto(node: nodes.GotoStatement) : boolean {
+		const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+		this.gotoList.add(func, node);
 		return true;
 	}
 
@@ -248,19 +300,22 @@ export class LintVisitor implements nodes.IVisitor {
 
 		const number = node.getNumber();
 		if (number) {
-			const n = number.getText().substr(1, number.getText().length);
 			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			const nList = this.sequenceNumbers.get(func);
-			const index = nList?.indexOf(n);
-			if (index !== undefined && index > -1){
-				this.addEntry(number, Rules.DuplicateSequence);
-			} 
-			else {
-				this.sequenceNumbers.add(func, n);
-				const label = this.labelList.get(func)?.indexOf(n);
-				if (label !== undefined && label !== -1) {
-					this.addEntry(number, Rules.DuplicateLabelSequence);
+			const list = this.sequenceList.get(func);
+			const duplicate = list?.some(a => {
+				if (a.getText() === number.getText()) {
+					if (a.type !== number.type){
+						this.addEntry(number, Rules.DuplicateLabelSequence);
+					}
+					else {
+						this.addEntry(number, Rules.DuplicateSequence);
+					}
+					return true;
 				}
+				return false;
+			});
+			if (!duplicate) {
+				this.sequenceList.add(func, number);
 			}
 		}
 		return true;
@@ -283,7 +338,7 @@ export class LintVisitor implements nodes.IVisitor {
 		 * Max number of statements  MAX_CONDITIONALS
 		 */
 		let conditional = node.getConditional();
-		let count = 1;
+		let count = 1;	
 		if (conditional) {
 			let first = conditional.logic?.getText();
 			while (conditional?.getNext()) {
@@ -322,9 +377,7 @@ export class LintVisitor implements nodes.IVisitor {
 	private visitWhileStatement(node: nodes.WhileStatement): boolean {
 
 		let depth = 0;
-		let depthIssue = false;
 		let doNumber:number = 0;
-
 		// Check no logic operators allowed
 		const conditional = node.getConditional();
 		if (conditional && conditional.logic) {
@@ -366,11 +419,11 @@ export class LintVisitor implements nodes.IVisitor {
 			}
 
 			const child = <nodes.WhileStatement>element;
-
+			
 			// Check while depth
-			if (!depthIssue && depth >= MAX_WHILE_DEPTH) {
-				depthIssue = true;
+			if (depth >= MAX_WHILE_DEPTH) {
 				this.addEntry(node, Rules.NestingTooDeep);
+				return false;
 			}
 
 			// Check duplicate DO number
@@ -397,7 +450,6 @@ export class LintVisitor implements nodes.IVisitor {
 		};
 		let len = 0;
 		for (; len < text.length; len++) {
-			let c = text.charCodeAt(len);
 			if (!isNumber(text.charCodeAt(len))){
 				return false;
 			}
@@ -406,16 +458,16 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 }
 
-class FunctionMap<T extends nodes.Node> {
-	private elements:Map<T, string[]> = new Map<T,string[]>();
-	public add(key:T, value:string){
-		if (!this.elements.has(key)){
-			this.elements.set(key, new Array<string>());
+class FunctionMap<T extends nodes.Node, V> {
+	public elements:Map<T, V[]> = new Map<T, V[]>();
+	public add(key:T, value:V) {
+		if (!this.elements.has(key)) {
+			this.elements.set(key, new Array<V>());
 		}
 		this.elements.get(key)?.push(value);
 	}
 
-	public get(key:T) : string[] | undefined {
+	public get(key:T) : V[] | undefined {
 		return this.elements.get(key);
 	}
 }

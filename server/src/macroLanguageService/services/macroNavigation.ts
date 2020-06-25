@@ -92,7 +92,23 @@ export class MacroNavigation {
 	}
 
 	public findImplementations(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location[] {
-		return this.findReferences(document, position, macroFile, nodes.ReferenceType.Function);
+		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
+		let referenceType:nodes.ReferenceType = undefined;
+		switch (node.getParent().type) {
+			case nodes.NodeType.VariableDef:
+			case nodes.NodeType.Variable:
+				referenceType = nodes.ReferenceType.Function;
+				break;
+			case nodes.NodeType.Goto:	
+			case nodes.NodeType.labelDef:	
+			case nodes.NodeType.Label:	
+				referenceType = nodes.ReferenceType.JumpLabel;
+				break;
+			default:
+				return [];
+		}
+
+		return this.findReferences(document, position, macroFile, referenceType);
 	}
 
 	public findDocumentLinks(document: TextDocument, macroFile: nodes.MacroFile, documentContext: DocumentContext): DocumentLink[] {
@@ -132,7 +148,7 @@ export class MacroNavigation {
 				entry.name = (<nodes.Function>node).getName();
 				entry.kind = SymbolKind.Function;
 			} 
-			else if (node.type === nodes.NodeType.label) {
+			else if (node.type === nodes.NodeType.Label) {
 				if (node.parent?.type === nodes.NodeType.Function) {
 					let label = <nodes.Label>node;
 					if (label.declaration?.valueType === nodes.ValueType.Numeric) {
@@ -232,7 +248,7 @@ export class MacroNavigation {
 		// local search
 		if (macroFile.type === nodes.NodeType.MacroFile) {
 			macroFile.accept(candidate => {
-				if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
+				if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.Label) {
 					const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
 					if (node) {
 						declarations.add(node.getText(), {
@@ -263,7 +279,7 @@ export class MacroNavigation {
 				}
 
 				(<nodes.Node>type.macrofile).accept(candidate => {
-					if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.label) {
+					if (candidate.type === nodes.NodeType.Variable || candidate.type === nodes.NodeType.Label) {
 						const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
 						if (node) {
 							declarations.add(node.getText(), {
@@ -285,7 +301,6 @@ export class MacroNavigation {
 				if (node) {
 					const value = declarations.get(node.getText()); //declarations.filter(a => a === node?.getText());
 					const count = value?.length;
-					const pos = document.positionAt(node.offset);
 					const c = count === undefined ? 0 : count;
 					const t:MacroCodeLensType = {
 						title: c + (c !== 1 ? ' references' : ' reference'),
@@ -361,7 +376,7 @@ export class MacroNavigation {
 				if (symbols.matchesSymbol(candidate, symbol)) {
 					let s = <nodes.Symbol>candidate;
 					if (s && s.referenceTypes && implType){
-						if (s.referenceTypes?.indexOf(implType) > 0) {
+						if (s.referenceTypes.indexOf(implType) > -1) {
 							highlights.push({
 								kind: this.getHighlightKind(candidate),
 								range: this.getRange(candidate, document)
@@ -459,12 +474,7 @@ export class MacroNavigation {
 	 * @param macroFile 
 	 */
 	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
-		let includes:string[] = [];
-		const uris = this.getIncludeUris(macroFile, this.fileProvider);
-		if (uris) {
-			includes = uris;
-		}
-
+		const includes = this.getIncludeUris(macroFile, this.fileProvider);
 		includes.push(document.uri);
 		if (!node) {
 			return null;
@@ -493,7 +503,11 @@ export class MacroNavigation {
 	 * @param fileProvider 
 	 */
 	private getIncludeUris(macroFile: nodes.MacroFile, fileProvider:MacroFileProvider) : string[] {
-		return <string[]>macroFile.getData(nodes.Data.Includes);
+		const includes = <string[]>macroFile.getData(nodes.Data.Includes);
+		if (includes) {
+			return [].concat(includes);
+		}
+		return [];
 	}
 
 	private getHighlightKind(node: nodes.Node): DocumentHighlightKind {

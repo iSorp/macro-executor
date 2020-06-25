@@ -8,6 +8,8 @@ export enum ReferenceType {
 	Label,
 	Variable,
 	Function,
+	Sequence,
+	JumpLabel,
 	Undefined
 }
 
@@ -439,7 +441,7 @@ export enum NodeType {
 	Goto,
 	Else,
 	While,
-	label,
+	Label,
 	Variable,
 	Address,
 	String,
@@ -653,7 +655,7 @@ export class Label extends DeclarationType<LabelDeclaration> {
 	}
 
 	public get type(): NodeType {
-		return NodeType.label;
+		return NodeType.Label;
 	}
 }
 

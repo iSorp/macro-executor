@@ -33,7 +33,7 @@ export class MacroSemantic {
 				} 
 			}
 		
-			if (candidate.type === nodes.NodeType.label) {
+			if (candidate.type === nodes.NodeType.Label) {
 				const label = <nodes.Label>candidate;
 				if (label.symbol){
 					const pos = document.positionAt(label.symbol.offset);
