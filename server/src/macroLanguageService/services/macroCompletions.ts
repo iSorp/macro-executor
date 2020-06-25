@@ -113,8 +113,11 @@ export class MacroCompletion {
 	}
 
 	private getIncludeUris(macroFile: nodes.MacroFile) : string[] {
-		let includes = []; 
-		return includes.concat(<string[]>macroFile.getData(nodes.Data.Includes));
+		const includes = <string[]>macroFile.getData(nodes.Data.Includes);
+		if (includes) {
+			return [].concat(includes);
+		}
+		return [];
 	}
 
 	public doComplete(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings): CompletionList {

@@ -503,8 +503,11 @@ export class MacroNavigation {
 	 * @param fileProvider 
 	 */
 	private getIncludeUris(macroFile: nodes.MacroFile, fileProvider:MacroFileProvider) : string[] {
-		let includes = []; 
-		return includes.concat(<string[]>macroFile.getData(nodes.Data.Includes));
+		const includes = <string[]>macroFile.getData(nodes.Data.Includes);
+		if (includes) {
+			return [].concat(includes);
+		}
+		return [];
 	}
 
 	private getHighlightKind(node: nodes.Node): DocumentHighlightKind {
