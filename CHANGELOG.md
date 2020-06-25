@@ -3,7 +3,7 @@
 - Sequence number refactoring skip on G10/G11
 - Sequence number reference search
 - GOTO Label/Sequence number implementation search
-- GOTO Label / seq check
+- GOTO Label/Sequence validation
 - Bug fixes Parser
 	- Error matches while statement
 

@@ -11,11 +11,8 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 
 ## News
-- [Semantic highlighting](#highlighting)
-- [Additional compiler parameters](#extensionSettings)
-- Array support (e.g var<#1>)
-- Custom macro commands
-       
+- Label/Sequence number references/implementations search
+
 ***
        
 
@@ -31,18 +28,35 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * Sequence number refactoring
 
 
-### Validation
+## Validation
 ![Validation](./resources/validation.gif)
 
-### Navigation
-![Navigation](./resources/navigation.gif)
 
-### References
+## References
+The reference service supports the search for the following types:
+* Symbols
+* Labels
+* Sequence numbers
+* GOTO Labels / Sequence numbers
+
+The search for symbol and label references is global (workspace) if the definitions are included by a definition file `.def`, otherwise the search is limited to the current file scope. Sequence numbers only can be found within a file scope (there is currently no function scope available).
+
+### Sequence number definition
+![References](./resources/sequenceref.gif)
+
+### Symbol references
 ![References](./resources/references.gif)
 
-### Implementations
-* Sub-Programs
-* Sequence numbers and labels
+## Implementations
+
+Implementations of one of the following types are found by the implementations search service:
+
+* Subprograms
+* Label statements
+* GOTO Label/Sequence number 
+
+The global / local search behavior is equal to the reference search.
+
 
 ![Implementations](./resources/implementations.gif)
 
