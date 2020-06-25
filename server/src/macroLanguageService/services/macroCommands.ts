@@ -44,17 +44,15 @@ export class MacroCommand {
 					this.skip(candidate, () => {
 						if (candidate.type === nodes.NodeType.SequenceNumber) {
 							const nnode = (<nodes.SequenceNumber>candidate).getNumber();
-							const number = nnode?.getText().toLocaleLowerCase().split('n').pop();
-							const labels = gotoLabelList.filter(a => a.getText() === number);
+							const labels = gotoLabelList.filter(a => a.getText() === nnode?.getText());
 	
 							if (nnode) {
-								const n = 'N' + seq;
 								const start = document.positionAt(nnode.offset);
 								const end = document.positionAt(nnode.end);
 								textEdits.push(TextEdit.del(Range.create(start, end)));
-								textEdits.push(TextEdit.insert(start, n));
+								textEdits.push(TextEdit.insert(start, seq+''));
 	
-								for (const label of labels){
+								for (const label of labels) {
 									const start = document.positionAt(label.offset);
 									const end = document.positionAt(label.end);
 									textEdits.push(TextEdit.del(Range.create(start, end)));
@@ -64,7 +62,6 @@ export class MacroCommand {
 										gotoLabelList.splice(index, 1);
 									}
 								}
-	
 								seq = seq + inc;
 							}
 						}
