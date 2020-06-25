@@ -27,7 +27,7 @@ export const ParseError = {
 	EndifExpected: new MacroIssueType('macro-endifexpected', localize('expected.endif', 'Endif expected')),
 	EndExpected: new MacroIssueType('macro-endexpected', localize('expected.end', 'End expected')),
 	DoExpected: new MacroIssueType('macro-doexpected', localize('expected.do', 'Do expected')),
-	ThenGotoExpected: new MacroIssueType('macro-thengotoexpected', localize('xpected.thenGoto', 'Then or goto expected')),
+	ThenGotoExpected: new MacroIssueType('macro-thengotoexpected', localize('expected.thenGoto', 'Then or goto expected')),
 	NewLineExpected: new MacroIssueType('macro-newlineexpected', localize('expected.newline', 'Newline expected')),
 	LeftSquareBracketExpected: new MacroIssueType('macro-lbracketexpected', localize('expected.lsquare', '[ expected')),
 	RightSquareBracketExpected: new MacroIssueType('macro-rbracketexpected', localize('expected.rsquare', '] expected')),
