@@ -8,7 +8,9 @@ import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
 import { getComment } from '../parser/macroScanner';
 import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupContent, 
-	MacroFileProvider, functionSignatures } from '../macroLanguageTypes';
+	MacroFileProvider, functionSignatures, GCodeDescription as CodeDescription 
+} from '../macroLanguageTypes';
+import { MarkupKind } from 'vscode-languageserver';
 
 export class MacroHover {
 
@@ -35,7 +37,7 @@ export class MacroHover {
 		for (let i = 0; i < nodepath.length; i++) {
 			const node = nodepath[i];
 
-			if (location && declaration){
+			if (location && declaration) {
 				if (node.type === nodes.NodeType.Symbol) {
 					if (node.parent?.type === nodes.NodeType.Label) {
 						let text = this.getMarkedStringForDeclaration('label', <nodes.Node>declaration!.macrofile, declaration!.document, location);
@@ -73,6 +75,18 @@ export class MacroHover {
 					contents: text,
 					range: getRange(node),
 
+				};
+			}
+			else if (node.type === nodes.NodeType.Code) {
+				const desc = CodeDescription[node.getText()];
+				const description = desc ? '\n' + desc : '';
+				let text:MarkupContent = {
+					kind: MarkupKind.Markdown,
+					value: '#### ' + node.getText() + description
+				};
+				hover = {
+					contents: text,
+					range: getRange(node),
 				};
 			}
 		}
