@@ -112,7 +112,7 @@ For some color themes, the semantic highlighting must be enabled in the settings
 
 ## Multi-Root Workspaces
 The extension supports [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces). Each workspace is handled as a separate macro project.
-This could be usefull if a fanuc project consists of several controls e.g machine and handling:
+This could be useful if a fanuc project consists of several controls e.g machine and handling:
 
 ![multi root workspace](./resources/mrworkspaces.png)
 
