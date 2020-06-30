@@ -285,6 +285,9 @@
 					"include":"#number"	
                 },
                 {
+					"include":"#parameter"
+                },
+                {
 					"include":"#symbol"	
                 },
                 {
