@@ -27,18 +27,18 @@ export interface LanguageService {
 	doValidation(document: TextDocument, file: Macrofile, documentSettings: LanguageSettings): Diagnostic[];
 	parseMacroFile(document: TextDocument): Macrofile;
 	doHover(document: TextDocument, position: Position, macroFile: Macrofile):Hover | null;
-	doComplete(document: TextDocument, position: Position, stylesheet: Macrofile, documentSettings: LanguageSettings): CompletionList;
+	doComplete(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings): CompletionList;
 	doSignature(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings):SignatureHelp | null;
 	findDefinition(document: TextDocument, position: Position, macroFile: Macrofile): Location | null;
 	findReferences(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
 	findImplementations(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
-	findDocumentLinks(document: TextDocument, macrofile: Macrofile, documentContext: DocumentContext): DocumentLink[];
+	findDocumentLinks(document: TextDocument, macrofile: Macrofile): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, macrofile: Macrofile): SymbolInformation[];
 	findCodeLenses(document: TextDocument, macrofile: Macrofile): CodeLens[];
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
-	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, range:Range | undefined) : Proposed.SemanticTokens;
+	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, range?:Range) : Proposed.SemanticTokens;
 }
 
 function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand, semantic:MacroSemantic): LanguageService {

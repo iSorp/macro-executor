@@ -1,4 +1,7 @@
-## 0.1.17 (, 2020)
+## 0.2.0
+- Multi-Root Workspace
+
+## 0.1.17 (June 25, 2020)
 - Language service tests 
 - Sequence number refactoring skip on G10/G11
 - Sequence number reference search

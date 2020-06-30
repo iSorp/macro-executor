@@ -2,12 +2,16 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.17",
+	"version": "0.2.0",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
 	"categories": [
-		"Programming Languages"
+		"Programming Languages",
+		"Snippets"
+	],
+	"keywords": [
+		"multi-root ready"
 	],
 	"homepage": "https://github.com/iSorp/macro-executor",
 	"repository": {
@@ -19,11 +23,12 @@
 	},
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.45.1"
+		"vscode": "^1.45.0"
 	},
 	"enableProposedApi": true,
 	"activationEvents": [
-		"onLanguage:macro"
+		"onLanguage:macro",
+		"workspaceContains:**/*.src"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -33,7 +38,8 @@
 				"aliases": [
 					"Macro Executor",
 					"Fanuc",
-					"CNC"
+					"CNC",
+					"NC"
 				],
 				"extensions": [
 					".src",
@@ -172,7 +178,7 @@
 				},
 				"macro.build.compiler": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"enum": [
 						"MCOMPI",
 						"MCOMP0",
@@ -186,7 +192,7 @@
 				},
 				"macro.build.controlType": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"enum": [
 						"",
 						"0",
@@ -200,42 +206,42 @@
 				},
 				"macro.build.compilerParams": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.build.compilerParams.description%",
 					"$id": "3"
 				},
 				"macro.build.makeFile": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.build.makeFile.description%",
 					"$id": "4"
 				},
 				"macro.project.exportPath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.exportPath.description%",
 					"$id": "5"
 				},
 				"macro.project.sourcePath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.sourcePath.description%",
 					"$id": "6"
 				},
 				"macro.project.buildPath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.buildPath.description%",
 					"$id": "7"
 				},
 				"macro.project.linkPath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.linkPath.description%",
 					"$id": "8"

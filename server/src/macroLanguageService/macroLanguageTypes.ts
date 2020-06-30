@@ -6,7 +6,6 @@
 
 import { Macrofile } from './macroLanguageService';
 import  { TextDocument, Location } from 'vscode-languageserver-types';
-import { stringify } from 'querystring';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
 export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/semanticTokens.proposed';
@@ -47,10 +46,6 @@ export interface DocumentContext {
 	resolveReference(ref: string, base?: string): string | undefined;
 }
 
-export interface FindDocumentLinks {
-	resolveReference(ref: string, base?: string): string | undefined;
-}
-
 export interface LanguageServiceOptions {
 
 	fileProvider: MacroFileProvider;
@@ -72,9 +67,9 @@ export interface FileProviderParams {
 }
 
 export interface MacroFileProvider {
-	get(uri: string) : MacroFileType | undefined;
-	getAll(param?: FileProviderParams) : MacroFileType[]
-	getLink(ref:string) : string |undefined;
+	get(uri: string, base?: string, workspaceFolder?: string) : MacroFileType | undefined;
+	getAll(param?: FileProviderParams, base?: string, workspaceFolder?: string) : MacroFileType[]
+	resolveReference(ref: string, base?: string, workspaceFolder?: string): string | undefined
 }
 
 export interface MacroCodeLensType {

@@ -11,7 +11,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 
 ## News
-- Label/Sequence number references/implementations search
+- [Multi-Root Workspaces](#Multi-Root)
 
 ***
        
@@ -101,10 +101,21 @@ For some color themes, the semantic highlighting must be enabled in the settings
 }
 ```
 
+| disabled | enabled     |
+|:-------------:|:-------------:|
+| ![no semantic](./resources/no_semantic.png) | ![with Semantic](./resources/with_semantic.png) |
 
-![References](./resources/semantic.gif)
+
+ 
 
 *The color theme used in screenshot →* **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**
+
+## Multi-Root Workspaces
+The extension supports [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces). Each workspace is handled as a separate macro project.
+This could be usefull if a fanuc project consists of several controls e.g machine and handling:
+
+![multi root workspace](./resources/mrworkspaces.png)
+
 
 
 ## Lint

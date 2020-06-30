@@ -11,9 +11,17 @@ import * as path from 'path';
 import { readFileSync, existsSync } from 'fs';
 
 import { 
+	getMacroLanguageService, 
+	Macrofile,
+	LanguageService, 
+} from './macroLanguageService/macroLanguageService';
+
+import { 
+	MacroFileType, 
+	MacroCodeLensType, 
+	MacroCodeLensCommand ,
 	LanguageSettings, 
 	MacroFileProvider, 
-	FindDocumentLinks, 
 	FileProviderParams,
 	TokenTypes,
 	TokenModifiers
@@ -27,77 +35,43 @@ import {
 	Diagnostic,
 	ProposedFeatures,
 	InitializeParams,
-	TextDocumentPositionParams,
-	DefinitionParams,
 	TextDocumentSyncKind,
 	InitializeResult,
 	DidChangeConfigurationNotification,
 	Files,
-	CompletionParams,
-	ReferenceParams,
-	DocumentSymbolParams,
-	DocumentLinkParams,
-	DidChangeConfigurationParams,
-	ImplementationParams,
 	FileChangeType,
-	DidChangeWatchedFilesParams,
-	CodeLensParams, 
-	CodeLens,
-	TextDocumentChangeEvent,
-	ExecuteCommandParams,
-	RenameParams,
-	SignatureHelpParams,
-	Proposed
+	Proposed,
+	WorkspaceFolder
 } from 'vscode-languageserver';
 
 import {
 	TextDocument,
 } from 'vscode-languageserver-textdocument';
 
-import { getMacroLanguageService, 
-	Macrofile, MacroFileType, 
-	MacroCodeLensType, MacroCodeLensCommand 
-} from './macroLanguageService/macroLanguageService';
 import { URI } from 'vscode-uri';
-import { rejects } from 'assert';
 
-const maxNumberOfProblems = 1000;
 
-let connection = createConnection(ProposedFeatures.all);
-let workspaceFolder: string | null;
-let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-let parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>();
+const connection = createConnection(ProposedFeatures.all);
+const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+const documentSettings: Map<string, Promise<TextDocumentSettings>> = new Map<string, Promise<TextDocumentSettings>>();
+const parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>();
+const languageServices: Map<string, LanguageService> = new Map<string, LanguageService>();
+
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
-let hasDiagnosticRelatedInformationCapability: boolean = false;
-let settings:LanguageSettings;
-const defaultSettings: LanguageSettings = { 
-	validate : {
-		enable:true,
-		workspace:true
-	},
-	codelens: {
-		enable:true
-	},
-	sequence: {
-		base:1000,
-		increment:10
-	},
-	lint: {rules: {}}
-};
-let globalSettings: LanguageSettings = defaultSettings;
+let workspaceValidation = false;
+
+interface TextDocumentSettings extends LanguageSettings {
+	workspaceFolder: WorkspaceFolder | undefined;
+}
 
 class FileProvider implements MacroFileProvider {
 
-	private resolver = new Links();
+	constructor(private workspaceFolder:string) {}
 
-	get(file: string): MacroFileType | undefined {
+	public get(file: string): MacroFileType | undefined {
 	
-		if (!workspaceFolder){
-			return undefined;
-		}
-
-		let uri = this.resolver.resolveReference(file);
+		let uri = this.resolveReference(file);
 		if (uri) {
 			
 			let doc = getParsedDocument(uri, (document => {
@@ -134,28 +108,26 @@ class FileProvider implements MacroFileProvider {
 		return undefined;
 	}
 	
-	getAll(param?:FileProviderParams) {
+	public getAll(param?:FileProviderParams) {
 		let types:MacroFileType[] = [];
 	
 		try {
-			if (workspaceFolder) {
-				const dir = Files.uriToFilePath(workspaceFolder);
-				let files:string[] = [];
-				if (param?.uris){
-					files = param.uris;
-				}
-				else if (param?.glob) {
-					files = glob.sync(dir + param.glob);
-				}
-				else {
-					files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}');
-				}
+			const dir = Files.uriToFilePath(this.workspaceFolder);
+			let files:string[] = [];
+			if (param?.uris){
+				files = param.uris;
+			}
+			else if (param?.glob) {
+				files = glob.sync(dir + param.glob);
+			}
+			else {
+				files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}');
+			}
 
-				for (const file of files) {
-					let type = this.get(file);
-					if (type){
-						types.push(type);
-					}
+			for (const file of files) {
+				let type = this.get(file);
+				if (type){
+					types.push(type);
 				}
 			}
 		}catch (err){
@@ -164,27 +136,16 @@ class FileProvider implements MacroFileProvider {
 		return types;
 	}
 
-
-	getLink(ref:string) : string |undefined {
-		return this.resolver.resolveReference(ref);
-	}
-}
-
-class Links implements FindDocumentLinks {
-
 	/**
 	 * Returns a given path as uri
 	 * @param ref 
 	 * @param base 
 	 */
 	public resolveReference(ref: string, base?: string): string | undefined {
-		if (!workspaceFolder){
-			return '';
-		}
-		
+
 		let file:string | undefined = '';
 		if (!path.isAbsolute(ref)) {
-			file = Files.uriToFilePath(workspaceFolder + '/' + ref);
+			file = Files.uriToFilePath(this.workspaceFolder + '/' + ref);
 
 			// convert already existing URI
 			let filePath = Files.uriToFilePath(ref);
@@ -213,18 +174,16 @@ class Links implements FindDocumentLinks {
 		let root = path.parse(norm).root;
 		let p = norm.slice(Math.max(root.length - 1, 0));
 		return glob.sync(p, { nocase: true, cwd: root })[0];
-	  }
+	}
 }
 
-const macroLanguageService = getMacroLanguageService({
-	fileProvider: new FileProvider(),
-
-});
-
 connection.onInitialize((params: InitializeParams) => {
+	
+	params.workspaceFolders.forEach(workspace => {
+		languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri)}));
+	});
 
 	let capabilities = params.capabilities;
-	workspaceFolder = params.rootUri;
 
 	hasConfigurationCapability = !!(
 		capabilities.workspace && !!capabilities.workspace.configuration
@@ -232,12 +191,7 @@ connection.onInitialize((params: InitializeParams) => {
 	hasWorkspaceFolderCapability = !!(
 		capabilities.workspace && !!capabilities.workspace.workspaceFolders
 	);
-	hasDiagnosticRelatedInformationCapability = !!(
-		capabilities.textDocument &&
-		capabilities.textDocument.publishDiagnostics &&
-		capabilities.textDocument.publishDiagnostics.relatedInformation
-	);
-
+	
 	const result: InitializeResult & { capabilities: Proposed.SemanticTokensServerCapabilities } = {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
@@ -269,11 +223,18 @@ connection.onInitialize((params: InitializeParams) => {
 				]
 			},
 			semanticTokensProvider: {
-				legend: computeLegend()
-				//rangeProvider: true
+				legend: computeLegend(),
+				rangeProvider: false
 			}
 		}
 	};
+	if (hasWorkspaceFolderCapability) {
+		result.capabilities.workspace = {
+			workspaceFolders: {
+				supported: true
+			}
+		};
+	}
 	return result;
 });
 
@@ -282,66 +243,147 @@ connection.onInitialized(async () => {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
-	settings = await getSettings();
-	Promise.resolve(revalidate(true));
+	if (hasWorkspaceFolderCapability) {
+		connection.workspace.onDidChangeWorkspaceFolders(_event => {
+			for (const added of _event.added) {
+				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri)}));
+				validateWorkspace(added.uri, true);
+			}
+			for (const removed of _event.removed) {
+				documentSettings.clear();
+				parsedDocuments.clear();
+				languageServices.delete(removed.uri);
+			}
+		});
+	}
+	const workspaces = await connection.workspace.getWorkspaceFolders();
+	if (workspaces && workspaces.length > 0) {
+		await getSettings(workspaces[0].uri);
+		validate();
+	}
 });
 
-connection.onCodeLens(codelens);
-connection.onCodeLensResolve(codeLensResolve);
-connection.onDidChangeWatchedFiles(watchedFiles);
-connection.onDidChangeConfiguration(configuration);
-connection.onDefinition(definition);
-connection.onReferences(references);
-connection.onRenameRequest(rename);
-connection.onImplementation(implementations);
-connection.onDocumentSymbol(documentSymbol);
-connection.onDocumentLinks(documentLinks);
-connection.onHover(hower);
-connection.onCompletion(completion);
-connection.onExecuteCommand(command);
-connection.onSignatureHelp(signature);
-connection.languages.semanticTokens.on(semantic);
-//connection.languages.semanticTokens.onRange(semanticRange);
+connection.onCodeLens(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.findCodeLenses(repo.document, repo.macrofile));
+});
 
-documents.onDidChangeContent(content);
-documents.listen(connection);
-connection.listen();
+connection.onCodeLensResolve(params => {
+	let data:MacroCodeLensType = <MacroCodeLensType>params.data;
+	let command:string = ''; 
+	if (data.type === MacroCodeLensCommand.References){
+		command = 'macro.codelens.references';
+	}
+	return {
+		range: params.range,
+		command: {
+			command: command,
+			title:data.title,
+			arguments: [
+				{ 
+					position: params.range.start, 
+					locations: data.locations 
+				}
+			]
+		}
+	};
+});
 
-async function configuration(params: DidChangeConfigurationParams) {
-	if (!hasConfigurationCapability) {
-		globalSettings = <LanguageSettings>((params.settings.macroLanguageServer || defaultSettings));
+connection.onDidChangeWatchedFiles(handler => {
+	for (const file of handler.changes) {
+		if (file.type === FileChangeType.Deleted) {
+			parsedDocuments.clear();
+			documentSettings.clear();
+			getSettings(file.uri).then(settings => {
+				validateWorkspace(file.uri, true);
+			});
+		} 
+		else if (file.type === FileChangeType.Changed) {
+			// if the file is not opened it was changed external 
+			// so the parsedDocuments repo is not up-to-date anymore.
+			if (!documents.get(file.uri)){
+				parsedDocuments.delete(file.uri);
+			}
+		} 
+		else if (file.type === FileChangeType.Created) {
+			parsedDocuments.clear();
+			documentSettings.clear();
+			getSettings(file.uri).then(settings => {
+				validateWorkspace(file.uri, true);
+			});
+		} 
+	}
+});
+
+connection.onDidChangeConfiguration(params => {
+	documentSettings.clear();
+	const settings: TextDocumentSettings = Object.assign({},params.settings);
+	workspaceValidation = settings.validate.workspace;
+
+	for (const document of documents.all()) {
+		exec(document.uri, (service, repo, settings) => {
+			validateTextDocument(repo);
+		});
+	}
+});
+
+connection.onDefinition(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.findDefinition(repo.document, params.position, repo.macrofile));
+});
+
+connection.onReferences(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.findReferences(repo.document, params.position, repo.macrofile));
+});
+
+connection.onRenameRequest(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.doRename(repo.document, params.position, params.newName, repo.macrofile));
+});
+
+connection.onImplementation(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.findImplementations(repo.document, params.position, repo.macrofile));
+});
+
+connection.onDocumentSymbol(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.findDocumentSymbols(repo.document, repo.macrofile));
+});
+
+connection.onDocumentLinks(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.findDocumentLinks(repo.document, repo.macrofile));
+});
+
+connection.onHover(params => {
+	return exec(params.textDocument.uri, (service, repo) => 
+		service.doHover(repo.document, params.position, repo.macrofile));
+});
+
+connection.onCompletion(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.doComplete(repo.document, params.position, repo.macrofile, settings));
+});
+
+connection.onExecuteCommand(params => {
+	if (params.arguments) { 
+		return;
 	}
 
-	settings = await getSettings();
+	const textDocument 	= documents.get(params.arguments[0]);
+	const position 		= params.arguments[1];
+	const start 		= params.arguments[2];
+	const inc 			= params.arguments[3];
 
-	for (const document of documents.all()){
-		validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile));
-	}
-}
-
-function getSettings(): Thenable<LanguageSettings> {
-	if (!hasConfigurationCapability) {
-		return Promise.resolve(globalSettings);
-	}
-	let result = connection.workspace.getConfiguration({
-		section: 'macro'
-	});
-	return result;
-}
-
-function command (params: ExecuteCommandParams) {
-	if (params.command === 'macro.action.refactorsequeces' || params.command === 'macro.action.addsequeces') {
-		if (params.arguments) {
-			const textDocument 	= documents.get(params.arguments[0]);
-			const position 		= params.arguments[1];
-			const start 		= params.arguments[2];
-			const inc 			= params.arguments[3];
-
+	return exec(textDocument.uri, (service, repo, settings) => {
+		if (params.command === 'macro.action.refactorsequeces' || params.command === 'macro.action.addsequeces') {
+		
 			let localsettings:LanguageSettings = {}; 
 			Object.assign(localsettings, settings);
 
 			if (textDocument && position) {
-				let repo = getParsedDocument(textDocument.uri, macroLanguageService.parseMacroFile);
 				if (!repo) {
 					return null;
 				}
@@ -351,7 +393,7 @@ function command (params: ExecuteCommandParams) {
 						localsettings.sequence.base  = start;
 						localsettings.sequence.increment  = inc;
 					}
-					const edit = macroLanguageService.doRefactorSequences(repo.document, position, repo.macrofile, localsettings);
+					const edit = service.doRefactorSequences(repo.document, position, repo.macrofile, localsettings);
 					if (edit) {
 						connection.workspace.applyEdit({
 							documentChanges: [edit]
@@ -363,7 +405,7 @@ function command (params: ExecuteCommandParams) {
 					if (localsettings.sequence){
 						localsettings.sequence.increment  = inc;
 					}
-					const edit = macroLanguageService.doCreateSequences(repo.document, position, repo.macrofile, localsettings);
+					const edit = service.doCreateSequences(repo.document, position, repo.macrofile, localsettings);
 					if (edit) {
 						connection.workspace.applyEdit({
 							documentChanges: [edit]
@@ -372,189 +414,74 @@ function command (params: ExecuteCommandParams) {
 					}
 				}
 			}
+			
 		}
-	}
-}
+	});
+});
 
-function signature(params:SignatureHelpParams ) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.doSignature(repo.document, params.position, repo.macrofile, settings);
-}
+connection.onSignatureHelp(params => {
+	return exec(params.textDocument.uri, (service, repo, settings) => 
+		service.doSignature(repo.document, params.position, repo.macrofile, settings));
+});
 
-function content(change:TextDocumentChangeEvent<TextDocument>) {
-	validateTextDocument(getParsedDocument(change.document.uri, macroLanguageService.parseMacroFile));
-
-	// TODO validate files only which include this def file
-	if (change.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
-		Promise.resolve(revalidate(false));	
-	}
-}
-
-function hower(params: TextDocumentPositionParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.doHover(repo.document, params.position, repo.macrofile);
-}
-
-function completion(params: CompletionParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.doComplete(repo.document, params.position, repo.macrofile, settings);
-}
-
-function codelens(params: CodeLensParams) {
-	if (settings && settings?.codelens?.enable){
-		let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-		if (!repo) {
-			return null;
+connection.languages.semanticTokens.on(event => {
+	return exec(event.textDocument.uri, (service, repo, settings) => {
+		if (!repo){
+			return {
+				data: [0],
+				resultId: ''
+			};
 		}
-		return macroLanguageService.findCodeLenses(repo.document, repo.macrofile);
-	}
-}
+		return service.doSemanticHighlighting(repo.document, repo.macrofile);
+	});
+});
 
-function codeLensResolve(handler:CodeLens) {
-
-	let data:MacroCodeLensType = <MacroCodeLensType>handler.data;
-	let command:string = ''; 
-	if (data.type === MacroCodeLensCommand.References){
-		command = 'macro.codelens.references';
-	}
-	return {
-		range: handler.range,
-		command: {
-			command: command,
-			title:data.title,
-			arguments: [handler.range.start, data.locations]
+connection.languages.semanticTokens.onRange(event => {
+	return exec(event.textDocument.uri, (service, repo, settings) => {
+		if (!repo){
+			return {
+				data: [0],
+				resultId: ''
+			};
 		}
-	};
-}
+		service.doSemanticHighlighting(repo.document, repo.macrofile, event.range);
+	});
+});
 
-function definition(params: DefinitionParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.findDefinition(repo.document, params.position, repo.macrofile);
-}
+documents.onDidChangeContent(event => {
+	return exec(event.document.uri, (service, repo, settings) => {
+		validateTextDocument(getParsedDocument(event.document.uri, service.parseMacroFile));
 
-function references(params: ReferenceParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.findReferences(repo.document, params.position, repo.macrofile);
-}
-
-function rename(params: RenameParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.doRename(repo.document, params.position, params.newName, repo.macrofile);
-}
-
-function implementations(params: ImplementationParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.findImplementations(repo.document, params.position, repo.macrofile);
-}
-
-function documentSymbol(params: DocumentSymbolParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.findDocumentSymbols(repo.document, repo.macrofile);
-}
-
-function documentLinks(params: DocumentLinkParams) {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {return null;}
-	return macroLanguageService.findDocumentLinks(repo.document, repo.macrofile, new Links());
-}
-
-function semantic(params:Proposed.SemanticTokensParams): Proposed.SemanticTokens   {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {
-		return {
-			data: [0],
-			resultId: ''
-		};
-	}
-	return macroLanguageService.doSemanticHighlighting(repo.document, repo.macrofile, undefined);
-}
-
-function semanticRange(params:Proposed.SemanticTokensRangeParams): Proposed.SemanticTokens   {
-	let repo = getParsedDocument(params.textDocument.uri, macroLanguageService.parseMacroFile);
-	if (!repo) {
-		return {
-			data: [0],
-			resultId: ''
-		};
-	}
-	return macroLanguageService.doSemanticHighlighting(repo.document, repo.macrofile, params.range);
-}
-
-function validateTextDocument(doc: MacroFileType | undefined) {
-
-	if (!doc) {return;}
-
-	try {
-
-		if (doc.document) {
-			if (macroLanguageService.doValidation && doc.macrofile) {
-				const entries = macroLanguageService.doValidation(doc.document, doc.macrofile, settings);
-				entries.splice(1000);
-				const diagnostics: Diagnostic[] = entries;
-				connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
-			}
+		// TODO validate only related files
+		if (event.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
+			validateWorkspace(settings.workspaceFolder.uri, false);	
 		}
-	} catch (e) {
-		connection.console.error(`Error while validating ${doc.document.uri}`);
-		connection.console.error(e);
+	});
+});
+
+documents.listen(connection);
+connection.listen();
+
+function getSettings(uri: string): Promise<TextDocumentSettings> {
+	let resultPromise = documentSettings.get(uri);
+	if (resultPromise) {
+		return resultPromise;
 	}
+	resultPromise = connection.workspace.getConfiguration({ scopeUri: uri, section: '' }).then(configuration => {
+		const settings: TextDocumentSettings = Object.assign({},configuration);
+		workspaceValidation = settings.validate.workspace;
+		return settings;
+	});
+	documentSettings.set(uri, resultPromise);
+	return resultPromise;
 }
 
-function watchedFiles(handler:DidChangeWatchedFilesParams){
-	for (const file of handler.changes) {
-		if (file.type === FileChangeType.Deleted){
-			parsedDocuments.clear();
-			revalidate(true);
-		} 
-		else if (file.type === FileChangeType.Changed) {
-			// if the file is not opened it was changed external 
-			// so the parsedDocuments repo is not up-to-date anymore.
-			if (!documents.get(file.uri)){
-				parsedDocuments.delete(file.uri);
-			}
-		} 
-		else if (file.type === FileChangeType.Created) {
-			parsedDocuments.clear();
-			revalidate(true);
-		} 
-	}
-}
-
-function revalidate(workspace:boolean) {
-	if (workspace && settings && settings?.validate?.workspace){
-		let fp = new FileProvider();
-		let types = fp.getAll();
-		for (const element of types){
-			validateTextDocument(element);
-		}
-	} else{
-		for (const document of documents.all()){
-			validateTextDocument(getParsedDocument(document.uri, macroLanguageService.parseMacroFile,true));
-		}
-	}
-}
-
-/**
- * Returns the parsed version of a TextDocument. 
- * An open TextDocument will be reparsd if the Version is newer than the parsed version.
- * @param uri 
- * @param parser 
- * @param parse 
- */
 function getParsedDocument(uri: string, parser:((document:TextDocument) => Macrofile), parse:boolean=false) : MacroFileType | undefined {
 	let document = documents.get(uri);
 	if (document) {
 		let parsed = parsedDocuments.get(uri);
 		if (parsed) {
-			if (document.version !== parsed.version || parse){
+			if (document.version !== parsed.version || parse) {
 				parsedDocuments.set(uri , {
 					macrofile: parser(document),
 					document: document,
@@ -571,6 +498,55 @@ function getParsedDocument(uri: string, parser:((document:TextDocument) => Macro
 		}	
 	}
 	return parsedDocuments.get(uri);
+}
+
+function validateTextDocument(doc: MacroFileType | undefined) {
+
+	return exec(doc.document.uri, (service, repo, settings) => {
+		try {
+			const entries = service.doValidation(doc.document, doc.macrofile, settings);
+			entries.splice(1000);
+			const diagnostics: Diagnostic[] = entries;
+			connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
+		} catch (e) {
+			connection.console.error(`Error while validating ${doc.document.uri}`);
+			connection.console.error(e);
+		}
+	});
+}
+
+function validateWorkspace(uri:string, allFiles:boolean) {
+	if (allFiles && workspaceValidation) {
+		const fp = new FileProvider(uri);
+		for (const element of fp.getAll()){
+			validateTextDocument(element);
+		}
+	} 
+	else {
+		for (const document of documents.all()) {
+			const service = languageServices.get(uri);
+			validateTextDocument(getParsedDocument(document.uri, service.parseMacroFile));
+		}
+	}
+}
+
+function validate() {
+	connection.workspace.getWorkspaceFolders().then(workspaces => {
+		for (const ws of workspaces) {
+			validateWorkspace(ws.uri, true);
+		}
+	});
+}
+
+async function exec(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => any) {
+	return getSettings(uri).then((settings) => {
+		const service = languageServices.get(settings.workspaceFolder.uri);
+		const repo = getParsedDocument(uri, service.parseMacroFile);
+		if (!repo) {
+			return null;
+		}
+		return runService(service, repo, settings);
+	});
 }
 
 function computeLegend(): Proposed.SemanticTokensLegend {

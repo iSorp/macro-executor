@@ -111,11 +111,11 @@ export class MacroNavigation {
 		return this.findReferences(document, position, macroFile, referenceType);
 	}
 
-	public findDocumentLinks(document: TextDocument, macroFile: nodes.MacroFile, documentContext: DocumentContext): DocumentLink[] {
+	public findDocumentLinks(document: TextDocument, macroFile: nodes.MacroFile): DocumentLink[] {
 		const result: DocumentLink[] = [];
 		macroFile.accept(candidate => {
 			if (candidate.type === nodes.NodeType.Include) {
-				const link = this.uriLiteralNodeToDocumentLink(document, candidate, documentContext);
+				const link = this.uriLiteralNodeToDocumentLink(document, candidate);
 				if (link) {
 					result.push(link);
 				}
@@ -299,12 +299,12 @@ export class MacroNavigation {
 
 				const node = (<nodes.AbstractDeclaration>candidate).getSymbol();
 				if (node) {
-					const value = declarations.get(node.getText()); //declarations.filter(a => a === node?.getText());
+					const value = declarations.get(node.getText()); 
 					const count = value?.length;
 					const c = count === undefined ? 0 : count;
 					const t:MacroCodeLensType = {
 						title: c + (c !== 1 ? ' references' : ' reference'),
-						locations: value,
+						locations: value?value:[],
 						type: MacroCodeLensCommand.References
 					};
 					codeLenses.push(
@@ -337,15 +337,15 @@ export class MacroNavigation {
 		};
 	}
 
-	private uriLiteralNodeToDocumentLink(document: TextDocument, uriLiteralNode: nodes.Node, documentContext: DocumentContext): DocumentLink | null {
+	private uriLiteralNodeToDocumentLink(document: TextDocument, uriLiteralNode: nodes.Node): DocumentLink | null {
 		if (uriLiteralNode.getChildren().length === 0) {
 			return null;
 		}
 		const uriStringNode = uriLiteralNode.getChild(0);
-		return this.uriStringNodeToDocumentLink(document, uriStringNode, documentContext);
+		return this.uriStringNodeToDocumentLink(document, uriStringNode);
 	}
 	
-	private uriStringNodeToDocumentLink(document: TextDocument, uriStringNode: nodes.Node | null, documentContext: DocumentContext): DocumentLink | null {
+	private uriStringNodeToDocumentLink(document: TextDocument, uriStringNode: nodes.Node | null): DocumentLink | null {
 		if (!uriStringNode) {
 			return null;
 		}
@@ -356,7 +356,7 @@ export class MacroNavigation {
 		if (range.start.line === range.end.line && range.start.character === range.end.character) {
 			return null;
 		}
-		let target = documentContext.resolveReference(rawUri, document.uri);
+		let target = this.fileProvider.resolveReference(rawUri, document.uri);
 		return {
 			range,
 			target

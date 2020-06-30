@@ -1,14 +1,15 @@
 import * as path from 'path';
-import { ExtensionContext, workspace, commands, window as Window, 
-	Selection, languages, TextDocument, CancellationToken,Range, Uri, Position, Location, WorkspaceEdit, ProviderResult
+import { workspace as Workspace, ExtensionContext, workspace, commands, window as Window, 
+	TextDocument, CancellationToken,Range, Uri, Position, Location, ProviderResult
 } from 'vscode';
-
 
 import { 
 	LanguageClient, LanguageClientOptions, 
 	ServerOptions, TransportKind, RevealOutputChannelOn,
-	ExecuteCommandSignature, Middleware
+	ExecuteCommandSignature, WorkspaceFolder
 } from 'vscode-languageclient';
+
+import * as ls from 'vscode-languageserver-protocol';
 
 import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/semanticTokens.proposed';
 import registerCommands from './common/commands';
@@ -23,6 +24,27 @@ const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 let client: LanguageClient;
 let disposables = new CompositeDisposable();
+
+interface ConfigurationSettings {
+	validate? : {
+		enable: boolean;
+		workspace:boolean;
+	};
+	codelens?: {
+		enable:boolean;
+	};
+	sequence?: {
+		base:number;
+		increment:number;
+	}
+	lint?: Object;
+	workspaceFolder?: WorkspaceFolder | undefined;
+}
+
+interface CodeLensReferenceArgument { 
+	position: ls.Position, 
+	locations: ls.Location[]
+}
 
 export function activate(context: ExtensionContext) {
 
@@ -59,14 +81,16 @@ export function activate(context: ExtensionContext) {
 			},
 			executeCommand: async (command:string, args:any[], next:ExecuteCommandSignature) => {
 				if (command === 'macro.codelens.references') {
+					const arg:CodeLensReferenceArgument = args[0];
 
-					let position = new Position(args[0].line, args[0].character);
-					let locations = remapLocations(args[1]);
-			
-					//let selection = new Selection(line, char, line,char);
+
+					const position = client.protocol2CodeConverter.asPosition(arg.position);
+					const locations:Location[] = [];
+					for (const location of arg.locations){
+						locations.push(client.protocol2CodeConverter.asLocation(location));
+					}
+
 					if (Window.activeTextEditor) {
-						//Window.activeTextEditor.selection = selection;
-						//commands.executeCommand('references-view.find');
 						commands.executeCommand('editor.action.showReferences', Window.activeTextEditor.document.uri, position, locations);
 					}
 				}
@@ -99,6 +123,38 @@ export function activate(context: ExtensionContext) {
 							return next(command, [Window.activeTextEditor.document.uri.toString(), Window.activeTextEditor.selection.start, start, increment]);
 						}
 					}
+				}
+			},
+			workspace : {
+				configuration: async (params, _token, _next): Promise<any[]> => {
+					if (params.items === undefined) {
+						return [];
+					}
+					const result: (ConfigurationSettings | null)[] = [];
+					for (const item of params.items) {
+						if (item.section || !item.scopeUri) {
+							result.push(null);
+							continue;
+						}
+						const resource = client.protocol2CodeConverter.asUri(item.scopeUri);
+						const workspaceFolder = Workspace.getWorkspaceFolder(resource);
+						const config = workspace.getConfiguration('macro', item.scopeUri);
+						const settings: ConfigurationSettings = {
+							codelens: config.get('codelens'),
+							lint:config.get('lint', {}),
+							sequence: config.get('sequence'),
+							validate: config.get('validate'),
+						};
+		
+						if (workspaceFolder !== undefined) {
+							settings.workspaceFolder = {
+								name: workspaceFolder.name,
+								uri: client.code2ProtocolConverter.asUri(workspaceFolder.uri),
+							};
+						}
+						result.push(settings);
+					}
+					return result;
 				}
 			}
 		} as any
