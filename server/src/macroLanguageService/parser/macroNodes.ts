@@ -437,7 +437,7 @@ export enum NodeType {
 	NumericValue,
 	If,
 	ThenEndif,
-	ThenTerm,
+	IfTerm,
 	Goto,
 	Else,
 	While,
@@ -451,7 +451,6 @@ export enum NodeType {
 	BinaryExpression,
 	Operator,
 	Identifier,
-	DeclarationValue,
 	ControlStatement,
 	FuncParam,
 	Statement,
@@ -751,14 +750,14 @@ export class IfEndifStatement extends BodyDeclaration {
 	}
 }
 
-export class ThenTermStatement extends IfEndifStatement {
+export class IfTermStatement extends IfEndifStatement {
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
 	}
 
 	public get type(): NodeType {
-		return NodeType.ThenTerm;
+		return NodeType.IfTerm;
 	}
 }
 
@@ -995,7 +994,8 @@ export enum ValueType {
 	Variable = 'variable',
 	Address = 'address',
 	NcCode = 	'code',
-	NcParam = 	'param'
+	NcParam = 	'param',
+	Sequence = 	'sequence'
 }
 
 export class AbstractDeclaration extends Node {

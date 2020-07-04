@@ -40,7 +40,7 @@ export class MacroSemantic {
 					builder.push(pos.line, pos.character, label.symbol.length, TokenTypes.label, 0);
 				}
 			}
-			else if (candidate.type === nodes.NodeType.Variable && candidate.getParent()?.type !== nodes.NodeType.Function) {	
+			else if (candidate.type === nodes.NodeType.Variable) {	
 				const variable = <nodes.Variable>candidate;
 				if (variable.symbol) {
 					const pos = document.positionAt(variable.symbol.offset);
@@ -48,12 +48,12 @@ export class MacroSemantic {
 					if (type === nodes.ValueType.Variable) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.variable, 0);
 					}
-					else if (type === nodes.ValueType.Constant) {
+					else if (type === nodes.ValueType.Constant && candidate.getParent()?.type !== nodes.NodeType.Function) {
 						if (!RegExp(/(true)|(false)/i).test(variable.symbol.getText())) {
 							builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.constant, 0);
 						}
 					}
-					else if (type === nodes.ValueType.Numeric) {
+					else if (type === nodes.ValueType.Numeric && candidate.getParent()?.type !== nodes.NodeType.Function) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.symbol, 0);
 					}
 					else if (type === nodes.ValueType.NcCode) {
@@ -64,6 +64,9 @@ export class MacroSemantic {
 					}
 					else if (type === nodes.ValueType.Address) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.address, 0);
+					}
+					else if (type === nodes.ValueType.Sequence) {
+						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.label, 0);
 					}
 					else if (!type && !Number.isNaN(Number(variable.getName()))) {
 						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.number, 0);

@@ -38,7 +38,7 @@ export class MacroNavigation {
 	
 	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.Node): Location | null {
 
-		const includes = this.getIncludeUris(macroFile, this.fileProvider);
+		const includes = this.getIncludeUris(macroFile);
 		includes.push(document.uri);
 		const offset = document.offsetAt(position);
 		const node = nodes.getNodeAtOffset(macroFile, offset);
@@ -162,7 +162,7 @@ export class MacroNavigation {
 				}
 			} 
 			else if (node.type === nodes.NodeType.Variable) {
-				let variable = <nodes.Variable>node;
+				const variable = <nodes.Variable>node;
 
 				if (variable.parent?.type === nodes.NodeType.Statement) {
 					entry.name = variable.getName();
@@ -193,7 +193,7 @@ export class MacroNavigation {
 							break;
 					}
 				} 	
-				else if (variable.declaration?.valueType === nodes.ValueType.NcCode){
+				else if (variable.declaration?.valueType === nodes.ValueType.NcCode) {
 					entry.name = variable.getName();
 					entry.kind = SymbolKind.Event;
 				} 
@@ -203,15 +203,23 @@ export class MacroNavigation {
 				entry.kind = SymbolKind.Field;
 			} 
 			else if (node.type === nodes.NodeType.SequenceNumber && node.getChildren().length > 1) {
-				if (node.getParent()?.type !== nodes.NodeType.BlockSkip){
+				if (node.getParent()?.type !== nodes.NodeType.BlockSkip) {
 					entry.name = node.getText();
 					entry.kind = SymbolKind.Field;
 				}
 			}
 			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
-				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip){
+				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
 					entry.name = node.getText();
 					entry.kind = SymbolKind.Field;
+				}
+				else {
+
+					const variable = <nodes.Variable>node;
+					if (variable && variable.declaration?.valueType === nodes.ValueType.Sequence) {
+						entry.name = node.getText();
+						entry.kind = SymbolKind.Field;
+					}
 				}
 			}
 			else if (node.type === nodes.NodeType.Code) {
@@ -272,7 +280,7 @@ export class MacroNavigation {
 				}
 
 				if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
-					const includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
+					const includes = this.getIncludeUris(<nodes.Node>type.macrofile);
 					if (includes.filter(uri => uri === document.uri).length <= 0) {
 						continue;
 					}
@@ -416,7 +424,7 @@ export class MacroNavigation {
 
 			// for macro files: only accept a src file which includes the origin def file
 			if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
-				const includes = this.getIncludeUris(<nodes.Node>type.macrofile, this.fileProvider);
+				const includes = this.getIncludeUris(<nodes.Node>type.macrofile);
 				if (includes.filter(uri => uri === includeUri).length <= 0){
 					continue;
 				}
@@ -467,14 +475,8 @@ export class MacroNavigation {
 		return locations;
 	}
 
-	/**
-	 * Finds the uri of the declaration origin of a certain node
-	 * @param document 
-	 * @param node 
-	 * @param macroFile 
-	 */
 	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
-		const includes = this.getIncludeUris(macroFile, this.fileProvider);
+		const includes = this.getIncludeUris(macroFile);
 		includes.push(document.uri);
 		if (!node) {
 			return null;
@@ -497,12 +499,7 @@ export class MacroNavigation {
 		return null;
 	}
 
-	/**
-	 * Gets the include uris of a macrofile
-	 * @param macroFile 
-	 * @param fileProvider 
-	 */
-	private getIncludeUris(macroFile: nodes.MacroFile, fileProvider:MacroFileProvider) : string[] {
+	private getIncludeUris(macroFile: nodes.MacroFile) : string[] {
 		const includes = <string[]>macroFile.getData(nodes.Data.Includes);
 		if (includes) {
 			return [].concat(includes);
