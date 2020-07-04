@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import CompositeDisposable from './compositeDisposable';
+import { WorkspaceFolder } from 'vscode-languageclient';
 
 const COMPILER = ['MCOMPI', 'MCOMP0', 'MCOMP30I', 'MCOMP15', 'MCOMP15I'];
 
@@ -47,7 +48,7 @@ export default function registerCommands() : CompositeDisposable {
 
 // Set Compiler
 async function setCompiler() {
-	pickFolder((workspace) => {
+	pickFolder(workspace => {
 		const config = vscode.workspace.getConfiguration('macro', workspace);
 		const quickPickOptions = {
 			matchOnDetail: true,
@@ -69,7 +70,7 @@ async function setCompiler() {
 }
 
 async function setControlType () {
-	pickFolder((workspace) => {
+	pickFolder(workspace => {
 		const config = vscode.workspace.getConfiguration('macro', workspace);
 		const quickPickOptions = {
 			matchOnDetail: true,
@@ -93,7 +94,7 @@ async function setControlType () {
 
 // Set Export Path
 function setExportPath () {
-	pickFolder((workspace) => {
+	pickFolder(workspace => {
 		const config = vscode.workspace.getConfiguration('macro', workspace);
 		const OpenDialogOptions = {
 			matchOnDetail: true,
@@ -120,23 +121,21 @@ function setExportPath () {
 	});
 }
 
-interface WorkspaceFolderItem extends vscode.QuickPickItem {
-	folder: vscode.WorkspaceFolder;
-}
-
 function pickFolder(cb:(workspace:vscode.WorkspaceFolder) => void) {
 	const folders = vscode.workspace.workspaceFolders;
 	if (folders.length === 1) {
 		cb(folders[0]);
+		return;
 	}
-	vscode.window.showQuickPick(
-		folders.map<WorkspaceFolderItem>((folder) => { return { label: folder.name, description: folder.uri.fsPath, folder: folder }; }),
-		{ placeHolder: '' }
-	).then(selected => {
+	vscode.window.showWorkspaceFolderPick({placeHolder:'', ignoreFocusOut:true}).then(selected => {
 		if (selected) {
-			cb(selected.folder);
+			cb(selected);
 		}
 	});
+	if (folders.length === 1) {
+		cb(folders[0]);
+		return;
+	}
 }
 
 class ProjectService {
@@ -150,7 +149,7 @@ class ProjectService {
 	}
 
 	public async clean() {
-		pickFolder(async (workspace) => {
+		pickFolder(async workspace => {
 			const command = await this.getCleanCommand(workspace); 
 			if (command){
 				vscode.tasks.executeTask(new vscode.Task({type:'shell'}, workspace, 'Clean','macro', new vscode.ShellExecution(command)));
@@ -172,7 +171,7 @@ class ProjectService {
 	}
 
 	public async build() {
-		pickFolder(async (workspace) => {
+		pickFolder(async workspace => {
 			const config = vscode.workspace.getConfiguration('macro', workspace);
 
 			const makeFile 	= config.build.makeFile;

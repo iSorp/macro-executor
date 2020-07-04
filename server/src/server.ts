@@ -8,7 +8,7 @@ import * as nls from 'vscode-nls';
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 import * as path from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 
 import { 
 	getMacroLanguageService, 
@@ -90,8 +90,6 @@ class FileProvider implements MacroFileProvider {
 							document: document,
 							version: 1
 						};
-						// add new parsed document to the repository
-						// TODO handle unused files in repo
 						parsedDocuments.set(uri, doc);
 					}
 					catch (err){
@@ -264,7 +262,7 @@ connection.onInitialized(async () => {
 });
 
 connection.onCodeLens(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findCodeLenses(repo.document, repo.macrofile));
 });
 
@@ -321,49 +319,49 @@ connection.onDidChangeConfiguration(params => {
 	workspaceValidation = settings.validate.workspace;
 
 	for (const document of documents.all()) {
-		exec(document.uri, (service, repo, settings) => {
+		execute(document.uri, (service, repo, settings) => {
 			validateTextDocument(repo);
 		});
 	}
 });
 
 connection.onDefinition(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findDefinition(repo.document, params.position, repo.macrofile));
 });
 
 connection.onReferences(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findReferences(repo.document, params.position, repo.macrofile));
 });
 
 connection.onRenameRequest(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.doRename(repo.document, params.position, params.newName, repo.macrofile));
 });
 
 connection.onImplementation(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findImplementations(repo.document, params.position, repo.macrofile));
 });
 
 connection.onDocumentSymbol(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findDocumentSymbols(repo.document, repo.macrofile));
 });
 
 connection.onDocumentLinks(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findDocumentLinks(repo.document, repo.macrofile));
 });
 
 connection.onHover(params => {
-	return exec(params.textDocument.uri, (service, repo) => 
+	return execute(params.textDocument.uri, (service, repo) => 
 		service.doHover(repo.document, params.position, repo.macrofile));
 });
 
 connection.onCompletion(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.doComplete(repo.document, params.position, repo.macrofile, settings));
 });
 
@@ -377,7 +375,7 @@ connection.onExecuteCommand(params => {
 	const start 		= params.arguments[2];
 	const inc 			= params.arguments[3];
 
-	return exec(textDocument.uri, (service, repo, settings) => {
+	return execute(textDocument.uri, (service, repo, settings) => {
 		if (params.command === 'macro.action.refactorsequeces' || params.command === 'macro.action.addsequeces') {
 		
 			let localsettings:LanguageSettings = {}; 
@@ -420,36 +418,22 @@ connection.onExecuteCommand(params => {
 });
 
 connection.onSignatureHelp(params => {
-	return exec(params.textDocument.uri, (service, repo, settings) => 
+	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.doSignature(repo.document, params.position, repo.macrofile, settings));
 });
 
 connection.languages.semanticTokens.on(event => {
-	return exec(event.textDocument.uri, (service, repo, settings) => {
-		if (!repo){
-			return {
-				data: [0],
-				resultId: ''
-			};
-		}
-		return service.doSemanticHighlighting(repo.document, repo.macrofile);
-	});
+	return execute(event.textDocument.uri, (service, repo, settings) => 
+		service.doSemanticHighlighting(repo.document, repo.macrofile));
 });
 
 connection.languages.semanticTokens.onRange(event => {
-	return exec(event.textDocument.uri, (service, repo, settings) => {
-		if (!repo){
-			return {
-				data: [0],
-				resultId: ''
-			};
-		}
-		service.doSemanticHighlighting(repo.document, repo.macrofile, event.range);
-	});
+	return execute(event.textDocument.uri, (service, repo, settings) =>
+		service.doSemanticHighlighting(repo.document, repo.macrofile, event.range));
 });
 
 documents.onDidChangeContent(event => {
-	return exec(event.document.uri, (service, repo, settings) => {
+	return execute(event.document.uri, (service, repo, settings) => {
 		validateTextDocument(getParsedDocument(event.document.uri, service.parseMacroFile));
 
 		// TODO validate only related files
@@ -461,6 +445,20 @@ documents.onDidChangeContent(event => {
 
 documents.listen(connection);
 connection.listen();
+
+async function execute<T>(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => T) : Promise<T> {
+	return getSettings(uri).then(settings => {
+		const service = languageServices.get(settings.workspaceFolder.uri);
+		const repo = getParsedDocument(uri, service.parseMacroFile);
+		if (!repo || !service) {
+			return null;
+		}
+		return runService(service, repo, settings);
+	}).catch(error => {
+		connection.console.error(error);
+		return null;
+	});
+}
 
 function getSettings(uri: string): Promise<TextDocumentSettings> {
 	let resultPromise = documentSettings.get(uri);
@@ -501,8 +499,7 @@ function getParsedDocument(uri: string, parser:((document:TextDocument) => Macro
 }
 
 function validateTextDocument(doc: MacroFileType | undefined) {
-
-	return exec(doc.document.uri, (service, repo, settings) => {
+	execute(doc.document.uri, (service, repo, settings) => {
 		try {
 			const entries = service.doValidation(doc.document, doc.macrofile, settings);
 			entries.splice(1000);
@@ -535,17 +532,6 @@ function validate() {
 		for (const ws of workspaces) {
 			validateWorkspace(ws.uri, true);
 		}
-	});
-}
-
-async function exec(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => any) {
-	return getSettings(uri).then((settings) => {
-		const service = languageServices.get(settings.workspaceFolder.uri);
-		const repo = getParsedDocument(uri, service.parseMacroFile);
-		if (!repo) {
-			return null;
-		}
-		return runService(service, repo, settings);
 	});
 }
 
