@@ -5,16 +5,28 @@
 		"description": "",
 		"scope": "source.macro"
 	},
+	"if": {
+		"prefix": "if",
+		"body": "IF [${1:condition}] THEN\n\t$2\nENDIF\n",
+		"description": "if ...",
+		"scope": "source.macro"
+	},
 	"ifelse": {
 		"prefix": "ifelse",
 		"body": "IF [ ${1:condition}] THEN\n\t$2\nELSE \n\t$3\nENDIF\n",
 		"description": "if ... else ...",
 		"scope": "source.macro"
 	},
-	"if": {
-		"prefix": "if",
-		"body": "IF [${1:condition}] THEN\n\t$2\nENDIF\n",
-		"description": "if ...",
+	"ifthen": {
+		"prefix": "ifthen",
+		"body": "IF [${1:condition}] THEN\t$0",
+		"description": "if [condition] then expression",
+		"scope": "source.macro"
+	},
+	"ifgoto": {
+		"prefix": "ifgoto",
+		"body": "IF [${1:condition}] GOTO\t$0",
+		"description": "if [condition] goto expression",
 		"scope": "source.macro"
 	},
 	"else": {
@@ -31,7 +43,7 @@
 	},
 	"goto": {
 		"prefix": "goto",
-		"body": "GOTO ${1:label}",
+		"body": "GOTO ${0:label}",
 		"description": "GOTO label",
 		"scope": "source.macro"
 	},
@@ -248,6 +260,12 @@
 	"write": {
 		"prefix": "write",
 		"body": "WRITE ${1:address} Q[${2|TRUE,FALSE|}] L${3|1,2,4|}",
+		"description": "Q[TRUE]",
+		"scope": "source.macro"
+	},
+	"read": {
+		"prefix": "read",
+		"body": "READ ${1:address} P[${2:variable}] L${3|1,2,4|}",
 		"description": "Q[TRUE]",
 		"scope": "source.macro"
 	}
