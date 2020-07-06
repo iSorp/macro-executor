@@ -20,16 +20,7 @@
                     "include": "#comments"
                 },
                 {
-                    "include":"#string_a"
-                },
-                {
-                    "include":"#string_b"
-                },
-                {
-                    "include":"#string_c"
-                },
-                {
-                    "include":"#string"
+                    "include":"#string_statement"
                 },
                 {
                     "include": "#language_keywords" 
@@ -71,16 +62,7 @@
                     "include":"#comments"
                 },
                 {
-                    "include":"#string_a"
-                },
-                {
-                    "include":"#string_b"
-                },
-                {
-                    "include":"#string_c"
-                },
-                {
-                    "include":"#string"
+                    "include":"#string_statement"
                 },
                 {
                     "include": "#language_keywords" 
@@ -138,6 +120,22 @@
                 },
                 {
                     "include":"#brackets"
+                }
+            ]
+        },
+        "string_statement" : {
+            "patterns" : [
+                {
+                    "include":"#string_a"
+                },
+                {
+                    "include":"#string_b"
+                },
+                {
+                    "include":"#string_c"
+                },
+                {
+                    "include":"#string"
                 }
             ]
         },
@@ -220,7 +218,7 @@
         },
         "sequence" : {
             "name":"punctuation.section.tag.macro",
-            "match":"(?i)^\\s*N\\d+"
+            "match":"(?i)((?<=\\/)|(^\\s*))(\\s*N\\d+)"
         },
 		"number": {	
 			"name":"constant.numeric.macro",
@@ -256,7 +254,7 @@
         },
         "parameter": {
             "name":"storage.type.parameter.macro",
-			"match":"(?i)(?<![A-Z])(?<=^|(?:\\d|\\W))([A-Z])(?=(?:\\-|\\+|\\#|\\[|\\d|\\s)|(?:\\s+\\w))"
+			"match":"(?i)(?<![A-Z])(?<=^|(?:\\d|\\W))(?![N])([A-Z])(?=(?:\\-|\\+|\\#|\\[|\\d|\\s)|(?:\\s+\\w))"
         },
         "assignment":{
             "begin" : "(?=#?\\w+\\s*\\=)|(?<=\\=)(\\w*)",
@@ -313,7 +311,10 @@
 				},
 				{
 					"include":"#comments"
-				}
+                },
+                {
+                    "include":"#string_statement"                  
+                }
 			]
 		},
 		"var_def": {
@@ -340,7 +341,10 @@
                 },
 				{
 					"include":"#comments"
-				},
+                },
+                {
+                    "include":"#string_statement"                  
+                },
 				{
 					"include":"#number"	
                 },
