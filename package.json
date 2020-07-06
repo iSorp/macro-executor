@@ -27,8 +27,7 @@
 	},
 	"enableProposedApi": true,
 	"activationEvents": [
-		"onLanguage:macro",
-		"workspaceContains:**/*.src"
+		"onLanguage:macro"
 	],
 	"main": "./client/out/extension",
 	"contributes": {

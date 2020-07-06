@@ -437,7 +437,8 @@ export enum NodeType {
 	NumericValue,
 	If,
 	ThenEndif,
-	IfTerm,
+	ThenTerm,
+	ElseTerm,
 	Goto,
 	Else,
 	While,
@@ -750,14 +751,14 @@ export class IfEndifStatement extends BodyDeclaration {
 	}
 }
 
-export class IfTermStatement extends IfEndifStatement {
+export class ThenTermStatement extends IfEndifStatement {
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
 	}
 
 	public get type(): NodeType {
-		return NodeType.IfTerm;
+		return NodeType.ThenTerm;
 	}
 }
 
@@ -774,6 +775,10 @@ export class ElseStatement extends BodyDeclaration {
 export class ElseTermStatement extends ElseStatement {
 	constructor(offset: number, length: number) {
 		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.ElseTerm;
 	}
 }
 
