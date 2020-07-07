@@ -219,7 +219,10 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private visitLabels(node: nodes.Label) : boolean {
 		const parentType = node.getParent().type;
-		if (parentType === nodes.NodeType.Function || parentType === nodes.NodeType.ThenEndif || parentType === nodes.NodeType.While) {
+		if (parentType === nodes.NodeType.Function 
+			|| parentType === nodes.NodeType.Else 
+			|| parentType === nodes.NodeType.ThenEndif 
+			|| parentType === nodes.NodeType.While) {
 			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
 			const value = node.declaration?.value;
 			if (value && func) {		
@@ -304,7 +307,6 @@ export class LintVisitor implements nodes.IVisitor {
 					}
 				}
 			}
-	
 		}
 		return true;
 	}
@@ -378,7 +380,7 @@ export class LintVisitor implements nodes.IVisitor {
 			const element = path[i];
 			if (element.type === nodes.NodeType.If) {
 				++level;
-				if (level > MAX_IF_DEPTH){
+				if (level > MAX_IF_DEPTH) {
 					this.addEntry(node, Rules.NestingTooDeep);
 					return false;
 				}
