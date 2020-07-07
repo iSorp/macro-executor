@@ -9,6 +9,7 @@ export enum ReferenceType {
 	Variable,
 	Function,
 	Sequence,
+	Code,
 	JumpLabel,
 	Undefined
 }
@@ -532,6 +533,8 @@ export class NcStatement extends Node {
 }
 
 export class NcCode extends Node {
+
+	public referenceTypes?: ReferenceType[] = [ReferenceType.Code];
 
 	constructor(offset: number, length: number) {
 		super(offset, length);

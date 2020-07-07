@@ -38,6 +38,7 @@ The reference service supports the search for the following types:
 * Labels
 * Sequence numbers
 * GOTO Labels / Sequence numbers
+* M-Codes and G-Codes
 
 The search for symbol and label references is global (workspace) if the definitions are included by a definition file `.def`, otherwise the search is limited to the current file scope. Sequence numbers only can be found within a file scope (there is currently no function scope available).
 

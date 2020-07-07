@@ -68,17 +68,19 @@ export class MacroNavigation {
 	
 	public findReferences(document: TextDocument, position: Position, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined): Location[] {
 
-		let locations:Location[] = [];
-
 		const offset = document.offsetAt(position);
 		const node = nodes.getNodeAtOffset(macroFile, offset);
 		if (!node) {
-			return locations;
+			return [];
+		}
+
+		if (node.type === nodes.NodeType.Code) {
+			return this.findGlobalCodeReferences(node, implType);
 		}
 
 		let include = this.findIncludeUri(document, node, macroFile);
 		if (!include){
-			return locations;
+			return [];
 		}
 
 		let symbols = new Symbols(<nodes.Node>macroFile);
@@ -86,8 +88,8 @@ export class MacroNavigation {
 		if (symbol && !node.findAParent(nodes.NodeType.DefFile)) {
 			return this.findLocalReferences(symbol, symbols, document, macroFile, implType);
 		}
-		else{
-			return this.findGlobalReferences(include, position, node, implType);
+		else {
+			return this.findGlobalReferences(include, node, implType);
 		}
 	}
 
@@ -411,7 +413,7 @@ export class MacroNavigation {
 		});
 	}
 
-	private findGlobalReferences(includeUri:string, position:Position, node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
+	private findGlobalReferences(includeUri:string, node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
 	
 		let locations:Location[] = [];
 		let types = this.fileProvider.getAll({glob:'/**/*.[sS][rR][cC]'});
@@ -423,7 +425,7 @@ export class MacroNavigation {
 		for (const type of types) {
 
 			// for macro files: only accept a src file which includes the origin def file
-			if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
+			if (includeUri && (<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
 				const includes = this.getIncludeUris(<nodes.Node>type.macrofile);
 				if (includes.filter(uri => uri === includeUri).length <= 0){
 					continue;
@@ -446,6 +448,47 @@ export class MacroNavigation {
 			(<nodes.Node>type.macrofile).accept(candidate => {
 				if (node && node.type === candidate.type && candidate.matches(name)) {
 					let s = <nodes.Symbol>candidate;
+					if (s && s.referenceTypes && implType){
+						if (s.referenceTypes?.indexOf(implType) > 0) {
+							highlights.push({
+								kind: this.getHighlightKind(candidate),
+								range: this.getRange(candidate, type.document)
+							});
+						}
+					}
+					else {
+						highlights.push({
+							kind: this.getHighlightKind(candidate),
+							range: this.getRange(candidate, type.document)
+						});
+					}
+				}
+				return true;
+			});
+	
+			const ret = highlights.map(h => {
+				return {
+					uri: type.document.uri,
+					range: h.range
+				};
+			});
+			locations = locations.concat(ret);
+		}
+		return locations;
+	}
+
+	private findGlobalCodeReferences(node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
+	
+		let locations:Location[] = [];
+		let types = this.fileProvider.getAll({glob:'/**/*.{[sS][rR][cC],[dD][eE][fF]}'});
+
+		for (const type of types) {		
+			const name = node.getText();
+	
+			const highlights: DocumentHighlight[] = [];
+			(<nodes.Node>type.macrofile).accept(candidate => {
+				if (node && node.type === candidate.type && candidate.matches(name)) {
+					let s = <nodes.NcCode>candidate;
 					if (s && s.referenceTypes && implType){
 						if (s.referenceTypes?.indexOf(implType) > 0) {
 							highlights.push({
