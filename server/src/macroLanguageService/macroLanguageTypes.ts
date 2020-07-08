@@ -34,12 +34,18 @@ export interface LanguageSettings {
 		increment:number;
 	}
 	lint?: LintSettings;
+	keywords?: CustomKeywords[];
 }
 export type LintSettings = { 
 	rules : {
 		[key: string]: any 	// e.g rule.duplicateInclude: 'ignore' | 'warning' | 'error'
 	}
+};
 
+export type CustomKeywords = { 
+	symbol: string;
+	scope:string;
+	description:string;
 };
 
 export interface DocumentContext {
@@ -87,11 +93,17 @@ export enum TokenTypes {
 	variable 		= 2,
 	symbol			= 3,
 	constant		= 4,
-	label			= 5,
-	code 			= 6,
-	parameter 		= 7,
-	address 		= 8,
-	_ 				= 9
+	language		= 5,
+	label			= 6,
+	code 			= 7,
+	parameter 		= 8,
+	address 		= 9,
+	custom_1 		= 10,
+	custom_2 		= 11,
+	custom_3 		= 12,
+	custom_4 		= 13,
+	custom_5 		= 14,
+	_				= 15,
 }
 
 

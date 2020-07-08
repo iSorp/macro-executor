@@ -1,5 +1,10 @@
 ## 0.2.0
 - Multi-Root Workspace
+- Custom Keywords (symbol, semantic scope, description)
+- M-Code and G-Code reference search
+- Bug fixes Parser
+	- NewLine checks
+- Tests
 
 ## 0.1.17 (June 25, 2020)
 - Language service tests 

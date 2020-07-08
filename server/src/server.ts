@@ -315,9 +315,6 @@ connection.onDidChangeWatchedFiles(handler => {
 
 connection.onDidChangeConfiguration(params => {
 	documentSettings.clear();
-	const settings: TextDocumentSettings = Object.assign({},params.settings);
-	workspaceValidation = settings.validate.workspace;
-
 	for (const document of documents.all()) {
 		execute(document.uri, (service, repo, settings) => {
 			validateTextDocument(repo);
@@ -356,8 +353,8 @@ connection.onDocumentLinks(params => {
 });
 
 connection.onHover(params => {
-	return execute(params.textDocument.uri, (service, repo) => 
-		service.doHover(repo.document, params.position, repo.macrofile));
+	return execute(params.textDocument.uri, (service, repo, settings) => 
+		service.doHover(repo.document, params.position, repo.macrofile, settings));
 });
 
 connection.onCompletion(params => {
@@ -366,7 +363,7 @@ connection.onCompletion(params => {
 });
 
 connection.onExecuteCommand(params => {
-	if (params.arguments) { 
+	if (!params.arguments) { 
 		return;
 	}
 
@@ -424,12 +421,12 @@ connection.onSignatureHelp(params => {
 
 connection.languages.semanticTokens.on(event => {
 	return execute(event.textDocument.uri, (service, repo, settings) => 
-		service.doSemanticHighlighting(repo.document, repo.macrofile));
+		service.doSemanticHighlighting(repo.document, repo.macrofile, settings));
 });
 
 connection.languages.semanticTokens.onRange(event => {
 	return execute(event.textDocument.uri, (service, repo, settings) =>
-		service.doSemanticHighlighting(repo.document, repo.macrofile, event.range));
+		service.doSemanticHighlighting(repo.document, repo.macrofile, settings, event.range));
 });
 
 documents.onDidChangeContent(event => {

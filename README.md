@@ -61,6 +61,12 @@ The global / local search behavior is equal to the reference search.
 
 ![Implementations](./resources/implementations.gif)
 
+
+## Sequence number refactoring for functions
+* Consecutive numbering on completion (snippet N-Number)
+* Command for renumbering sequences (incl. GOTOs)
+* Command for adding missing sequences (for NC statements)
+
 ## Supported display languages
 * English `en`
 * Deutsch `de`
@@ -76,11 +82,6 @@ The global / local search behavior is equal to the reference search.
 * Uppercase for constants: `@MY_CONSTANT 100`
 * Space between statements: `O SUB_PROGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
 * A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
-
-## Sequence number refactoring for functions
-* Consecutive numbering on completion (snippet N-Number)
-* Command for renumbering sequences (incl. GOTOs)
-* Command for adding missing sequences (for NC statements)
 
 
 <a name="highlighting"></a>
@@ -107,9 +108,60 @@ For some color themes, the semantic highlighting must be enabled in the settings
 | ![no semantic](./resources/no_semantic.png) | ![with Semantic](./resources/with_semantic.png) |
 
 
- 
-
 *The color theme used in screenshot →* **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**
+
+## Customization
+
+* Symbol highlighting
+* Symbol description for hover and completion
+
+Out of the box the extension supports syntax highlighting for the common types, but sometimes it could be useful to change the default highlighting for a particular symbol or for a type of a symbol like a variable. 
+
+A customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user or workspace settings.
+
+Currently the following semantic tokens scopes are available:
+
+* number  
+* variable
+* symbol  
+* constant
+* language
+* label   
+* code    
+* parameter
+* address
+
+
+ These scopes are used internally and the colorization depends on the choosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)** To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to your settings.
+ 
+If the default scopes should be unchanged then the additional scopes `custom_1` - `custom_5` could be used:
+* custom_1  
+* custom_2
+* custom_3
+* custom_4
+* custom_5
+
+In the following example the symbol `TRUE` which has a default scope `constant` is changed to `custom_1` and the scope `custom_1` is getting a red color:
+
+```
+"macro.keywords" : [
+       {
+              "symbol": "TRUE",
+              "scope": "custom_1",
+              "description": "value 1"
+       }
+]
+```
+
+```
+"editor.semanticTokenColorCustomizations": {
+       "enabled": true,
+       "rules": {
+              "custom_1": "#ff0000"
+       }
+},
+```
+
 
 ## Multi-Root Workspaces
 The extension supports [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces). Each workspace is handled as a separate macro project.

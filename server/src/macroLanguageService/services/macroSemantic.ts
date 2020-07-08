@@ -5,18 +5,24 @@
 'use strict';
 
 import {
-	TextDocument, MacroFileProvider, 
+	TextDocument, LanguageSettings, Position,
 	Proposed, SemanticTokensBuilder, TokenTypes, Range
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 
 
 export class MacroSemantic {
+	private builder:SemanticTokensBuilder;
+	private settings:LanguageSettings;
+	private document: TextDocument;
+
 	constructor() {}
 	
-	public doSemanticHighlighting(document: TextDocument, macroFile: nodes.MacroFile, range:Range | undefined) : Proposed.SemanticTokens {
+	public doSemanticHighlighting(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings, range:Range | undefined) : Proposed.SemanticTokens {
+		this.builder = new SemanticTokensBuilder();
+		this.settings = settings;
+		this.document = document;
 
-		const builder = new SemanticTokensBuilder();
 		let start:number;
 		let end:number;
 		if (range){
@@ -25,56 +31,69 @@ export class MacroSemantic {
 		}
 		macroFile.accept(candidate => {
 			if (range) {
-				if (candidate.offset < start){
+				if (candidate.offset < start) {
 					return true;
 				}
-				if (candidate.offset > end){
+				if (candidate.offset > end) {
 					return false;
 				} 
 			}
-		
-			if (candidate.type === nodes.NodeType.Label) {
+			if (candidate.type === nodes.NodeType.Code) {
+				this.build(candidate);
+			}
+			else if (candidate.type === nodes.NodeType.Label) {
 				const label = <nodes.Label>candidate;
 				if (label.symbol){
-					const pos = document.positionAt(label.symbol.offset);
-					builder.push(pos.line, pos.character, label.symbol.length, TokenTypes.label, 0);
+					this.build(label.symbol, TokenTypes.label);
 				}
 			}
 			else if (candidate.type === nodes.NodeType.Variable) {	
 				const variable = <nodes.Variable>candidate;
 				if (variable.symbol) {
-					const pos = document.positionAt(variable.symbol.offset);
 					const type = variable.declaration?.valueType;
 					if (type === nodes.ValueType.Variable) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.variable, 0);
+						this.build(variable.symbol, TokenTypes.variable);
 					}
 					else if (type === nodes.ValueType.Constant && candidate.getParent()?.type !== nodes.NodeType.Function) {
-						if (!RegExp(/(true)|(false)/i).test(variable.symbol.getText())) {
-							builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.constant, 0);
-						}
+						this.build(variable.symbol, TokenTypes.constant);
 					}
 					else if (type === nodes.ValueType.Numeric && candidate.getParent()?.type !== nodes.NodeType.Function) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.symbol, 0);
+						this.build(variable.symbol, TokenTypes.symbol);
 					}
 					else if (type === nodes.ValueType.NcCode) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.code, 0);
+						this.build(variable.symbol, TokenTypes.code);
 					}
 					else if (type === nodes.ValueType.NcParam) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.parameter, 0);
+						this.build(variable.symbol, TokenTypes.parameter);
 					}
 					else if (type === nodes.ValueType.Address) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.address, 0);
+						this.build(variable.symbol, TokenTypes.address);
 					}
 					else if (type === nodes.ValueType.Sequence) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.label, 0);
+						this.build(variable.symbol, TokenTypes.label);
 					}
 					else if (!type && !Number.isNaN(Number(variable.getName()))) {
-						builder.push(pos.line, pos.character, variable.symbol.length, TokenTypes.number, 0);
+						this.build(variable.symbol, TokenTypes.number);
 					}
 				}
 			}
+
 			return true;
 		});
-		return builder.build();
+		return this.builder.build();
+	}
+
+	private build(node:nodes.Node, tokenType?:TokenTypes) {
+		const pos = this.document.positionAt(node.offset);
+		let token:TokenTypes = tokenType;
+		if (node.type === nodes.NodeType.Symbol || node.type === nodes.NodeType.Code) {
+			const customKey = this.settings.keywords.find(a => RegExp('^'+a.symbol+'$').test(node.getText()));
+			if (customKey) {
+				token = TokenTypes[customKey.scope];
+			}
+		}
+		if (token) {
+			this.builder.push(pos.line, pos.character, node.length, token, 0);
+		}
 	}
 }

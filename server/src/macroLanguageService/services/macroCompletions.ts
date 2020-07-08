@@ -17,7 +17,8 @@ import {
 	InsertTextFormat,
 	TextEdit,
 	LanguageSettings,
-	functionSignatures
+	functionSignatures,
+	MarkupKind
 } from '../macroLanguageTypes';
 import { getComment } from '../parser/macroScanner';
 import { SignatureHelp, ParameterInformation, SignatureInformation } from 'vscode-languageserver';
@@ -83,15 +84,16 @@ enum Sort {
 }
 
 export class MacroCompletion {
-	position!: Position;
-	offset!: number;
-	currentWord!: string;
-	textDocument!: TextDocument;
-	macroFile!: nodes.MacroFile;
-	symbolContext!: Symbols;
-	defaultReplaceRange!: Range;
-	nodePath!: nodes.Node[];
-	inc : number = 10;
+	private position!: Position;
+	private offset!: number;
+	private currentWord!: string;
+	private textDocument!: TextDocument;
+	private macroFile!: nodes.MacroFile;
+	private settings: LanguageSettings
+	private symbolContext!: Symbols;
+	private defaultReplaceRange!: Range;
+	private nodePath!: nodes.Node[];
+	private inc : number = 10;
 
 	constructor(private fileProvider: MacroFileProvider) {}
 
@@ -127,7 +129,8 @@ export class MacroCompletion {
 		this.defaultReplaceRange = Range.create(Position.create(this.position.line, this.position.character - this.currentWord.length), this.position);
 		this.textDocument = document;
 		this.macroFile = macroFile;
-		this.inc	= settings.sequence?.increment ? Number(settings.sequence?.increment) : 10;
+		this.settings = settings;
+		this.inc = settings.sequence?.increment ? Number(settings.sequence?.increment) : 10;
 
 		try {
 			const result: CompletionList = { isIncomplete: false, items: [] };
@@ -148,26 +151,27 @@ export class MacroCompletion {
 					this.getKeyWordProposals(result);
 					this.getSequenceNumberSnippet(node, result);
 				}
-				else if (node.type === nodes.NodeType.ConditionalExpression || node.type === nodes.NodeType.BinaryExpression) {
+				else if (node.type === nodes.NodeType.ConditionalExpression 
+					|| node.type === nodes.NodeType.BinaryExpression 
+					|| node.type === nodes.NodeType.Goto 
+					|| node.type === nodes.NodeType.Assignment) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 					this.getOperatorProposals(result);
-				}
-				else if (node.type === nodes.NodeType.Goto || node.type === nodes.NodeType.Assignment) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
-					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 				}
 				else {
 					continue;
 				}
 				if (result.items.length > 0 || this.offset > node.offset) {
+					this.getCustomProposals(result);
 					return result;
 				}
 			}
 			this.getCompletionsForMacroFile(result);			
 			return result;
 
-		} finally {
+		} 
+		finally {
 			this.position = null!;
 			this.currentWord = null!;
 			this.textDocument = null!;
@@ -194,14 +198,15 @@ export class MacroCompletion {
 		let sort:Sort = Sort.Undefinded;
 		const symbols = this.getSymbolContext().findSymbols(referenceType, types);
 		let text:string | undefined;
+		let doc = '';
 		for (const context of symbols){
 			if (context.uri){
 				text = this.fileProvider.get(context.uri)?.document.getText();
 			}
 
 			for (const symbol of context.symbols) {
-
 				if (referenceType === nodes.ReferenceType.Variable) {
+					doc = this.getMarkedStringForDeclaration('symbol', <nodes.AbstractDeclaration>symbol.node);
 					switch (symbol.valueType){
 						case nodes.ValueType.Address:
 							sort = Sort.Address;
@@ -234,6 +239,7 @@ export class MacroCompletion {
 					}
 				}
 				else if (referenceType === nodes.ReferenceType.Label) {
+					doc = this.getMarkedStringForDeclaration('label', <nodes.AbstractDeclaration>symbol.node);
 					switch (symbol.valueType){
 						case nodes.ValueType.Numeric:
 							sort = Sort.Label;
@@ -250,18 +256,20 @@ export class MacroCompletion {
 					}
 				}
 
-		
-				const doc = text ? getComment(symbol.node.offset, text) : ''; 
+				const custom = this.settings.keywords.find(a => a.symbol === symbol.name);
+				doc = custom ? doc + '\n\n' + custom.description : doc;
 				const completionItem: CompletionItem = {
 					label: symbol.name,
-					documentation: doc + '\n' + (<nodes.AbstractDeclaration>symbol.node).getValue()?.getText(),
+					documentation: {
+						kind: MarkupKind.Markdown,
+						value:doc
+					},
 					kind: kind,
 					sortText: sort
 				};
 				result.items.push(completionItem);
 			}
 		}
-
 		return result;
 	}
 
@@ -285,6 +293,21 @@ export class MacroCompletion {
 				sortText: Sort.KeyWords
 			};
 			result.items.push(completionItem);
+		}
+		return result;
+	}
+
+	private getCustomProposals(result: CompletionList): CompletionList {
+		for (const key of this.settings.keywords) {
+			result.items.push(
+				{
+					label: key.symbol, 
+					kind: CompletionItemKind.Snippet,
+					documentation: {
+						kind: MarkupKind.Markdown,
+						value:key.description
+					},
+				});
 		}
 		return result;
 	}
@@ -348,6 +371,21 @@ export class MacroCompletion {
 		return this.defaultReplaceRange;
 	}
 
+	private getMarkedStringForDeclaration(type: string, node: nodes.AbstractDeclaration) : string {		
+		const comment = getComment(node.offset, this.textDocument.getText()).trim();
+		const name = node.getName();
+		const address = node.getValue()?.getText();
+		const valueType = node.valueType?.toString();
+		
+		let text = '';
+		text += `(${type}:${valueType}) ` + `@${name} `+` ${address}`;
+
+		if (comment){
+			text += '\n\n' + `${comment}`;
+		}
+		return text;
+	}
+
 	public doSignature(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings) : SignatureHelp | null{
 
 		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
@@ -355,7 +393,6 @@ export class MacroCompletion {
 			return null;
 		}
 
-		const path = nodes.getNodePath(node, document.offsetAt(position));
 		const paramNode = node.findAParent(nodes.NodeType.FuncParam);
 		const funcNode:nodes.Ffunc = <nodes.Ffunc>node.findAParent(nodes.NodeType.Ffunc);
 		const ident  = funcNode.getIdentifier()?.getText()?.toLocaleLowerCase();

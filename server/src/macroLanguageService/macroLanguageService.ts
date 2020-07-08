@@ -26,7 +26,7 @@ export * from './macroLanguageTypes';
 export interface LanguageService {
 	doValidation(document: TextDocument, file: Macrofile, documentSettings: LanguageSettings): Diagnostic[];
 	parseMacroFile(document: TextDocument): Macrofile;
-	doHover(document: TextDocument, position: Position, macroFile: Macrofile):Hover | null;
+	doHover(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings):Hover | null;
 	doComplete(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings): CompletionList;
 	doSignature(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings):SignatureHelp | null;
 	findDefinition(document: TextDocument, position: Position, macroFile: Macrofile): Location | null;
@@ -38,7 +38,7 @@ export interface LanguageService {
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
-	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, range?:Range) : Proposed.SemanticTokens;
+	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, documentSettings: LanguageSettings, range?:Range) : Proposed.SemanticTokens;
 }
 
 function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand, semantic:MacroSemantic): LanguageService {

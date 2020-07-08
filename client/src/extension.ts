@@ -38,6 +38,7 @@ interface ConfigurationSettings {
 		increment:number;
 	}
 	lint?: Object;
+	keywords: Object[],
 	workspaceFolder?: WorkspaceFolder | undefined;
 }
 
@@ -144,6 +145,7 @@ export function activate(context: ExtensionContext) {
 							lint:config.get('lint', {}),
 							sequence: config.get('sequence'),
 							validate: config.get('validate'),
+							keywords: config.get('keywords'),
 						};
 		
 						if (workspaceFolder !== undefined) {
