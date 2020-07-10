@@ -41,9 +41,31 @@ export class MacroHover {
 	
 				if (location && macroFileType) {
 					let type = '';
-					if (node.type === nodes.NodeType.Variable) {
+					if (node.type === nodes.NodeType.VariableDef) {
+						const vardef = <nodes.VariableDeclaration>node;
+						const custom = this.getCustomKeywordDescription(vardef.getName(), nodes.NodeType.Variable);
+						hover =  {
+							contents: {
+								kind:MarkupKind.Markdown,
+								value: [`${custom}`].join('\n')
+							},
+							range: this.getRange(vardef.getSymbol())
+						};
+					}
+					else if (node.type === nodes.NodeType.labelDef) {
+						const labeldef = <nodes.LabelDeclaration>node;
+						const custom = this.getCustomKeywordDescription(labeldef.getName(), nodes.NodeType.Label);
+						hover =  {
+							contents: {
+								kind:MarkupKind.Markdown,
+								value: [`${custom}`].join('\n')
+							},
+							range: this.getRange(labeldef.getSymbol())
+						};
+					}
+					else if (node.type === nodes.NodeType.Variable) {
 						type = 'symbol';
-						const custom = this.getCustomKeywordDescription((<nodes.Variable>node).getName(), node.type);
+						const custom = this.getCustomKeywordDescription((<nodes.Variable>node).getName(), nodes.NodeType.Variable);
 						const text = this.getMarkedStringForDeclaration(type, <nodes.Node>macroFileType!.macrofile, macroFileType!.document, location);
 						hover =  {
 							contents: {
@@ -55,7 +77,7 @@ export class MacroHover {
 					}
 					else if (node.type === nodes.NodeType.Label) {
 						type = 'label';
-						const custom = this.getCustomKeywordDescription((<nodes.Label>node).getName(), node.type);
+						const custom = this.getCustomKeywordDescription((<nodes.Label>node).getName(), nodes.NodeType.Label);
 						const text = this.getMarkedStringForDeclaration(type, <nodes.Node>macroFileType!.macrofile, macroFileType!.document, location);
 						hover =  {
 							contents: {
@@ -66,7 +88,7 @@ export class MacroHover {
 						};
 					}
 					else if (node.type === nodes.NodeType.Code) {
-						const custom = this.getCustomKeywordDescription(node.getText(), node.type);
+						const custom = this.getCustomKeywordDescription(node.getText(), nodes.NodeType.Code);
 						const desc = CodeDescription[node.getText()];
 						const type = (<nodes.NcCode>node).codeType + '-code';
 						hover =  {
@@ -80,11 +102,10 @@ export class MacroHover {
 				}
 				else if (node.type === nodes.NodeType.Ffunc) {
 					const text = this.getMarkedStringForFunction(<nodes.Ffunc>node);
-					const custom = this.getCustomKeywordDescription((<nodes.Ffunc>node).identifier.getText(), node.type);
 					hover =  {
 						contents: {
 							kind:MarkupKind.Markdown,
-							value: [`${text}`, '', `${custom}`].join('\n')
+							value: [`${text}`].join('\n')
 						},
 						range: this.getRange(node)
 					};

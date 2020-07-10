@@ -1,7 +1,7 @@
 ## 0.2.0
 - Multi-Root Workspace
 - Custom Keywords (symbol, semantic scope, description)
-- M-Code and G-Code reference search
+- M-Code, G-Code, macro variable(#..) and address reference search
 - Bug fixes Parser
 	- NewLine checks
 - Tests

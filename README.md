@@ -11,7 +11,8 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 
 ## News
-- [Multi-Root Workspaces](#Multi-Root)
+- [Multi-Root Workspaces](#multi-root-workspaces)
+- [Custom Keywords](#Customization)
 
 ***
        
@@ -27,18 +28,34 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * Lint features
 * Sequence number refactoring
 
+## Supported display languages
+* English `en`
+* Deutsch `de`
+* 中文 `zh-cn`
+
+## Required file extensions
+* Macro files`.src`
+* Include files `.def` 
+* Link files `.lnk` 
+
+## Coding conventions
+* `$Include` paths must be absolute or relative to the workspace folder
+* Uppercase for constants: `@MY_CONSTANT 100`
+* Space between statements: `O SUB_PROGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
+* A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
 
 ## Validation
 ![Validation](./resources/validation.gif)
-
 
 ## References
 The reference service supports the search for the following types:
 * Symbols
 * Labels
 * Sequence numbers
-* GOTO Labels / Sequence numbers
+* GOTO Label/sequence numbers
 * M-Codes and G-Codes
+* Macro variables (#..) 
+* Addresses
 
 The search for symbol and label references is global (workspace) if the definitions are included by a definition file `.def`, otherwise the search is limited to the current file scope. Sequence numbers only can be found within a file scope (there is currently no function scope available).
 
@@ -67,24 +84,6 @@ The global / local search behavior is equal to the reference search.
 * Command for renumbering sequences (incl. GOTOs)
 * Command for adding missing sequences (for NC statements)
 
-## Supported display languages
-* English `en`
-* Deutsch `de`
-* 中文 `zh-cn`
-
-## Required file extensions
-* Macro files`.src`
-* Include files `.def` 
-* Link files `.lnk` 
-
-## Coding conventions
-* `$Include` paths must be absolute or relative to the workspace folder
-* Uppercase for constants: `@MY_CONSTANT 100`
-* Space between statements: `O SUB_PROGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
-* A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
-
-
-<a name="highlighting"></a>
 
 ## Semantic highlighting
 
@@ -97,7 +96,7 @@ Semantic highlighting is used to highlight the represented type of a symbol. Fol
 
 For some color themes, the semantic highlighting must be enabled in the settings:
 
-```
+```json
 "editor.semanticTokenColorCustomizations": {
        "enabled": true,
 }
@@ -117,43 +116,62 @@ For some color themes, the semantic highlighting must be enabled in the settings
 
 Out of the box the extension supports syntax highlighting for the common types, but sometimes it could be useful to change the default highlighting for a particular symbol or for a type of a symbol like a variable. 
 
-A customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user or workspace settings.
-
-Currently the following semantic tokens scopes are available:
-
-* number  
-* variable
-* symbol  
-* constant
-* language
-* label   
-* code    
-* parameter
-* address
-
-
- These scopes are used internally and the colorization depends on the choosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)** To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to your settings.
- 
-If the default scopes should be unchanged then the additional scopes `custom_1` - `custom_5` could be used:
-* custom_1  
-* custom_2
-* custom_3
-* custom_4
-* custom_5
-
-In the following example the symbol `TRUE` which has a default scope `constant` is changed to `custom_1` and the scope `custom_1` is getting a red color:
-
+A customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
+```json
+{
+       "symbol": exact symbol text e.g. M08,
+       "scope": [see Scopes below],
+       "nodeType" : [Label, Variable, Code],
+       "description": Markdown string
+}
 ```
+
+The field `nodeType` defines the related type in the macro program. If the field is empty, a keyword item will affect all symbol occurrences. E.g. if you want to add a hower text to a particular P-Code variable, an item could be structed as follows:
+
+```json
+{
+       "symbol": "10000",
+       "nodeType" :"Variable",
+       "description": "some variable text"
+}
+```
+
+### Scopes
+
+       number        Style for compile-time number
+       macrovar      Style for compile-time macro variable (@var    #10000)
+       symbol        Style for compile-time symbol (@var    R100.0, @var    1000)
+       constant      Style for compile-time constant symbol (@UPPER    #10000)
+       language      Style for compile-time language constant
+       label         Style for compile-time label
+       code          Style for compile-time M-Code/G-Code
+       parameter     Style for compile-time NC-Parameter 
+       address       Style for compile-time address
+
+
+ These scopes are used internally and the colorization depends on the chosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**. To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to the `editor.semanticTokenColorCustomizations` settings.
+ 
+In case the default scopes should be unchanged, the additional custom scopes `custom_1` - `custom_5` could be used:
+
+       custom_1  
+       custom_2
+       custom_3
+       custom_4
+       custom_5
+
+### Example
+
+The following example changes the symbol `M08`, which has a default scope `code`, to `custom_1` and the scope `custom_1` is associated with the color red:
+
+```json
 "macro.keywords" : [
        {
-              "symbol": "TRUE",
+              "symbol": "M08",
               "scope": "custom_1",
-              "description": "value 1"
+              "description": "*Coolant*"
        }
-]
-```
+],
 
-```
 "editor.semanticTokenColorCustomizations": {
        "enabled": true,
        "rules": {
@@ -161,6 +179,8 @@ In the following example the symbol `TRUE` which has a default scope `constant` 
        }
 },
 ```
+
+**[Example on github](https://github.com/iSorp/macro-executor/tree/master/doc/settings.example.json)**
 
 
 ## Multi-Root Workspaces
@@ -208,8 +228,6 @@ Three levels are supported: `error`, `warning` and `ignore`.
 | Link / build all    | Ctrl+Shift+L |
 | Clean   | Ctrl+Shift+C |
 
-
-<a name="extensionSettings"></a>
 
 ## Extension Settings
 

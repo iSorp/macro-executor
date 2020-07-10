@@ -141,7 +141,7 @@
 			"title": "Macro Executor",
 			"properties": {
 				"macro.keywords": {
-					"scope": "window",
+					"scope": "resource",
 					"type" : "array",
 					"description": "custom keywords",
 					"items": {
@@ -160,7 +160,7 @@
 								"type" : "string",
 								"enum": [		
 									"number",
-									"variable",
+									"macro",
 									"symbol",
 									"constant",
 									"language",
@@ -177,6 +177,15 @@
 							},
 							"description": {
 								"type" : "string"
+							},
+							"nodeType" : {
+								"type" : "string",
+								"enum": [		
+									"",
+									"Label",
+									"Variable",
+									"Code"
+								]
 							}
 						}
 					}
@@ -420,12 +429,12 @@
 				"description": "Style for compile-time number"
 			},
 			{
-				"id": "variable",
-				"description": "Style for compile-time # variable symbol"
+				"id": "macrovar",
+				"description": "Style for compile-time # macro variable symbol"
 			},
 			{
 				"id": "symbol",
-				"description": "Style for compile-time variable symbol"
+				"description": "Style for compile-time symbol"
 			},
 			{
 				"id": "constant",
@@ -441,7 +450,11 @@
 			},
 			{
 				"id": "parameter",
-				"description": "Style for compile-time parameter NC-Parameter/Address"
+				"description": "Style for compile-time NC-Parameter"
+			},
+			{
+				"id": "address",
+				"description": "Style for compile-time Address"
 			},
 			{
 				"id": "custom_1",
@@ -473,7 +486,7 @@
 					"number": [
 						"constant.numeric"
 					],
-					"variable": [
+					"macrovar": [
 						"variable.other.field"
 					],
 					"symbol": [
@@ -496,9 +509,6 @@
 					],
 					"address": [
 						"support.variable.property"
-					],
-					"custom_1": [
-						"custom.1"
 					]
 				}
 			}
