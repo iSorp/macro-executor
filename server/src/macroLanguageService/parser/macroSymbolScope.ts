@@ -5,6 +5,7 @@
 'use strict';
 
 import * as nodes from './macroNodes';
+import { Context } from 'mocha';
 
 export class Scope {
 
@@ -80,7 +81,10 @@ export class ScopeBuilder implements nodes.IVisitor {
 		if (node.offset !== -1) {
 			const current = this.scope;
 			if (current) {
-				current.addSymbol(new Symbol(name, node, refType, valueType));
+				if (!current.getSymbol(name, refType)){
+					current.addSymbol(new Symbol(name, node, refType, valueType));
+				}
+				
 			}
 		}
 	}
@@ -88,8 +92,8 @@ export class ScopeBuilder implements nodes.IVisitor {
 	public visitNode(node: nodes.Node): boolean {
 		switch (node.type) {
 			case nodes.NodeType.VariableDef:
-				const variable = (<nodes.VariableDeclaration>node);
-				this.addSymbol(node, variable.getName(), nodes.ReferenceType.Variable, variable.valueType);
+				const vardef = (<nodes.VariableDeclaration>node);
+				this.addSymbol(node, vardef.getName(), nodes.ReferenceType.Variable, vardef.valueType);
 				return true;
 			case nodes.NodeType.labelDef:
 				const label = (<nodes.VariableDeclaration>node);
@@ -98,6 +102,16 @@ export class ScopeBuilder implements nodes.IVisitor {
 			case nodes.NodeType.SequenceNumber:
 				const sequence = (<nodes.SequenceNumber>node);
 				this.addSymbol(node, sequence.getNumber().getText(), nodes.ReferenceType.Sequence);
+				return true;
+			case nodes.NodeType.Code:
+				this.addSymbol(node, node.getText(), nodes.ReferenceType.Code);
+				return true;
+			case nodes.NodeType.Variable:		
+				const variable = (<nodes.Variable>node);
+				this.addSymbol(node, variable.getName(), nodes.ReferenceType.Variable);
+				return true;
+			case nodes.NodeType.Address:
+				this.addSymbol(node, node.getText(), nodes.ReferenceType.Address);
 				return true;
 		}
 		return true;
@@ -175,8 +189,8 @@ export class Symbols {
 	}
 
 	private evaluateReferenceTypes(node: nodes.Node): nodes.ReferenceType[] | null {
-		if (node instanceof nodes.Symbol) {
-			const referenceTypes = (<nodes.Symbol>node).referenceTypes;
+		if ('referenceTypes' in node) {
+			const referenceTypes = (<nodes.Reference>node).referenceTypes;
 			if (referenceTypes) {
 				return referenceTypes;
 			}

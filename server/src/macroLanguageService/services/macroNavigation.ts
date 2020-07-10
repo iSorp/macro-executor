@@ -8,7 +8,7 @@ import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
 	Position, Range, SymbolInformation, SymbolKind, TextEdit, 
 	MacroCodeLensCommand, TextDocument, DocumentContext, MacroFileProvider, 
-	WorkspaceEdit, MacroCodeLensType
+	WorkspaceEdit, MacroCodeLensType, MacroFileType
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols, Symbol } from '../parser/macroSymbolScope';
@@ -33,7 +33,11 @@ type EditEntries = {
 	[key:string]:TextEdit[];
 }
 
+const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
+const SRC_FILES:string = '/**/*.[sS][rR][cC]';
+
 export class MacroNavigation {
+
 	constructor(private fileProvider: MacroFileProvider){}
 	
 	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.Node): Location | null {
@@ -73,23 +77,43 @@ export class MacroNavigation {
 		if (!node) {
 			return [];
 		}
-
-		if (node.type === nodes.NodeType.Code) {
-			return this.findGlobalCodeReferences(node, implType);
-		}
-
-		let include = this.findIncludeUri(document, node, macroFile);
-		if (!include){
+		
+		const includeUri = this.findIncludeUri(document, node, macroFile);
+		if (!includeUri) {
 			return [];
 		}
 
-		let symbols = new Symbols(<nodes.Node>macroFile);
-		let symbol = symbols.findSymbolFromNode(node);
-		if (symbol && !node.findAParent(nodes.NodeType.DefFile)) {
-			return this.findLocalReferences(symbol, symbols, document, macroFile, implType);
-		}
-		else {
-			return this.findGlobalReferences(include, node, implType);
+		const origin = this.fileProvider.get(includeUri);
+		const symbolContext = new Symbols(<nodes.MacroFile>origin.macrofile);
+
+		let files:MacroFileType[] = [];
+		switch (node.type) {
+			case nodes.NodeType.Code:
+			case nodes.NodeType.Address:
+				files = this.fileProvider.getAll({glob:ALL_FILES});
+				return this.findReferencesInternal(files, node, symbolContext, implType);
+			case nodes.NodeType.Symbol:
+				// search macro variable symbol (#10000)
+				if (node.parent.type === nodes.NodeType.Variable) {
+					const variable = <nodes.Variable>node.parent;
+					if (!variable.declaration && !Number.isNaN(Number(variable.getName()))) {
+						files = this.fileProvider.getAll({glob:ALL_FILES});
+						return this.findReferencesInternal(files, node, symbolContext, implType);
+					}
+				}
+	
+				// Search label and variables symbols
+				if (!(origin.macrofile instanceof nodes.MacroFile)) {
+					files = this.fileProvider.getAll({glob:SRC_FILES});
+					files = files.filter(file => {
+						const includes = this.getIncludeUris(<nodes.MacroFile>file.macrofile);
+						if (includes.some(uri => uri === origin.document.uri)) {
+							return true;
+						}
+					});
+				}
+				files.push(origin);
+				return this.findReferencesInternal(files, node, symbolContext, implType);	
 		}
 	}
 
@@ -274,7 +298,7 @@ export class MacroNavigation {
 		// global search
 		else {
 
-			let types = this.fileProvider.getAll({glob:'/**/*.[sS][rR][cC]'});
+			let types = this.fileProvider.getAll({glob:SRC_FILES});
 			for (const type of types) {
 
 				if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile)) {
@@ -377,136 +401,41 @@ export class MacroNavigation {
 		return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 	}
 	
-	private findLocalReferences(symbol:Symbol, symbols:Symbols, document: TextDocument, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined) : Location[] {
-	
-		const highlights: DocumentHighlight[] = [];
+	private findReferencesInternal(files:MacroFileType[], node:nodes.Node, symbolContext:Symbols, implType:nodes.ReferenceType | undefined = undefined):Location[] {
+		let locations:Location[] = [];
 
-		macroFile.accept(candidate => {
-			if (symbol) {
-				if (symbols.matchesSymbol(candidate, symbol)) {
+		for (const type of files) {
+			const macroFile = <nodes.MacroFile>type.macrofile;
+
+			// finding condition: name and reference type
+			const symbol = symbolContext.findSymbolFromNode(node); 	
+			if (!symbol) {
+				continue;
+			}
+
+			const highlights: DocumentHighlight[] = [];
+			macroFile.accept(candidate => {	
+				if (symbolContext.matchesSymbol(candidate, symbol)) {
 					let s = <nodes.Symbol>candidate;
-					if (s && s.referenceTypes && implType){
+					if (s && s.referenceTypes && implType) {
 						if (s.referenceTypes.indexOf(implType) > -1) {
 							highlights.push({
 								kind: this.getHighlightKind(candidate),
-								range: this.getRange(candidate, document)
+								range: this.getRange(candidate, type.document)
 							});
 						}
 					}
 					else {
 						highlights.push({
 							kind: this.getHighlightKind(candidate),
-							range: this.getRange(candidate, document)
+							range: this.getRange(candidate, type.document)
 						});
 					}
 					return false;
-				}
-			} 
-			return true;
-		});
-
-		return highlights.map(h => {
-			return {
-				uri: document.uri,
-				range: h.range
-			};
-		});
-	}
-
-	private findGlobalReferences(includeUri:string, node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
-	
-		let locations:Location[] = [];
-		let types = this.fileProvider.getAll({glob:'/**/*.[sS][rR][cC]'});
-		const origin = this.fileProvider.get(includeUri);
-		if (origin){
-			types = types.concat(origin);
-		}
-
-		for (const type of types) {
-
-			// for macro files: only accept a src file which includes the origin def file
-			if (includeUri && (<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
-				const includes = this.getIncludeUris(<nodes.Node>type.macrofile);
-				if (includes.filter(uri => uri === includeUri).length <= 0){
-					continue;
-				}
-			}
-
-			// all symbols found in the file
-			const symbols = new Symbols(<nodes.Node>type.macrofile);
-			
-			// finding condition: name and reference type
-			const symbol = symbols.findSymbolFromNode(node); 			
-			const name = node.getText();
-			
-			// only accept the symbol of the origin symbol source file
-			if (symbol && includeUri !== type.document.uri) {
-				continue; // local declaration found
-			}
-
-			const highlights: DocumentHighlight[] = [];
-			(<nodes.Node>type.macrofile).accept(candidate => {
-				if (node && node.type === candidate.type && candidate.matches(name)) {
-					let s = <nodes.Symbol>candidate;
-					if (s && s.referenceTypes && implType){
-						if (s.referenceTypes?.indexOf(implType) > 0) {
-							highlights.push({
-								kind: this.getHighlightKind(candidate),
-								range: this.getRange(candidate, type.document)
-							});
-						}
-					}
-					else {
-						highlights.push({
-							kind: this.getHighlightKind(candidate),
-							range: this.getRange(candidate, type.document)
-						});
-					}
-				}
+				}	
 				return true;
 			});
-	
-			const ret = highlights.map(h => {
-				return {
-					uri: type.document.uri,
-					range: h.range
-				};
-			});
-			locations = locations.concat(ret);
-		}
-		return locations;
-	}
 
-	private findGlobalCodeReferences(node:nodes.Node, implType:nodes.ReferenceType | undefined = undefined):Location[] {
-	
-		let locations:Location[] = [];
-		let types = this.fileProvider.getAll({glob:'/**/*.{[sS][rR][cC],[dD][eE][fF]}'});
-
-		for (const type of types) {		
-			const name = node.getText();
-	
-			const highlights: DocumentHighlight[] = [];
-			(<nodes.Node>type.macrofile).accept(candidate => {
-				if (node && node.type === candidate.type && candidate.matches(name)) {
-					let s = <nodes.NcCode>candidate;
-					if (s && s.referenceTypes && implType){
-						if (s.referenceTypes?.indexOf(implType) > 0) {
-							highlights.push({
-								kind: this.getHighlightKind(candidate),
-								range: this.getRange(candidate, type.document)
-							});
-						}
-					}
-					else {
-						highlights.push({
-							kind: this.getHighlightKind(candidate),
-							range: this.getRange(candidate, type.document)
-						});
-					}
-				}
-				return true;
-			});
-	
 			const ret = highlights.map(h => {
 				return {
 					uri: type.document.uri,
@@ -536,7 +465,6 @@ export class MacroNavigation {
 			if (!symbol) {
 				continue;
 			}
-
 			return type.document.uri;
 		}
 		return null;
