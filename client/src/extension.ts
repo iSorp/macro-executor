@@ -139,7 +139,7 @@ export function activate(context: ExtensionContext) {
 						}
 						const resource = client.protocol2CodeConverter.asUri(item.scopeUri);
 						const workspaceFolder = Workspace.getWorkspaceFolder(resource);
-						const config = workspace.getConfiguration('macro', item.scopeUri);
+						const config = workspace.getConfiguration('macro', workspaceFolder);
 						const settings: ConfigurationSettings = {
 							codelens: config.get('codelens'),
 							lint:config.get('lint', {}),
