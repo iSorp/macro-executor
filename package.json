@@ -160,7 +160,7 @@
 								"type" : "string",
 								"enum": [		
 									"number",
-									"macro",
+									"macrovar",
 									"symbol",
 									"constant",
 									"language",
