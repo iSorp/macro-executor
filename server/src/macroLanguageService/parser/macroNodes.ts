@@ -10,6 +10,7 @@ export enum ReferenceType {
 	Function,
 	Sequence,
 	Code,
+	Address,
 	JumpLabel,
 	Undefined
 }
@@ -462,6 +463,11 @@ export enum NodeType {
 	BlockSkip
 }
 
+export interface Reference {
+	referenceTypes: ReferenceType[];
+}
+
+
 export class LnkFile extends Node {
 
 	constructor(offset: number, length: number) {
@@ -532,9 +538,15 @@ export class NcStatement extends Node {
 	}
 }
 
-export class NcCode extends Node {
+export enum CodeType {
+	G = 'g',
+	M = 'm'
+}
 
-	public referenceTypes?: ReferenceType[] = [ReferenceType.Code];
+export class NcCode extends Node implements Reference {
+
+	public referenceTypes: ReferenceType[] = [ReferenceType.Code];
+	public codeType?:CodeType;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -616,9 +628,9 @@ export class Function extends BodyDeclaration {
 	}
 }
 
-export class Symbol extends Node {
+export class Symbol extends Node implements Reference {
 
-	public referenceTypes?: ReferenceType[] = [ReferenceType.Undefined];
+	public referenceTypes: ReferenceType[] = [ReferenceType.Undefined];
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -666,7 +678,6 @@ export class Variable extends DeclarationType<VariableDeclaration> {
 
 	public expression?: BinaryExpression;
 
-
 	constructor(offset: number, length: number) {
 		super(offset, length);
 	}
@@ -684,7 +695,9 @@ export class Variable extends DeclarationType<VariableDeclaration> {
 	}
 }
 
-export class Address extends Node {
+export class Address extends Node implements Reference {
+
+	public referenceTypes: ReferenceType[] = [ReferenceType.Address];
 
 	constructor(offset: number, length: number) {
 		super(offset, length);

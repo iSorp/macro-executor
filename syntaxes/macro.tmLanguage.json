@@ -98,6 +98,9 @@
                     "include":"#keyword_operator_assignment"
                 },
                 {
+                    "include":"#boolean"
+                },
+                {
                     "include":"#sequence"
                 },
                 {
@@ -176,6 +179,10 @@
         "brackets":{
             "name" : "meta.brace.square.macro",
             "match":"\\[|\\]"
+        },
+        "boolean" : {
+            "name":"constant.language.macro",
+            "match":"(?i)(?<=\\W|\\d)(TRUE|FALSE)(?=\\d*\\W)"
         },
         "conditionals_1" : {
             "name":"keyword.control.conditional.macro",
@@ -268,6 +275,9 @@
                 },
                 {
                     "include":"#keyword_operator_assignment"
+                },
+                {
+                    "include":"#boolean"
                 },
                 {
 					"include":"#number"	

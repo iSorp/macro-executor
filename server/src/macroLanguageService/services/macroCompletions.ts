@@ -18,7 +18,8 @@ import {
 	TextEdit,
 	LanguageSettings,
 	functionSignatures,
-	MarkupKind
+	MarkupKind,
+	CustomKeywords
 } from '../macroLanguageTypes';
 import { getComment } from '../parser/macroScanner';
 import { SignatureHelp, ParameterInformation, SignatureInformation } from 'vscode-languageserver';
@@ -32,8 +33,10 @@ let macroStatementTypes:nodes.ValueType[] = [
 ];
 
 let labelTypes:nodes.ValueType[] = [
-	nodes.ValueType.String, 
-	nodes.ValueType.Numeric
+	nodes.ValueType.Numeric,
+	nodes.ValueType.Constant,
+	nodes.ValueType.Variable,
+	nodes.ValueType.String
 ];
 
 let operators = [
@@ -75,12 +78,12 @@ enum Sort {
 	Undefinded 	= ' ',
 	Operators	= '1',
 	KeyWords	= '2',
-	Constant 	= '3',
-	Variable 	= '4',
-	Value 		= '5',
-	Address		= '6',
-	Nc			= '7',
-	Label		= '8'
+	Label		= '3',
+	Constant 	= '4',
+	Variable 	= '5',
+	Value 		= '6',
+	Address		= '7',
+	Nc			= '8',
 }
 
 export class MacroCompletion {
@@ -89,7 +92,7 @@ export class MacroCompletion {
 	private currentWord!: string;
 	private textDocument!: TextDocument;
 	private macroFile!: nodes.MacroFile;
-	private settings: LanguageSettings
+	private customKeywords:CustomKeywords[];
 	private symbolContext!: Symbols;
 	private defaultReplaceRange!: Range;
 	private nodePath!: nodes.Node[];
@@ -129,7 +132,8 @@ export class MacroCompletion {
 		this.defaultReplaceRange = Range.create(Position.create(this.position.line, this.position.character - this.currentWord.length), this.position);
 		this.textDocument = document;
 		this.macroFile = macroFile;
-		this.settings = settings;
+		this.customKeywords = settings.keywords.slice();
+
 		this.inc = settings.sequence?.increment ? Number(settings.sequence?.increment) : 10;
 
 		try {
@@ -138,22 +142,32 @@ export class MacroCompletion {
 
 			for (let i = this. nodePath.length - 1; i >= 0; i--) {
 				const node = this.nodePath[i];
-
+				
 				if (node.type === nodes.NodeType.Function) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label);
 					this.getKeyWordProposals(result);
 					this.getSequenceNumberSnippet(node, result);
 				}
-				else if (node.type === nodes.NodeType.If || node.type === nodes.NodeType.While) {
+				else if (node.type === nodes.NodeType.Variable) {
+					this.getSymbolProposals(result, nodes.ReferenceType.Variable);
+				}
+				else if (node.type === nodes.NodeType.If) {
+					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
+					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
+				}
+				else if (node.type === nodes.NodeType.ThenEndif || node.type === nodes.NodeType.Else || node.type === nodes.NodeType.While) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 					this.getKeyWordProposals(result);
 					this.getSequenceNumberSnippet(node, result);
 				}
+				else if (node.type === nodes.NodeType.Goto) {
+					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
+					this.getSymbolProposals(result, nodes.ReferenceType.Variable, labelTypes);
+				}
 				else if (node.type === nodes.NodeType.ConditionalExpression 
 					|| node.type === nodes.NodeType.BinaryExpression 
-					|| node.type === nodes.NodeType.Goto 
 					|| node.type === nodes.NodeType.Assignment) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
@@ -179,6 +193,7 @@ export class MacroCompletion {
 			this.symbolContext = null!;
 			this.defaultReplaceRange = null!;
 			this.nodePath = null!;
+			this.customKeywords = null!;
 		}
 	}
 
@@ -187,7 +202,7 @@ export class MacroCompletion {
 		let kind:CompletionItemKind = CompletionItemKind.Variable; 
 
 		if (this.currentWord === '#') {
-			if (referenceType !== nodes.ReferenceType.Variable){
+			if (referenceType !== nodes.ReferenceType.Variable) {
 				return result;
 			}
 			types = [nodes.ValueType.Numeric];
@@ -197,16 +212,12 @@ export class MacroCompletion {
 		}
 		let sort:Sort = Sort.Undefinded;
 		const symbols = this.getSymbolContext().findSymbols(referenceType, types);
-		let text:string | undefined;
-		let doc = '';
+		let type = '';
 		for (const context of symbols){
-			if (context.uri){
-				text = this.fileProvider.get(context.uri)?.document.getText();
-			}
-
+	
 			for (const symbol of context.symbols) {
 				if (referenceType === nodes.ReferenceType.Variable) {
-					doc = this.getMarkedStringForDeclaration('symbol', <nodes.AbstractDeclaration>symbol.node);
+					type = 'symbol';
 					switch (symbol.valueType){
 						case nodes.ValueType.Address:
 							sort = Sort.Address;
@@ -239,7 +250,7 @@ export class MacroCompletion {
 					}
 				}
 				else if (referenceType === nodes.ReferenceType.Label) {
-					doc = this.getMarkedStringForDeclaration('label', <nodes.AbstractDeclaration>symbol.node);
+					type = 'label';
 					switch (symbol.valueType){
 						case nodes.ValueType.Numeric:
 							sort = Sort.Label;
@@ -256,13 +267,20 @@ export class MacroCompletion {
 					}
 				}
 
-				const custom = this.settings.keywords.find(a => a.symbol === symbol.name);
-				doc = custom ? doc + '\n\n' + custom.description : doc;
+				const custom = this.customKeywords.find(a => a.symbol === symbol.name);
+				const index = this.customKeywords.indexOf(custom);
+				if (index > -1) {
+					this.customKeywords.splice(index, 1);
+				}
+
+				const detail = symbol.node instanceof nodes.AbstractDeclaration ? this.getMarkedStringForDeclaration(type, <nodes.AbstractDeclaration>symbol.node) : '';
+				const doc = custom ? custom.description : '';
 				const completionItem: CompletionItem = {
 					label: symbol.name,
+					detail:detail,
 					documentation: {
 						kind: MarkupKind.Markdown,
-						value:doc
+						value: doc
 					},
 					kind: kind,
 					sortText: sort
@@ -298,15 +316,15 @@ export class MacroCompletion {
 	}
 
 	private getCustomProposals(result: CompletionList): CompletionList {
-		for (const key of this.settings.keywords) {
+		for (const key of this.customKeywords ) {
 			result.items.push(
 				{
 					label: key.symbol, 
 					kind: CompletionItemKind.Snippet,
 					documentation: {
-						kind: MarkupKind.Markdown,
+						kind:MarkupKind.Markdown,
 						value:key.description
-					},
+					}
 				});
 		}
 		return result;
@@ -339,6 +357,7 @@ export class MacroCompletion {
 			kind: CompletionItemKind.Snippet,
 			sortText: ' '
 		};
+		
 		result.items.push(item);
 		return result;
 	}

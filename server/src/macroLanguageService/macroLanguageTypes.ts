@@ -5,6 +5,7 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
+import { NodeType } from './parser/macroNodes';
 import  { TextDocument, Location } from 'vscode-languageserver-types';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
@@ -46,6 +47,7 @@ export type CustomKeywords = {
 	symbol: string;
 	scope:string;
 	description:string;
+	nodeType:string
 };
 
 export interface DocumentContext {
@@ -90,7 +92,7 @@ export enum MacroCodeLensCommand {
 
 export enum TokenTypes {
 	number 			= 1,
-	variable 		= 2,
+	macrovar 		= 2,
 	symbol			= 3,
 	constant		= 4,
 	language		= 5,
