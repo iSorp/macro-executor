@@ -1,0 +1,29 @@
+{
+	"editor.semanticTokenColorCustomizations": {
+		"enabled": true,
+		"rules": {
+			"custom_1": "#089627",
+			"custom_2": "#ff2600"
+		}
+	 },
+
+	"macro.keywords": [
+		
+		{"symbol": "10000", "scope":"number", "nodeType": "Variable", "description": "Base address"},
+
+		{"symbol": "ret_arg", "scope":"symbol", "nodeType": "Variable"},
+		{"symbol": "error_1", "scope":"custom_2", "nodeType": "Variable"},
+		{"symbol": "error_2", "scope":"custom_2", "nodeType": "Variable"},
+		{"symbol": "TRUE", "scope":"number"},
+		{"symbol": "FALSE", "scope":"number"},
+		{"symbol": "TRUE", "scope":"number"},
+		{"symbol": "LOOP_I", "scope":"number"},
+		{"symbol": "LOOP_II", "scope":"number"},
+		{"symbol": "LOOP_III", "scope":"number"},
+
+		{"symbol": "M03", "description": "Spindle start clockwise"},
+		{"symbol": "M04", "description": "Spindle start counterclockwise"},
+		{"symbol": "M05", "description": "Spindle stop"}
+
+	]
+}
