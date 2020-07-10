@@ -174,8 +174,8 @@ suite('Parser', () => {
 
 	test('Control command', function () {
 		let parser = new Parser(null);
-		assertNode('$EJECT', parser, parser._parseControlCommands.bind(parser));
-		assertError('$eject', parser, parser._parseControlCommands.bind(parser), ParseError.UnknownKeyword);
+		assertNode('$EJECT', parser, parser._parseControlCommands.bind(parser, ['$eject']));
+		assertError('$eject', parser, parser._parseControlCommands.bind(parser, ['$eject']), ParseError.UnknownKeyword);
 	});
 
 	test('Macro statement', function () {
