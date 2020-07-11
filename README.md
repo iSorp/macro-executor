@@ -114,8 +114,7 @@ For some color themes, the semantic highlighting must be enabled in the settings
 * Symbol highlighting
 * Symbol description for hover and completion
 
-Out of the box the extension supports syntax highlighting for the common types, but sometimes it could be useful to change the default highlighting for a particular symbol or for a type of a symbol like a variable. 
-
+Out of the box the extension supports semantic highlighting for the common types, but sometimes it could be useful to change the default highlighting for a particular symbol or for a type of a symbol like a variable. 
 A customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
 
 
