@@ -647,6 +647,8 @@ export class Parser {
 			node = this._parseFunction();
 		}
 
+		node.addChild(this._parseString());
+
 		// check new line after statement
 		if (this._needsLineBreakAfter(node) && !this.peekOneOf([TokenType.NewLine, TokenType.EOF])) {
 			this.markError(node, ParseError.NewLineExpected);
@@ -776,7 +778,6 @@ export class Parser {
 			if (!this.peek(TokenType.NewLine)) {
 				this._parseBody(statement,  this._parseFunctionBodyStatement.bind(this), false);
 			}
-				
 			return statement;
 		}
 		
@@ -788,6 +789,7 @@ export class Parser {
 		// Variable and label declaration within a function
 		const declaraionType = this._parseVariableDeclaration() || this._parseLabelDeclaration();
 		if (declaraionType){
+			declaraionType.addChild(this._parseString());
 			this._setLocalDeclaration(declaraionType);
 			return declaraionType;
 		}
@@ -806,7 +808,7 @@ export class Parser {
 	//#endregion
 
 	//#region Function helper
-	private _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildes=true): T {
+	private _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildes=true, ignoreNewLine=true): T {
 		if (this._needsLineBreakBefore(node) && !this.peekOneOf([TokenType.NewLine, TokenType.EOF])) {
 			this.markError(node, ParseError.NewLineExpected, [], [TokenType.NewLine]);
 		}
@@ -1193,8 +1195,12 @@ export class Parser {
 			// ELSE term
 				if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
 					const elseNode = this.create(nodes.ElseTermStatement);
-					this._parseBody(elseNode, this._parseMacroStatement.bind(this, false), false);
+					elseNode.addChild(this._parseMacroStatement(false));
 					endIfNode.setElseClause(elseNode);
+					// check new line after statement
+					if (this._needsLineBreakAfter(elseNode) && !this.peekOneOf([TokenType.NewLine, TokenType.EOF])) {
+						this.markError(elseNode, ParseError.NewLineExpected);
+					}	
 				} 
 				else {
 					// ELSE
@@ -1766,7 +1772,7 @@ export class Parser {
 		}
 		switch (node.type) {
 			case nodes.NodeType.Function:
-			case nodes.NodeType.ThenEndif:
+			case nodes.NodeType.Then:
 			case nodes.NodeType.Else:
 			case nodes.NodeType.While:
 				return true;
@@ -1785,9 +1791,8 @@ export class Parser {
 			case nodes.NodeType.Statement:
 			case nodes.NodeType.String:
 			case nodes.NodeType.ControlStatement:	
-			case nodes.NodeType.ThenEndif:		
+			case nodes.NodeType.Then:		
 			case nodes.NodeType.While:
-			case nodes.NodeType.Label:
 			case nodes.NodeType.labelDef:
 			case nodes.NodeType.VariableDef:
 				return true;
