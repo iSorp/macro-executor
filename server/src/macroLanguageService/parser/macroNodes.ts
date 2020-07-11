@@ -438,7 +438,7 @@ export enum NodeType {
 	Ffunc,
 	NumericValue,
 	If,
-	ThenEndif,
+	Then,
 	ThenTerm,
 	ElseTerm,
 	Goto,
@@ -759,7 +759,7 @@ export class IfEndifStatement extends BodyDeclaration {
 	}
 
 	public get type(): NodeType {
-		return NodeType.ThenEndif;
+		return NodeType.Then;
 	}
 
 	public setElseClause(elseClause: BodyDeclaration | null): elseClause is BodyDeclaration {

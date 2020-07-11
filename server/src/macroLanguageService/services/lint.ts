@@ -221,7 +221,7 @@ export class LintVisitor implements nodes.IVisitor {
 		const parentType = node.getParent().type;
 		if (parentType === nodes.NodeType.Function 
 			|| parentType === nodes.NodeType.Else 
-			|| parentType === nodes.NodeType.ThenEndif 
+			|| parentType === nodes.NodeType.Then 
 			|| parentType === nodes.NodeType.While) {
 			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
 			const value = node.declaration?.value;

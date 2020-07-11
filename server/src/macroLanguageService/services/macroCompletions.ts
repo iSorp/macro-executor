@@ -156,7 +156,7 @@ export class MacroCompletion {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 				}
-				else if (node.type === nodes.NodeType.ThenEndif || node.type === nodes.NodeType.Else || node.type === nodes.NodeType.While) {
+				else if (node.type === nodes.NodeType.Then || node.type === nodes.NodeType.Else || node.type === nodes.NodeType.While) {
 					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
 					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
 					this.getKeyWordProposals(result);
