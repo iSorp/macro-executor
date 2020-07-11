@@ -18,12 +18,12 @@ const serverOutDest = 'server/out';
 
 const languages = [
 	{ id: 'de',		folderName: 'deu' }, 
-	{ id: "zh-cn", 	folderName: "chs", transifexId: "zh-hans" },
+	{ id: 'zh-cn', 	folderName: 'chs', transifexId: 'zh-hans' }
 ];
 
 const cleanTask = function() {
 	return del(['client/out/**', 'server/out/**', 'package.nls.*.json', 'macro-executor*.vsix']);
-}
+};
 
 const internalCompileTask = function() {
 	let ret = doCompile(false, clientProject, clientOutDest);
@@ -59,16 +59,16 @@ const doCompile = function (buildNls, project, out) {
 	if (inlineMap && inlineSource) {
 		r = r.pipe(sourcemaps.write());
 	} else {
-		r = r.pipe(sourcemaps.write("../out", {
+		r = r.pipe(sourcemaps.write('../out', {
 			// no inlined source
 			includeContent: inlineSource,
 			// Return relative source map root directories per file.
-			sourceRoot: "../src"
+			sourceRoot: '../src'
 		}));
 	}
 
 	return r.pipe(gulp.dest(out));
-}
+};
 
 const vscePublishTask = function() {
 	return vsce.publish();
