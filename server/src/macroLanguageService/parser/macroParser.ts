@@ -1427,6 +1427,9 @@ export class Parser {
 				this.markError(node, ParseError.InvalidStatement);
 			}
 		}
+		else if (!declaration) {
+			return null;
+		}
 
 		let referenceTypes = [nodes.ReferenceType.Variable];
 		if (referenceType){
@@ -1474,6 +1477,11 @@ export class Parser {
 	}
 
 	public _parseAddress() : nodes.Node | null {
+
+		if (!this.peek(TokenType.Symbol)) {
+			return null;
+		}
+
 		const node = <nodes.Address>this.create(nodes.Address);
 
 		// Address e.g: R[1], R#1, R1.#[1]
