@@ -5,8 +5,8 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
+import { NodeType } from './parser/macroNodes';
 import  { TextDocument, Location } from 'vscode-languageserver-types';
-import { stringify } from 'querystring';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
 export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/semanticTokens.proposed';
@@ -35,19 +35,22 @@ export interface LanguageSettings {
 		increment:number;
 	}
 	lint?: LintSettings;
+	keywords?: CustomKeywords[];
 }
 export type LintSettings = { 
 	rules : {
 		[key: string]: any 	// e.g rule.duplicateInclude: 'ignore' | 'warning' | 'error'
 	}
+};
 
+export type CustomKeywords = { 
+	symbol: string;
+	scope:string;
+	description:string;
+	nodeType:string
 };
 
 export interface DocumentContext {
-	resolveReference(ref: string, base?: string): string | undefined;
-}
-
-export interface FindDocumentLinks {
 	resolveReference(ref: string, base?: string): string | undefined;
 }
 
@@ -72,9 +75,9 @@ export interface FileProviderParams {
 }
 
 export interface MacroFileProvider {
-	get(uri: string) : MacroFileType | undefined;
-	getAll(param?: FileProviderParams) : MacroFileType[]
-	getLink(ref:string) : string |undefined;
+	get(uri: string, base?: string, workspaceFolder?: string) : MacroFileType | undefined;
+	getAll(param?: FileProviderParams, base?: string, workspaceFolder?: string) : MacroFileType[]
+	resolveReference(ref: string, base?: string, workspaceFolder?: string): string | undefined
 }
 
 export interface MacroCodeLensType {
@@ -89,14 +92,19 @@ export enum MacroCodeLensCommand {
 
 export enum TokenTypes {
 	number 			= 1,
-	variable 		= 2,
-	symbol			= 3,
-	constant		= 4,
+	macrovar 		= 2,
+	constant		= 3,
+	language		= 4,
 	label			= 5,
 	code 			= 6,
 	parameter 		= 7,
 	address 		= 8,
-	_ 				= 9
+	custom_1 		= 9,
+	custom_2 		= 10,
+	custom_3 		= 11,
+	custom_4 		= 12,
+	custom_5 		= 13,
+	_				= 14,
 }
 
 

@@ -9,6 +9,8 @@ export enum ReferenceType {
 	Variable,
 	Function,
 	Sequence,
+	Code,
+	Address,
 	JumpLabel,
 	Undefined
 }
@@ -436,8 +438,9 @@ export enum NodeType {
 	Ffunc,
 	NumericValue,
 	If,
-	ThenEndif,
+	Then,
 	ThenTerm,
+	ElseTerm,
 	Goto,
 	Else,
 	While,
@@ -451,7 +454,6 @@ export enum NodeType {
 	BinaryExpression,
 	Operator,
 	Identifier,
-	DeclarationValue,
 	ControlStatement,
 	FuncParam,
 	Statement,
@@ -460,6 +462,11 @@ export enum NodeType {
 	SequenceNumber,
 	BlockSkip
 }
+
+export interface Reference {
+	referenceTypes: ReferenceType[];
+}
+
 
 export class LnkFile extends Node {
 
@@ -531,7 +538,15 @@ export class NcStatement extends Node {
 	}
 }
 
-export class NcCode extends Node {
+export enum CodeType {
+	G = 'g',
+	M = 'm'
+}
+
+export class NcCode extends Node implements Reference {
+
+	public referenceTypes: ReferenceType[] = [ReferenceType.Code];
+	public codeType?:CodeType;
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -613,9 +628,9 @@ export class Function extends BodyDeclaration {
 	}
 }
 
-export class Symbol extends Node {
+export class Symbol extends Node implements Reference {
 
-	public referenceTypes?: ReferenceType[] = [ReferenceType.Undefined];
+	public referenceTypes: ReferenceType[] = [ReferenceType.Undefined];
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -663,7 +678,6 @@ export class Variable extends DeclarationType<VariableDeclaration> {
 
 	public expression?: BinaryExpression;
 
-
 	constructor(offset: number, length: number) {
 		super(offset, length);
 	}
@@ -681,7 +695,9 @@ export class Variable extends DeclarationType<VariableDeclaration> {
 	}
 }
 
-export class Address extends Node {
+export class Address extends Node implements Reference {
+
+	public referenceTypes: ReferenceType[] = [ReferenceType.Address];
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -743,7 +759,7 @@ export class IfEndifStatement extends BodyDeclaration {
 	}
 
 	public get type(): NodeType {
-		return NodeType.ThenEndif;
+		return NodeType.Then;
 	}
 
 	public setElseClause(elseClause: BodyDeclaration | null): elseClause is BodyDeclaration {
@@ -775,6 +791,10 @@ export class ElseStatement extends BodyDeclaration {
 export class ElseTermStatement extends ElseStatement {
 	constructor(offset: number, length: number) {
 		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.ElseTerm;
 	}
 }
 
@@ -995,7 +1015,8 @@ export enum ValueType {
 	Variable = 'variable',
 	Address = 'address',
 	NcCode = 	'code',
-	NcParam = 	'param'
+	NcParam = 	'param',
+	Sequence = 	'sequence'
 }
 
 export class AbstractDeclaration extends Node {

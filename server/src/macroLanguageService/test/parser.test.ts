@@ -155,8 +155,8 @@ suite('Parser', () => {
 	test('Nc statement', function () {
 		let parser = new Parser(null);
 		assertNode('G01', parser, parser._parseNcStatement.bind(parser));
-		assertNode('N100G01', parser, parser._parseNcStatement.bind(parser));
-		assertNode('N100 G04 P01', parser, parser._parseNcStatement.bind(parser));
+		assertNode('N100G01', parser, parser._parseFunctionBody.bind(parser));
+		assertNode('N100 G04 P01', parser, parser._parseFunctionBody.bind(parser));
 		assertNode('X', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X[1]', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X#[1]', parser, parser._parseNcStatement.bind(parser));
@@ -174,8 +174,8 @@ suite('Parser', () => {
 
 	test('Control command', function () {
 		let parser = new Parser(null);
-		assertNode('$EJECT', parser, parser._parseControlCommands.bind(parser));
-		assertError('$eject', parser, parser._parseControlCommands.bind(parser), ParseError.UnknownKeyword);
+		assertNode('$EJECT', parser, parser._parseControlCommands.bind(parser, ['$eject']));
+		assertError('$eject', parser, parser._parseControlCommands.bind(parser, ['$eject']), ParseError.UnknownKeyword);
 	});
 
 	test('Macro statement', function () {
@@ -188,21 +188,21 @@ suite('Parser', () => {
 
 	test('IF statement', function () {
 		let parser = new Parser(null);
-		assertNode('IF [1] THEN #1 = 1\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN #1 = 1\nELSE #1 = 1\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN \nELSE #1 = 1\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN\#1 = 1\nELSE\nENDIF\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN\nENDIF\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN\nELSE\nENDIF\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN\nIF [1] THEN #1 = 1\nIF [1] THEN #1 = 1\nENDIF\nENDIF\n', parser, parser._parseIfStatement.bind(parser, parser._parseIfStatement.bind(parser, () => {})));
-		assertNode('IF [1] GOTO 1\n', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+		assertNode('IF [1] THEN #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+		assertNode('IF [1] THEN #1 = 1\nELSE #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+		assertNode('IF [1] THEN \nELSE #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+		assertNode('IF [1] THEN\n#1 = 1\nELSE\nENDIF', parser, parser._parseIfStatement.bind(parser, parser._parseMacroStatement.bind(parser, false)));
+		assertNode('IF [1] THEN\nENDIF', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+		assertNode('IF [1] THEN\nELSE\nENDIF', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+		assertNode('IF [1] THEN\nIF [1] THEN #1 = 1\nIF [1] THEN #1 = 1\nENDIF\nENDIF', parser, parser._parseIfStatement.bind(parser, parser._parseIfStatement.bind(parser, () => {})));
+		assertNode('IF [1] GOTO 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
 
 		assertError('IF ', parser, parser._parseIfStatement.bind(parser), ParseError.LeftSquareBracketExpected);
 		assertError('IF [ ', parser, parser._parseIfStatement.bind(parser), ParseError.ExpressionExpected);
 		assertError('IF [1 ', parser, parser._parseIfStatement.bind(parser), ParseError.RightSquareBracketExpected);
 		assertError('IF [1] ', parser, parser._parseIfStatement.bind(parser), ParseError.ThenGotoExpected);
 		assertError('IF [1] THEN ', parser, parser._parseIfStatement.bind(parser, ()=> {}), ParseError.EndifExpected);
-		assertError('IF [1] THEN\nIF [1] THEN #1 = 1\nIF [1] THEN #1 = 1\nENDIF\n', 
+		assertError('IF [1] THEN\nIF [1] THEN #1 = 1\nIF [1] THEN #1 = 1\nENDIF', 
 			parser, parser._parseIfStatement.bind(parser, parser._parseIfStatement.bind(parser, () => {})),  ParseError.EndifExpected);
 	});
 
@@ -281,6 +281,22 @@ suite('Parser', () => {
 		let parser = new Parser(null);
 		assertNode('||', parser, parser._parseLogicalOperator.bind(parser));
 		assertNode('&&', parser, parser._parseLogicalOperator.bind(parser));
+	});
+
+	test('New line', function () {
+		let parser = new Parser(null);
+		assertError('@var1  1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('>var2  1  N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n #100 = 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n IF [1] THEN #1 = 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n IF [1] GOTO 10 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n WHILE [1] DO 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n WHILE [1] DO 1 \n END 1 N10', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n IF [1] THEN #1=1 N10\n ENDIF\n ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n IF [1] THEN \n ENDIF N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n N100 G01 #1=1 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n / N100 G01 #1=1 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 	});
 
 	test('Functions', function () {

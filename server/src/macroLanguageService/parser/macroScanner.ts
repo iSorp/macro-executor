@@ -171,7 +171,6 @@ export const _CMA = ','.charCodeAt(0);
 export const _SUB = 'O'.charCodeAt(0);
 
 const staticTokenTable: { [code: number]: TokenType; } = {};
-staticTokenTable[_NWL] = TokenType.NewLine;
 staticTokenTable[_BRR] = TokenType.BracketR;
 staticTokenTable[_BRL] = TokenType.BracketL;
 staticTokenTable[_CMA] = TokenType.Comma;
@@ -237,8 +236,8 @@ export class Scanner {
 	public stream: MultiLineStream = new MultiLineStream('');
 	public ignoreComment = true;
 	public ignoreWhitespace = true;
+	public ignoreNewLine = false;
 	public inFunction = false;
-
 
 	public setSource(input: string): void {
 		this.stream = new MultiLineStream(input);
@@ -276,7 +275,7 @@ export class Scanner {
 
 	public scan(): IToken {
 		// processes all whitespaces and comments
-		const triviaToken = this._trivia();
+		const triviaToken = this.trivia();
 		if (triviaToken !== null) {
 			return triviaToken;
 		}
@@ -379,10 +378,10 @@ export class Scanner {
 		return this.finishToken(offset, TokenType.Delim);
 	}
 
-	private _trivia(): IToken | null {
+	private trivia(): IToken | null {
 		while (true) {
 			const offset = this.stream.pos();
-			if (this._whitespace(true)) {
+			if (this._whitespace()) {
 				if (!this.ignoreWhitespace) {
 					return this.finishToken(offset, TokenType.Whitespace);
 				}
@@ -390,7 +389,13 @@ export class Scanner {
 				if (!this.ignoreComment) {
 					return this.finishToken(offset, TokenType.Comment);
 				}
-			} else {
+			} 
+			else if (this._newline()) {
+				if (!this.ignoreNewLine) {
+					return this.finishToken(offset, TokenType.NewLine);
+				}
+			}
+			else {
 				return null;
 			}
 		}
@@ -399,7 +404,7 @@ export class Scanner {
 	private _comment(): boolean {
 		if (this.stream.advanceIfChars([_FSL, _MUL]) || this.stream.advanceIfChar(_SEM)) {
 			this.stream.advanceWhileChar((ch) => {
-				if (this._newline(ch)) {
+				if (this._checkNewline(ch)) {
 					return false;
 				}
 				return true;
@@ -409,7 +414,22 @@ export class Scanner {
 		return false;
 	}
 
-	private _newline(ch: number): boolean {
+	private _newline(): boolean {
+		const ch = this.stream.peekChar();
+		switch (ch) {
+			case _CAR:
+			case _LFD:
+			case _NWL:
+				this.stream.advance(1);
+				if (ch === _CAR) {
+					this.stream.advanceIfChar(_NWL);
+				}
+				return true;
+		}
+		return false;
+	}
+
+	private _checkNewline(ch: number): boolean {
 		switch (ch) {
 			case _CAR:
 			case _LFD:
@@ -504,17 +524,11 @@ export class Scanner {
 		return hasContent;
 	}
 
-	private _whitespace(skipp_newline:boolean = false): boolean {
-		if (skipp_newline){
-			return this.stream.advanceWhileChar((ch) => {
-				return ch === _WSP || ch === _TAB || ch === _LFD || ch === _CAR;
-			}) > 0;
-		}
-		else {
-			return this.stream.advanceWhileChar((ch) => {
-				return ch === _WSP || ch === _TAB || ch === _NWL || ch === _LFD || ch === _CAR;
-			}) > 0;
-		}
+	private _whitespace(): boolean {
+		const n = this.stream.advanceWhileChar((ch) => {
+			return ch === _WSP || ch === _TAB;
+		});
+		return n > 0;
 	}
 
 	private _name(result: string[]): boolean {

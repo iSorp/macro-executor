@@ -9,7 +9,9 @@ entity.name.function.macro          				// O <Function>
 
 constant.language.macro             				// TRUE, FALSE
 
+
 constant.numeric.macro              				// Numbers
+constant.numeric.macrovar.macro						// Macro variable #<number>
 punctuation.section.tag.macro						// N-Number
 
 keyword.operator.arithmetic.macro					// +, -, *, /

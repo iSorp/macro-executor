@@ -2,12 +2,20 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.1.17",
+	"version": "0.2.0",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
 	"categories": [
-		"Programming Languages"
+		"Programming Languages",
+		"Snippets"
+	],
+	"keywords": [
+		"multi-root ready",
+		"Macro Executor",
+		"Fanuc",
+		"CNC",
+		"NC"
 	],
 	"homepage": "https://github.com/iSorp/macro-executor",
 	"repository": {
@@ -19,7 +27,7 @@
 	},
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.45.1"
+		"vscode": "^1.45.0"
 	},
 	"enableProposedApi": true,
 	"activationEvents": [
@@ -32,8 +40,7 @@
 				"id": "macro",
 				"aliases": [
 					"Macro Executor",
-					"Fanuc",
-					"CNC"
+					"Macro Compiler"
 				],
 				"extensions": [
 					".src",
@@ -133,10 +140,163 @@
 			"type": "object",
 			"title": "Macro Executor",
 			"properties": {
+				"macro.keywords": {
+					"scope": "resource",
+					"type" : "array",
+					"description": "custom keywords",
+					"items": {
+						"type" :"object",
+						"default" : {
+							"symbol": "special symbol",
+							"scope": "variable",
+							"description": "this text will be shown on hover and completion"
+						},
+						"properties" : { 
+							"type" : "object",
+							"symbol": {
+								"type" : "string"
+							},
+							"scope": {
+								"type" : "string",
+								"enum": [		
+									"number",
+									"macrovar",
+									"symbol",
+									"constant",
+									"language",
+									"label",
+									"code",
+									"parameter",
+									"address",
+									"custom_1",
+									"custom_2",
+									"custom_3",
+									"custom_4",
+									"custom_5"
+								]
+							},
+							"description": {
+								"type" : "string"
+							},
+							"nodeType" : {
+								"type" : "string",
+								"enum": [		
+									"",
+									"Label",
+									"Variable",
+									"Code"
+								]
+							}
+						}
+					}
+				},
 				"macro.lint": {
 					"scope": "window",
-					"type": "object",
-					"description": "%macro.lint.description%"
+					"type" : "object",
+					"description": "%macro.lint.description%",
+					"properties": {
+						"rules" : {
+							"type" : "object",
+							"default": {},
+							"properties": {
+								"duplicateInclude": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateDeclaration": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateFunction": {
+									"type" : "string",
+									"default": "warning",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateAddress": {
+									"type" : "string",
+									"default": "ignore",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateSequence":  {
+									"type" : "string",
+									"default": "warning",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateLabel":   {
+									"type" : "string",
+									"default": "warning",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateLabelSequence": {
+									"type" : "string",
+									"default": "warning",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"unknownSymbol": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"whileLogicOperator": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"doEndNumberTooBig": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"doEndNumberNotEqual": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"nestingTooDeep": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"duplicateDoEndNumber": {
+									"type" : "string",
+									"default": "warning",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"mixedConditionals": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"tooManyConditionals": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"seqNotFound": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},   
+								"incompleteParameter": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"includeNotFound": {
+									"type" : "string",
+									"default": "error",
+									"enum": ["error", "warning", "ignore"]
+								},
+								"assignmentConstant": {
+									"type" : "string",
+									"default": "warning",
+									"enum": ["error", "warning", "ignore"]
+								}
+							}
+						}
+					}
 				},
 				"macro.sequence.base": {
 					"scope": "window",
@@ -172,7 +332,7 @@
 				},
 				"macro.build.compiler": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"enum": [
 						"MCOMPI",
 						"MCOMP0",
@@ -186,7 +346,7 @@
 				},
 				"macro.build.controlType": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"enum": [
 						"",
 						"0",
@@ -200,42 +360,42 @@
 				},
 				"macro.build.compilerParams": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.build.compilerParams.description%",
 					"$id": "3"
 				},
 				"macro.build.makeFile": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.build.makeFile.description%",
 					"$id": "4"
 				},
 				"macro.project.exportPath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.exportPath.description%",
 					"$id": "5"
 				},
 				"macro.project.sourcePath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.sourcePath.description%",
 					"$id": "6"
 				},
 				"macro.project.buildPath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.buildPath.description%",
 					"$id": "7"
 				},
 				"macro.project.linkPath": {
 					"type": "string",
-					"scope": "window",
+					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.linkPath.description%",
 					"$id": "8"
@@ -269,16 +429,16 @@
 				"description": "Style for compile-time number"
 			},
 			{
-				"id": "variable",
-				"description": "Style for compile-time # variable symbol"
-			},
-			{
-				"id": "symbol",
-				"description": "Style for compile-time variable symbol"
+				"id": "macrovar",
+				"description": "Style for compile-time # macro variable symbol"
 			},
 			{
 				"id": "constant",
 				"description": "Style for compile-time constant symbol"
+			},
+			{
+				"id": "language",
+				"description": "Style for compile-time language constant symbol"
 			},
 			{
 				"id": "code",
@@ -286,8 +446,33 @@
 			},
 			{
 				"id": "parameter",
-				"description": "Style for compile-time parameter NC-Parameter/Address"
+				"description": "Style for compile-time NC-Parameter"
+			},
+			{
+				"id": "address",
+				"description": "Style for compile-time Address"
+			},
+			{
+				"id": "custom_1",
+				"description": "Style for compile-time custom symbol"
+			},
+			{
+				"id": "custom_2",
+				"description": "Style for compile-time custom symbol"
+			},
+			{
+				"id": "custom_3",
+				"description": "Style for compile-time custom symbol"
+			},
+			{
+				"id": "custom_4",
+				"description": "Style for compile-time custom symbol"
+			},
+			{
+				"id": "custom_5",
+				"description": "Style for compile-time custom symbol"
 			}
+			
 		],
 		"semanticTokenModifiers": [],
 		"semanticTokenScopes": [
@@ -295,16 +480,16 @@
 				"language": "macro",
 				"scopes": {
 					"number": [
-						"constant.numeric"
-					],
-					"variable": [
-						"variable.other.field"
-					],
-					"symbol": [
 						"variable.other.numeric"
+					],
+					"macrovar": [
+						"variable.other.field"
 					],
 					"constant": [
 						"constant.other.numeric"
+					],
+					"language": [
+						"constant.language"
 					],
 					"label": [
 						"entity.name.label"

@@ -75,7 +75,7 @@ export class LintVisitor implements nodes.IVisitor {
 					}
 					else if (jumpLabel instanceof nodes.Variable) {
 						const delc = (<nodes.Variable>jumpLabel).declaration;
-						if (delc.valueType === nodes.ValueType.Numeric || delc.valueType === nodes.ValueType.Constant) {
+						if (delc.valueType === nodes.ValueType.Numeric || delc.valueType === nodes.ValueType.Constant || delc.valueType === nodes.ValueType.Sequence) {
 							number = (<nodes.Variable>jumpLabel).declaration?.getValue()?.getText();
 						}
 						else {
@@ -206,35 +206,51 @@ export class LintVisitor implements nodes.IVisitor {
 		if (this.duplicateList.indexOf(node.getName()) !== -1) {
 			this.addEntry(node, Rules.DuplicateDeclaration);
 		}
+
+		if (node.declaration?.valueType === nodes.ValueType.Sequence) {
+			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			const value = (<nodes.SequenceNumber>node.declaration.getValue())?.getNumber();
+			if (value && func) {		
+				this.addSequenceNumber(node, func, value);
+			}
+		}
 		return true;
 	}
 
 	private visitLabels(node: nodes.Label) : boolean {
 		const parentType = node.getParent().type;
-		if (parentType === nodes.NodeType.Function || parentType === nodes.NodeType.ThenEndif || parentType === nodes.NodeType.While) {
+		if (parentType === nodes.NodeType.Function 
+			|| parentType === nodes.NodeType.Else 
+			|| parentType === nodes.NodeType.Then 
+			|| parentType === nodes.NodeType.While) {
+			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
 			const value = node.declaration?.value;
-			if (value) {
-				const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-				let list = this.sequenceList.get(func);
-				const duplicate = list?.some(a => {
-					if (a.getText() === value.getText()) {
-						if (a.type !== value.type){
-							this.addEntry(node, Rules.DuplicateLabelSequence);
-						}
-						else {
-							this.addEntry(node, Rules.DuplicateLabel);
-						}
-						return true;
-					}
-					return false;
-				});
-				if (!duplicate) {
-					this.sequenceList.add(func, value);
-				}
+			if (value && func) {		
+				this.addSequenceNumber(node, func, value);
 			}
 		}
 		return true;
 	}
+
+	private addSequenceNumber(node:nodes.Node, func:nodes.Function, value:nodes.Node) {
+		const list = this.sequenceList.get(func);
+		const duplicate = list?.some(a => {
+			if (a.getText() === value.getText()) {
+				if (a.type !== value.type){
+					this.addEntry(node, Rules.DuplicateLabelSequence);
+				}
+				else {
+					this.addEntry(node, Rules.DuplicateLabel);
+				}
+				return true;
+			}
+			return false;
+		});
+		if (!duplicate) {
+			this.sequenceList.add(func, value);
+		}
+	}
+
 
 	private visitGoto(node: nodes.GotoStatement) : boolean {
 		const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
@@ -291,7 +307,6 @@ export class LintVisitor implements nodes.IVisitor {
 					}
 				}
 			}
-	
 		}
 		return true;
 	}
@@ -365,7 +380,7 @@ export class LintVisitor implements nodes.IVisitor {
 			const element = path[i];
 			if (element.type === nodes.NodeType.If) {
 				++level;
-				if (level > MAX_IF_DEPTH){
+				if (level > MAX_IF_DEPTH) {
 					this.addEntry(node, Rules.NestingTooDeep);
 					return false;
 				}

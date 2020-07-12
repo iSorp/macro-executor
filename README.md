@@ -11,7 +11,8 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 
 ## News
-- Label/Sequence number references/implementations search
+- [Multi-Root Workspaces](#multi-root-workspaces)
+- [Custom Keywords](#Customization)
 
 ***
        
@@ -27,17 +28,34 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 * Lint features
 * Sequence number refactoring
 
+## Supported display languages
+* English `en`
+* Deutsch `de`
+* 中文 `zh-cn`
+
+## Required file extensions
+* Macro files`.src`
+* Include files `.def` 
+* Link files `.lnk` 
+
+## Coding conventions
+* `$Include` paths must be absolute or relative to the workspace folder
+* Uppercase for constants: `@MY_CONSTANT 100`
+* Space between statements: `O SUB_PROGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
+* A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
 
 ## Validation
 ![Validation](./resources/validation.gif)
-
 
 ## References
 The reference service supports the search for the following types:
 * Symbols
 * Labels
 * Sequence numbers
-* GOTO Labels / Sequence numbers
+* GOTO Label/sequence numbers
+* M-Codes and G-Codes
+* Macro variables (#..) 
+* Addresses
 
 The search for symbol and label references is global (workspace) if the definitions are included by a definition file `.def`, otherwise the search is limited to the current file scope. Sequence numbers only can be found within a file scope (there is currently no function scope available).
 
@@ -60,29 +78,12 @@ The global / local search behavior is equal to the reference search.
 
 ![Implementations](./resources/implementations.gif)
 
-## Supported display languages
-* English `en`
-* Deutsch `de`
-* 中文 `zh-cn`
-
-## Required file extensions
-* Macro files`.src`
-* Include files `.def` 
-* Link files `.lnk` 
-
-## Coding conventions
-* `$Include` paths must be absolute or relative to the workspace folder
-* Uppercase for constants: `@MY_CONSTANT 100`
-* Space between statements: `O SUB_PROGRAM; N9000 G01 X1; DO 1; END 1; GOTO 1` etc.
-* A comment of a declaration `@var` <span style="color:green">**/* my comment**</span> is displayed on hover and completion
 
 ## Sequence number refactoring for functions
 * Consecutive numbering on completion (snippet N-Number)
 * Command for renumbering sequences (incl. GOTOs)
 * Command for adding missing sequences (for NC statements)
 
-
-<a name="highlighting"></a>
 
 ## Semantic highlighting
 
@@ -95,16 +96,94 @@ Semantic highlighting is used to highlight the represented type of a symbol. Fol
 
 For some color themes, the semantic highlighting must be enabled in the settings:
 
-```
+```json
 "editor.semanticTokenColorCustomizations": {
        "enabled": true,
 }
 ```
 
+| disabled | enabled     |
+|:-------------:|:-------------:|
+| ![no semantic](./resources/no_semantic.png) | ![with Semantic](./resources/with_semantic.png) |
 
-![References](./resources/semantic.gif)
 
 *The color theme used in screenshot →* **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**
+
+## Customization
+
+* Symbol highlighting
+* Symbol description for hover and completion
+
+Out of the box the extension supports semantic highlighting for Labels (>symbol), Variables (@symbol) and M/G-Codes. Sometimes it could be useful to change the default highlighting for a particular symbol or for a type like a macro variable. 
+Such a customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
+
+
+|     **Keyword item**| | 
+|-------------|----------------------------|
+| symbol      | Symbol text                |
+| scope       | [Scopes](#Scopes)           |
+| nodeType    | Label, Code (M/G), Variable (all @ symbols)   |
+| description | Markdown string            |
+
+
+The field `nodeType` defines the related type in the macro program. If the field is empty, a keyword item affects all symbol occurrences regardless of the symbols type. E.g. if you want to add a hower text to a particular P-Code variable, an item could be structed as follows:
+
+```json
+{
+       "symbol": "10000",
+       "nodeType" :"Variable",
+       "description": "some variable text"
+}
+```
+
+### Scopes
+|    | Style for compile-time Variable nodeType | 
+|-----------|---------------------------------------|
+| number    | Numeric (@var  10000) |
+| macrovar  | Macro variable (@var     #10000)             |
+| constant  | Constant numeric (@UPPER  10000)             |
+| language  | Language constant (e.g. true/false)          |
+| label     | Label                                        |
+| code      | M-Code/G-Code                                |
+| parameter | NC-Parameter                                 |
+| address   | Address                                      |
+
+
+ These scopes are used internally and are responsible for the colorization which depends on the chosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**. To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to the `editor.semanticTokenColorCustomizations` configuration property.
+ 
+In case the default scopes should be unchanged, the additional custom scopes `custom_1` - `custom_5` could be used:
+
+
+### Example
+
+The following example changes the symbol `M08`, which has a default scope `code`, to `custom_1` and the scope `custom_1` is associated with the color red:
+
+```json
+"macro.keywords" : [
+       {
+              "symbol": "M08",
+              "scope": "custom_1",
+              "description": "*Coolant*"
+       }
+],
+
+"editor.semanticTokenColorCustomizations": {
+       "enabled": true,
+       "rules": {
+              "custom_1": "#ff0000"
+       }
+},
+```
+
+**[Example](https://github.com/iSorp/macro-executor/tree/master/doc/settings.example.json)**
+
+
+## Multi-Root Workspaces
+The extension supports [multi-root workspaces](https://code.visualstudio.com/docs/editor/multi-root-workspaces). Each workspace is handled as a separate macro project.
+This could be useful if a fanuc project consists of several controls e.g machine and handling:
+
+![multi root workspace](./resources/mrworkspaces.png)
+
 
 
 ## Lint
@@ -144,8 +223,6 @@ Three levels are supported: `error`, `warning` and `ignore`.
 | Link / build all    | Ctrl+Shift+L |
 | Clean   | Ctrl+Shift+C |
 
-
-<a name="extensionSettings"></a>
 
 ## Extension Settings
 
