@@ -114,18 +114,19 @@ For some color themes, the semantic highlighting must be enabled in the settings
 * Symbol highlighting
 * Symbol description for hover and completion
 
-Out of the box the extension supports semantic highlighting for the common types, but sometimes it could be useful to change the default highlighting for a particular symbol or for a type of a symbol like a variable. 
-A customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
+Out of the box the extension supports semantic highlighting for Labels (>symbol), Variables (@symbol) and M/G-Codes. Sometimes it could be useful to change the default highlighting for a particular symbol or for a type like a macro variable. 
+Such a customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
 
 
 |     **Keyword item**| | 
 |-------------|----------------------------|
-| scope       | see Scopes below           |
-| nodeType    | Label, Variable, Code      |
+| symbol      | Symbol text                |
+| scope       | [Scopes](#Scopes)           |
+| nodeType    | Label, Code (M/G), Variable (all @ symbols)   |
 | description | Markdown string            |
 
 
-The field `nodeType` defines the related type in the macro program. If the field is empty, a keyword item will affect all symbol occurrences. E.g. if you want to add a hower text to a particular P-Code variable, an item could be structed as follows:
+The field `nodeType` defines the related type in the macro program. If the field is empty, a keyword item affects all symbol occurrences regardless of the symbols type. E.g. if you want to add a hower text to a particular P-Code variable, an item could be structed as follows:
 
 ```json
 {
@@ -136,21 +137,19 @@ The field `nodeType` defines the related type in the macro program. If the field
 ```
 
 ### Scopes
-|    | | 
-|-----------|---------------------------------------------------------------------|
-| number    | Style for compile-time number                                       |
-| macrovar  | Style for compile-time macro variable (@var     #10000)             |
-| symbol    | Style for compile-time symbol (@var             R100.0, @var  1000) |
-| constant  | Style for compile-time constant symbol (@UPPER  #10000)             |
-| language  | Style for compile-time language constant                            |
-| label     | Style for compile-time label                                        |
-| code      | Style for compile-time M-Code/G-Code                                |
-| parameter | Style for compile-time NC-Parameter                                 |
-| address   | Style for compile-time address                                      |
-|           |                                                                     |
+|    | Style for compile-time Variable nodeType | 
+|-----------|---------------------------------------|
+| number    | Numeric (@var  10000) |
+| macrovar  | Macro variable (@var     #10000)             |
+| constant  | Constant numeric (@UPPER  10000)             |
+| language  | Language constant (e.g. true/false)          |
+| label     | Label                                        |
+| code      | M-Code/G-Code                                |
+| parameter | NC-Parameter                                 |
+| address   | Address                                      |
 
 
- These scopes are used internally and the colorization depends on the chosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**. To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to the `editor.semanticTokenColorCustomizations` settings.
+ These scopes are used internally and are responsible for the colorization which depends on the chosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**. To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to the `editor.semanticTokenColorCustomizations` configuration property.
  
 In case the default scopes should be unchanged, the additional custom scopes `custom_1` - `custom_5` could be used:
 
@@ -176,7 +175,7 @@ The following example changes the symbol `M08`, which has a default scope `code`
 },
 ```
 
-**[Example on github](https://github.com/iSorp/macro-executor/tree/master/doc/settings.example.json)**
+**[Example](https://github.com/iSorp/macro-executor/tree/master/doc/settings.example.json)**
 
 
 ## Multi-Root Workspaces

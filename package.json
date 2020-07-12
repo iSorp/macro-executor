@@ -433,10 +433,6 @@
 				"description": "Style for compile-time # macro variable symbol"
 			},
 			{
-				"id": "symbol",
-				"description": "Style for compile-time symbol"
-			},
-			{
 				"id": "constant",
 				"description": "Style for compile-time constant symbol"
 			},
@@ -484,13 +480,10 @@
 				"language": "macro",
 				"scopes": {
 					"number": [
-						"constant.numeric"
+						"variable.other.numeric"
 					],
 					"macrovar": [
 						"variable.other.field"
-					],
-					"symbol": [
-						"variable.other.numeric"
 					],
 					"constant": [
 						"constant.other.numeric"

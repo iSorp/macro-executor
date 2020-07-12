@@ -1,4 +1,4 @@
-## 0.2.0
+## 0.2.0  (July 12, 2020)
 - Multi-Root Workspace
 - Custom Keywords (symbol, semantic scope, description)
 - M-Code, G-Code, macro variable(#..) and address reference search
