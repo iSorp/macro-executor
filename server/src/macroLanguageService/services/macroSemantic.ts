@@ -56,9 +56,7 @@ export class MacroSemantic {
 							this.build(variable.symbol, variable.type, TokenTypes.macrovar);
 						}
 						else if (type === nodes.ValueType.Constant && candidate.getParent()?.type !== nodes.NodeType.Function) {
-							if (!RegExp(/(true)|(false)/i).test(variable.symbol.getText())) {
-								this.build(variable.symbol, variable.type, TokenTypes.constant);
-							}
+							this.build(variable.symbol, variable.type, TokenTypes.constant);
 						}
 						else if (type === nodes.ValueType.Numeric && candidate.getParent()?.type !== nodes.NodeType.Function) {
 							this.build(variable.symbol, variable.type, TokenTypes.number);
