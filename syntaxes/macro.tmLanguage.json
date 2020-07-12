@@ -104,6 +104,9 @@
                     "include":"#sequence"
                 },
                 {
+					"include":"#variable"	
+                },
+                {
 					"include":"#number"	
                 },
                 {
@@ -216,6 +219,10 @@
             "name":"variable.macro",
             "match":"\\b([\\w\\_])*(?=[a-zA-Z])([\\w\\_])+\\b"
         },
+        "variable": {
+            "name": "constant.numeric.macrovar.macro",
+            "match": "(?<=#)[0-9]+"
+        },
         "sequence" : {
             "name":"punctuation.section.tag.macro",
             "match":"(?i)((?<=\\/)|(^\\s*))(\\s*N\\d+)"
@@ -278,6 +285,9 @@
                 },
                 {
                     "include":"#boolean"
+                },
+                {
+					"include":"#variable"	
                 },
                 {
 					"include":"#number"	
@@ -344,6 +354,9 @@
                 },
                 {
                     "include":"#string_statement"                  
+                },
+                {
+					"include":"#variable"	
                 },
 				{
 					"include":"#number"	
