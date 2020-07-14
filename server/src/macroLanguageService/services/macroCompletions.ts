@@ -267,14 +267,8 @@ export class MacroCompletion {
 					}
 				}
 
-				const custom = this.customKeywords.find(a => a.symbol === symbol.name);
-				const index = this.customKeywords.indexOf(custom);
-				if (index > -1) {
-					this.customKeywords.splice(index, 1);
-				}
-
 				const detail = symbol.node instanceof nodes.AbstractDeclaration ? this.getMarkedStringForDeclaration(type, <nodes.AbstractDeclaration>symbol.node) : '';
-				const doc = custom ? custom.description : '';
+				const doc = this.popCustomKeywordDescription(symbol.name);
 				const completionItem: CompletionItem = {
 					label: symbol.name,
 					detail:detail,
@@ -289,6 +283,25 @@ export class MacroCompletion {
 			}
 		}
 		return result;
+	}
+
+	private popCustomKeywordDescription(text:string) : string {
+		const custom = this.customKeywords.find(a => a.symbol === text);
+		const index = this.customKeywords.indexOf(custom);
+		if (index > -1) {
+			this.customKeywords.splice(index, 1);
+		}
+
+		let doc = '';
+		if (custom){
+			if (custom.description instanceof Array) {
+				doc = custom.description.join('\n\n');
+			}
+			else {
+				doc = custom.description;
+			}
+		}
+		return doc;
 	}
 
 	private getOperatorProposals(result: CompletionList): CompletionList {
@@ -316,14 +329,21 @@ export class MacroCompletion {
 	}
 
 	private getCustomProposals(result: CompletionList): CompletionList {
-		for (const key of this.customKeywords ) {
+		for (const key of this.customKeywords) {
+			let doc = '';
+			if (key.description instanceof Array) {
+				doc = key.description.join('\n\n');
+			}
+			else {
+				doc = key.description;
+			}
 			result.items.push(
 				{
 					label: key.symbol, 
 					kind: CompletionItemKind.Snippet,
 					documentation: {
 						kind:MarkupKind.Markdown,
-						value:key.description
+						value:doc
 					}
 				});
 		}
@@ -396,13 +416,12 @@ export class MacroCompletion {
 		const address = node.getValue()?.getText();
 		const valueType = node.valueType?.toString();
 		
-		let text = '';
-		text += `(${type}:${valueType}) ` + `@${name} `+` ${address}`;
-
+		
+		let text:string[] = [`(${type}:${valueType}) ` + `@${name} `+` ${address}`];
 		if (comment){
-			text += '\n\n' + `${comment}`;
+			text.push(`${comment}`);
 		}
-		return text;
+		return text.join('\n\n');
 	}
 
 	public doSignature(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings) : SignatureHelp | null{
