@@ -12,7 +12,7 @@ Fanuc Macro Executor syntax highlighting, validating and project building
 
 ## News
 - [Multi-Root Workspaces](#multi-root-workspaces)
-- [Custom Keywords](#Customization)
+- [Custom Keywords](#custom-Keywords)
 
 ***
        
@@ -89,7 +89,7 @@ The global / local search behavior is equal to the reference search.
 
 Semantic highlighting is used to highlight the represented type of a symbol. Following types are supported:
 * M-Code and G-Code
-* PMC Address
+* Address
 * Macro variable
 * Constant
 * Label
@@ -109,7 +109,7 @@ For some color themes, the semantic highlighting must be enabled in the settings
 
 *The color theme used in screenshot →* **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**
 
-## Customization
+## Custom Keywords
 
 * Symbol highlighting
 * Symbol description for hover and completion
@@ -123,10 +123,10 @@ Such a customization can be achieved by adding custom keyword items to the confi
 | symbol      | Symbol text                |
 | scope       | [Scopes](#Scopes)           |
 | nodeType    | Label, Code (M/G), Variable (all @ symbols)   |
-| description | Markdown string            |
+| description | Markdown `string` \| `string[]`   |
 
 
-The field `nodeType` defines the related type in the macro program. If the field is empty, a keyword item affects all symbol occurrences regardless of the symbols type. E.g. if you want to add a hower text to a particular P-Code variable, an item could be structed as follows:
+The field `nodeType` defines the related type in the macro program. If the field is empty, a keyword item affects all symbol occurrences regardless of the symbols type. E.g. if you want to add a hover text to a particular P-Code variable, an item could be structed as follows:
 
 ```json
 {
@@ -149,7 +149,7 @@ The field `nodeType` defines the related type in the macro program. If the field
 | address   | Address                                      |
 
 
- These scopes are used internally and are responsible for the colorization which depends on the chosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**. To override the colorization just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to the `editor.semanticTokenColorCustomizations` configuration property.
+ These scopes are used internally and are responsible for the symbol style which depends on the chosen color theme like **[Noctis](https://marketplace.visualstudio.com/items?itemName=liviuschera.noctis#review-details)**. To override the style just add **[rules](https://github.com/microsoft/vscode/wiki/Semantic-Highlighting-Overview#as-a-theme-author-do-i-need-to-change-my-theme-to-make-it-work-with-semantic-highlighting)** to the `editor.semanticTokenColorCustomizations` configuration property.
  
 In case the default scopes should be unchanged, the additional custom scopes `custom_1` - `custom_5` could be used:
 
@@ -163,7 +163,7 @@ The following example changes the symbol `M08`, which has a default scope `code`
        {
               "symbol": "M08",
               "scope": "custom_1",
-              "description": "*Coolant*"
+              "description": ["*Coolant*", "ON"]
        }
 ],
 
@@ -228,6 +228,7 @@ Three levels are supported: `error`, `warning` and `ignore`.
 
 This extension contributes the following settings:
 
+* `macro.keywords` : [Custom Keywords](#custom-Keywords)
 * `macro.lint`: Lint settings and rule configuration
 * `macro.sequence.base`: Sequences start number for refactoring
 * `macro.sequence.increment`: Sequences increment for refactoring

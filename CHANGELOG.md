@@ -1,3 +1,7 @@
+## 0.2.1  (July 14, 2020)
+- node module languageserver/client update
+- Multiline keyword description
+
 ## 0.2.0  (July 12, 2020)
 - Multi-Root Workspace
 - Custom Keywords (symbol, semantic scope, description)

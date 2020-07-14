@@ -9,7 +9,7 @@ import { NodeType } from './parser/macroNodes';
 import  { TextDocument, Location } from 'vscode-languageserver-types';
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export  { Proposed } from 'vscode-languageserver';
-export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/semanticTokens.proposed';
+export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/common/semanticTokens.proposed';
 export * from './languageFacts/builtinData';
 export { 
 	SemanticTokenModifiers,
@@ -18,7 +18,7 @@ export {
 	SemanticTokensLegend,
 	SemanticTokensServerCapabilities,
 	SemanticTokensClientCapabilities
-} from 'vscode-languageserver-protocol/lib/protocol.semanticTokens.proposed';
+} from 'vscode-languageserver-protocol/lib/common/protocol.semanticTokens.proposed';
 
 export * from 'vscode-languageserver-types';
 
@@ -46,7 +46,7 @@ export type LintSettings = {
 export type CustomKeywords = { 
 	symbol: string;
 	scope:string;
-	description:string;
+	description:any;
 	nodeType:string
 };
 

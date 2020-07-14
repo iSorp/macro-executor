@@ -90,8 +90,8 @@ export class MacroSemantic {
 	private build(node:nodes.Node, type:nodes.NodeType, tokenType?:TokenTypes) {
 		const pos = this.document.positionAt(node.offset);
 		let token:TokenTypes = tokenType;
-		const customKey = this.customKeywords.find(a => RegExp('^'+a.symbol+'$').test(node.getText()) && (!a.nodeType || nodes.NodeType[a.nodeType] === type));
-		if (customKey) {
+		const customKey = this.customKeywords.find(a => a.symbol === node.getText() && (!a.nodeType || nodes.NodeType[a.nodeType] === type));
+		if (customKey && customKey.scope) {
 			token = TokenTypes[customKey.scope];
 		}
 		

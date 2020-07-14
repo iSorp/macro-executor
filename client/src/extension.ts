@@ -7,11 +7,12 @@ import {
 	LanguageClient, LanguageClientOptions, 
 	ServerOptions, TransportKind, RevealOutputChannelOn,
 	ExecuteCommandSignature, WorkspaceFolder
-} from 'vscode-languageclient';
+} from 'vscode-languageclient/node';
+
 
 import * as ls from 'vscode-languageserver-protocol';
 
-import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/semanticTokens.proposed';
+import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/common/semanticTokens.proposed';
 import registerCommands from './common/commands';
 
 import CompositeDisposable from './common/compositeDisposable';

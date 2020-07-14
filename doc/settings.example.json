@@ -9,7 +9,17 @@
 
 	"macro.keywords": [
 		
-		{"symbol": "10000", "scope":"number", "nodeType": "Variable", "description": "Base address"},
+		{
+			"symbol": "10000", 
+			"scope":"number", 
+			"nodeType": "Variable", 
+			"description": [
+				"# some",
+				"*markdown*",
+				"text",
+				"lines"
+			]
+		},
 
 		{"symbol": "ret_arg", "scope":"symbol", "nodeType": "Variable"},
 		{"symbol": "error_1", "scope":"custom_2", "nodeType": "Variable"},

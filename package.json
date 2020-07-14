@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -142,26 +142,25 @@
 			"properties": {
 				"macro.keywords": {
 					"scope": "resource",
-					"type" : "array",
+					"type": "array",
 					"description": "custom keywords",
 					"items": {
-						"type" :"object",
-						"default" : {
+						"type": "object",
+						"default": {
 							"symbol": "special symbol",
-							"scope": "variable",
+							"scope": "macrovar",
 							"description": "this text will be shown on hover and completion"
 						},
-						"properties" : { 
-							"type" : "object",
+						"properties": {
+							"type": "object",
 							"symbol": {
-								"type" : "string"
+								"type": "string"
 							},
 							"scope": {
-								"type" : "string",
-								"enum": [		
+								"type": "string",
+								"enum": [
 									"number",
 									"macrovar",
-									"symbol",
 									"constant",
 									"language",
 									"label",
@@ -175,12 +174,10 @@
 									"custom_5"
 								]
 							},
-							"description": {
-								"type" : "string"
-							},
-							"nodeType" : {
-								"type" : "string",
-								"enum": [		
+							"description": {},
+							"nodeType": {
+								"type": "string",
+								"enum": [
 									"",
 									"Label",
 									"Variable",
