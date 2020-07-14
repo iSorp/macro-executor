@@ -13,7 +13,7 @@
 		"vscode": "^1.45.1"
 	},
 	"dependencies": {
-		"vscode-languageclient": "7.0.0-next.1",
+		"vscode-languageclient": "7.0.0-next.5",
 		"rxjs": "^6.5.5",
 		"vscode-nls": "^4.1.2"
 	},
