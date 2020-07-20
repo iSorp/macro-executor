@@ -519,7 +519,7 @@ function validateWorkspace(uri:string, allFiles:boolean) {
 	else {
 		for (const document of documents.all()) {
 			const service = languageServices.get(uri);
-			validateTextDocument(getParsedDocument(document.uri, service.parseMacroFile));
+			validateTextDocument(getParsedDocument(document.uri, service.parseMacroFile,true));
 		}
 	}
 }

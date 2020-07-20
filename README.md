@@ -1,4 +1,4 @@
-# Fanuc Macro Executor
+# Fanuc Macro Executor extension for Visual Studio Code
 
 <img src="./resources/icon.png" alt="drawing" width="100"/>
 
@@ -7,12 +7,13 @@
 [![license](https://img.shields.io/github/license/iSorp/macro-executor)](https://opensource.org/licenses/MIT)
 [![Build Status](https://dev.azure.com/iSorp/fanuc-macro-executor/_apis/build/status/iSorp.macro-executor?branchName=master)](https://dev.azure.com/iSorp/fanuc-macro-executor/_build/latest?definitionId=2&branchName=master)
 
-Fanuc Macro Executor syntax highlighting, validating and project building 
+
+Visual Studio Code extension with support for the Fanuc Macro Executor programming language including syntax highlighting, validating and project building. 
 
 
 ## News
 - [Multi-Root Workspaces](#multi-root-workspaces)
-- [Custom Keywords](#custom-Keywords)
+- [Custom Keywords](#custom-keywords)
 
 ***
        
@@ -321,6 +322,38 @@ $INCLUDE def\file1.def
 /* file3.src
 $INCLUDE def\file2.def
 ```
+
+
+## 16 bit Compiler
+
+A convenient way to compile 16 bit macro programs is to use [Dosbox](https://www.dosbox.com/). 
+Below an example [task](https://code.visualstudio.com/Docs/editor/tasks) definition which executes dosbox and passes the build script as command line argument.
+
+```json
+{
+       "label": "Fanuc Macro 16bit build",
+       "type": "shell",
+       "command": "C:/Program Files (x86)/DOSBox-0.74-3/DOSBox.exe",
+       "args": [
+              "Make.bat",
+              "-noconsole"
+       ],
+       "group": {
+              "kind": "build",
+              "isDefault": true
+       },
+       "presentation": {
+              "echo": true,
+              "reveal": "always",
+              "focus": false,
+              "panel": "shared",
+              "showReuseMessage": true,
+              "clear": false
+       },
+       "problemMatcher": []
+}
+```
+
 
 -----------------------------------------------------------------------------------------------------------
 
