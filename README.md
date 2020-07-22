@@ -326,7 +326,7 @@ $INCLUDE def\file2.def
 
 ## 16 bit Compiler
 
-A convenient way to compile 16 bit macro programs is to use [Dosbox](https://www.dosbox.com/). 
+A convenient way to compile 16 bit macro programs if the host system doesn't support it, is to use [Dosbox](https://www.dosbox.com/). 
 Below an example [task](https://code.visualstudio.com/Docs/editor/tasks) definition which executes dosbox and passes the build script as command line argument.
 
 ```json

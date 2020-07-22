@@ -1,6 +1,7 @@
 ## 0.2.2  ()
 - README 16bit compiler
 - Force document parsing when changing .def file
+- Line comments
 
 
 ## 0.2.1  (July 14, 2020)
