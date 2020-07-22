@@ -206,13 +206,10 @@ export class MacroNavigation {
 							entry.kind = SymbolKind.Variable;
 							break;
 						case nodes.ValueType.Numeric:
-							entry.kind = SymbolKind.Variable;
+							entry.kind = SymbolKind.Number;
 							break;
 						case nodes.ValueType.NcCode:
 							entry.kind = SymbolKind.Event;
-							break;
-						case nodes.ValueType.Undefinded:
-							entry.kind = SymbolKind.Variable;
 							break;
 						default:
 							entry.kind = SymbolKind.Variable;
