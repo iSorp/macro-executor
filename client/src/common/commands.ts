@@ -109,7 +109,7 @@ function setExportPath () {
 		// Set Export Path
 		vscode.window.showOpenDialog(OpenDialogOptions).then(value => {
 			if (value !== undefined) {
-				const macroConfig = vscode.workspace.getConfiguration('macro');
+				const macroConfig = vscode.workspace.getConfiguration('macro', workspace);
 				macroConfig.update('project.exportPath', value[0].fsPath, vscode.ConfigurationTarget.WorkspaceFolder).then(() => {
 				//Done
 				}, reason => {

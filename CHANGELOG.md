@@ -2,6 +2,8 @@
 - README 16bit compiler
 - Force document parsing when changing .def file
 - Line comments
+- Bug fixes
+	- set export path 
 
 
 ## 0.2.1  (July 14, 2020)
