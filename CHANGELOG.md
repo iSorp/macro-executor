@@ -1,3 +1,10 @@
+## 0.2.2  (August 4y, 2020)
+- README 16bit compiler
+- Force document parsing when changing .def file
+- Line comments
+- Bugfix set export path 
+
+
 ## 0.2.1  (July 14, 2020)
 - node module languageserver/client update
 - Multiline keyword description

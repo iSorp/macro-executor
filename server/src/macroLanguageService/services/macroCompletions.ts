@@ -83,7 +83,8 @@ enum Sort {
 	Variable 	= '5',
 	Value 		= '6',
 	Address		= '7',
-	Nc			= '8',
+	Parameter	= '8',
+	Nc			= '9',
 }
 
 export class MacroCompletion {
@@ -223,25 +224,25 @@ export class MacroCompletion {
 							sort = Sort.Address;
 							kind = CompletionItemKind.Interface;
 							break;
+						case nodes.ValueType.NcParam:
+							sort = Sort.Parameter;
+							kind = CompletionItemKind.Property;
+							break;
 						case nodes.ValueType.Constant:
 							sort = Sort.Constant;
 							kind = CompletionItemKind.Constant;
 							break;
 						case nodes.ValueType.Variable:
 							sort = Sort.Value;
-							kind = CompletionItemKind.Value;
+							kind = CompletionItemKind.Variable;
 							break;
 						case nodes.ValueType.Numeric:
 							sort = Sort.Variable;
-							kind = CompletionItemKind.Variable;
+							kind = CompletionItemKind.Value;
 							break;
 						case nodes.ValueType.NcCode:
 							sort = Sort.Nc;
 							kind = CompletionItemKind.Event;
-							break;
-						case nodes.ValueType.Undefinded:
-							sort = Sort.Variable;
-							kind = CompletionItemKind.Variable;
 							break;
 						default:
 							sort = Sort.Variable;

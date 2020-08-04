@@ -13,7 +13,7 @@
 	},
 	"ifelse": {
 		"prefix": "ifelse",
-		"body": "IF [ ${1:condition}] THEN\n\t$2\nELSE \n\t$3\nENDIF\n",
+		"body": "IF [${1:condition}] THEN\n\t$2\nELSE \n\t$3\nENDIF\n",
 		"description": "if ... else ...",
 		"scope": "source.macro"
 	},
@@ -31,7 +31,7 @@
 	},
 	"else": {
 		"prefix": "else",
-		"body": "ELSE \n\t$2\nENDIF\n",
+		"body": "ELSE\n\t$2\nENDIF\n",
 		"description": "else ...",
 		"scope": "source.macro"
 	},

@@ -52,10 +52,7 @@ export class MacroSemantic {
 					const variable = <nodes.Variable>candidate;
 					if (variable.symbol) {
 						const type = variable.declaration?.valueType;
-						if (type === nodes.ValueType.Variable) {
-							this.build(variable.symbol, variable.type, TokenTypes.macrovar);
-						}
-						else if (type === nodes.ValueType.Constant && candidate.getParent()?.type !== nodes.NodeType.Function) {
+						if (type === nodes.ValueType.Constant && candidate.getParent()?.type !== nodes.NodeType.Function) {
 							this.build(variable.symbol, variable.type, TokenTypes.constant);
 						}
 						else if (type === nodes.ValueType.Numeric && candidate.getParent()?.type !== nodes.NodeType.Function) {
@@ -72,6 +69,12 @@ export class MacroSemantic {
 						}
 						else if (type === nodes.ValueType.Sequence) {
 							this.build(variable.symbol, variable.type, TokenTypes.label);
+						}
+						else if (type === nodes.ValueType.Variable) {
+							this.build(variable.symbol, variable.type, TokenTypes.macrovar);
+						}
+						else {
+							this.build(variable.symbol, variable.type);
 						}
 					}
 				}

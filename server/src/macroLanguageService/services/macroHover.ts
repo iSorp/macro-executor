@@ -66,12 +66,18 @@ export class MacroHover {
 					else if (node.type === nodes.NodeType.Variable) {
 						type = 'symbol';
 						let text:string[] = [];
-						const detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
-						const custom = this.getCustomKeywordDescription((<nodes.Variable>node).getName(), nodes.NodeType.Variable);
-						const comment = getComment(declaraion.document.offsetAt(location.range.start), declaraion.document.getText()).trim();
-						text.push(detail);
-						if (custom || comment){
-							text.push('','***','');	
+						let detail = '';
+						let comment = '';
+						if ((<nodes.Variable>node).declaration) {
+							detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
+							comment = getComment(declaraion.document.offsetAt(location.range.start), declaraion.document.getText()).trim();
+						}
+						const custom = this.getCustomKeywordDescription((<nodes.Variable>node).getName(), nodes.NodeType.Variable);			
+						if (detail){
+							text.push(detail);
+							if (custom || comment){
+								text.push('','***','');	
+							}
 						}
 						if (comment) {
 							text.push(comment);	
@@ -79,11 +85,10 @@ export class MacroHover {
 						if (custom) {
 							text.push(custom);	
 						}
-
 						hover =  {
 							contents: {
 								kind:MarkupKind.Markdown,
-								value: text.join('\n')
+								value: text.join('\n\n')
 							},
 							range: this.getRange(node)
 						};
@@ -91,12 +96,18 @@ export class MacroHover {
 					else if (node.type === nodes.NodeType.Label) {
 						type = 'label';
 						let text:string[] = [];
-						const detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
+						let detail = '';
+						let comment = '';
+						if ((<nodes.Label>node).declaration) {
+							detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
+							comment = getComment(document.offsetAt(location.range.start), document.getText()).trim();
+						}
 						const custom = this.getCustomKeywordDescription((<nodes.Label>node).getName(), nodes.NodeType.Label);
-						const comment = getComment(document.offsetAt(location.range.start), document.getText()).trim();
-						text.push(detail);
-						if (custom || comment){
-							text.push('','***','');	
+						if (detail){
+							text.push(detail);
+							if (custom || comment){
+								text.push('','***','');	
+							}
 						}
 						if (comment) {
 							text.push(comment);	
@@ -104,11 +115,10 @@ export class MacroHover {
 						if (custom) {
 							text.push(custom);	
 						}
-
 						hover =  {
 							contents: {
 								kind:MarkupKind.Markdown,
-								value: text.join('\n')
+								value: text.join('\n\n')
 							},
 							range: this.getRange(node)
 						};
@@ -176,8 +186,14 @@ export class MacroHover {
 			const name = node.getName();
 			const address = node.getValue()?.getText();
 			const valueType = node.valueType?.toString();
-		
-			text.push('```macro',`(${type}:${valueType}) ` + `@${name} `+` ${address}`, '```');
+			let punctation = '';
+			if (type === 'label') {
+				punctation = '>';
+			}
+			else if (type === 'symbol') {
+				punctation = '@';
+			}
+			text.push('```macro',`(${type}:${valueType}) ` + `${punctation}${name} `+` ${address}`, '```');
 		}
 		return text.join('\n');
 	}
