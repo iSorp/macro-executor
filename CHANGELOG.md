@@ -1,4 +1,10 @@
-## 0.2.2  (August 4y, 2020)
+## 0.2.3  (October 13, 2020)
+- Additional linker parameter
+- Bug fixes
+	- Comment reference for labels
+	- Comment highlighting after include statement
+
+## 0.2.2  (August 4, 2020)
 - README 16bit compiler
 - Force document parsing when changing .def file
 - Line comments
