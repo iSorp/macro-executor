@@ -12,8 +12,7 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 
 
 ## News
-- [Multi-Root Workspaces](#multi-root-workspaces)
-- [Custom Keywords](#custom-keywords)
+- [Additional linker parameters](#extension-settings)
 
 ***
        
@@ -241,6 +240,7 @@ Build settings:
 * `macro.build.compiler`: Selection of the macro compiler
 * `macro.build.controlType`: Selection of the control type
 * `macro.build.compilerParams`: Additional compiler parameters: -NR, -L1, -L2, -L3, -PR
+* `macro.build.linkerParams`: Additional linker parameters: -NR, -NL, -Fm, -Fr
 * `macro.build.makeFile`: The path to the makefile
 * `macro.project.exportPath`: The path to the directory for the memory card file (.mem)
 * `macro.project.sourcePath`: The path to the directory for the source files (.src)

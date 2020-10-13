@@ -1713,9 +1713,10 @@ export class Parser {
 		if (integer && this.peekRegExp(TokenType.Symbol, /\d*\.\d*/)) {
 			return null;
 		}
-		
+
 		let node = this.createNode(nodes.NodeType.NumericValue);
-		if (!this.acceptUnquotedString()) {
+
+		if (!this.acceptRegexp(/\b((\d+\.\d+)|(\d+\.\d*)|(\d*\.\d+)|(\d+))\b/)) {
 			return this.finish(node, ParseError.NumberExpected);
 		}
 		

@@ -3,6 +3,7 @@
 - Bug fixes
 	- Comment reference for labels
 	- Comment highlighting after include statement
+	- No space between comment (/*) and statement needed
 
 ## 0.2.2  (August 4, 2020)
 - README 16bit compiler
