@@ -100,7 +100,7 @@ export class MacroHover {
 						let comment = '';
 						if ((<nodes.Label>node).declaration) {
 							detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
-							comment = getComment(document.offsetAt(location.range.start), document.getText()).trim();
+							comment = getComment(declaraion.document.offsetAt(location.range.start), declaraion.document.getText()).trim();
 						}
 						const custom = this.getCustomKeywordDescription((<nodes.Label>node).getName(), nodes.NodeType.Label);
 						if (detail){

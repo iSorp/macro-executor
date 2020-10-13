@@ -94,30 +94,28 @@ async function setControlType () {
 
 // Set Export Path
 function setExportPath () {
-	pickFolder(workspace => {
-		const config = vscode.workspace.getConfiguration('macro', workspace);
-		const OpenDialogOptions = {
-			matchOnDetail: true,
-			matchOnDescription: false,
-			placeHolder: `current: ${config.project.exportPath}`,
-			canSelectMany: false,
-			canSelectFiles : false,
-			canSelectFolders : true,
-			openLabel: 'Select',
-		};
-	
-		// Set Export Path
-		vscode.window.showOpenDialog(OpenDialogOptions).then(value => {
-			if (value !== undefined) {
-				const macroConfig = vscode.workspace.getConfiguration('macro', workspace);
-				macroConfig.update('project.exportPath', value[0].fsPath, vscode.ConfigurationTarget.WorkspaceFolder).then(() => {
-				//Done
-				}, reason => {
-					vscode.window.showErrorMessage(`Failed to set 'expor path'. Error: ${reason.message}`);
-					console.error(reason);
-				});
-			}
-		});
+	const config = vscode.workspace.getConfiguration('macro');
+	const OpenDialogOptions = {
+		matchOnDetail: true,
+		matchOnDescription: false,
+		placeHolder: `current: ${config.project.exportPath}`,
+		canSelectMany: false,
+		canSelectFiles : false,
+		canSelectFolders : true,
+		openLabel: 'Select',
+	};
+
+	// Set Export Path
+	vscode.window.showOpenDialog(OpenDialogOptions).then(value => {
+		if (value !== undefined) {
+			const macroConfig = vscode.workspace.getConfiguration('macro');
+			macroConfig.update('project.exportPath', value[0].fsPath, vscode.ConfigurationTarget.Global).then(() => {
+			//Done
+			}, reason => {
+				vscode.window.showErrorMessage(`Failed to set 'export path'. Error: ${reason.message}`);
+				console.error(reason);
+			});
+		}
 	});
 }
 
@@ -275,6 +273,7 @@ class ProjectService {
 		const buildPath	= config.project.buildPath;
 		const exportPath= config.project.exportPath;
 		const compiler 	= config.build.compiler;
+		const params 	= config.build.linkerParams;
 		const link 		= this.getRelativePath(config.project.linkPath, workspace.uri.fsPath);
 
 		let glob = '**/*.{[lL][nN][kK]}';
@@ -296,7 +295,7 @@ class ProjectService {
 		}
 
 		for (const file of lnkFiles) {	
-			lines.push(BUILD_SYSTEMS[compiler].linker);
+			lines.push(BUILD_SYSTEMS[compiler].linker + ' ' + params);
 			lines.push(linkPath + this.getRelativePath(file.fsPath, workspace.uri.fsPath));
 			lines.push('\n\r');
 			lines.push(BUILD_SYSTEMS[compiler].card);

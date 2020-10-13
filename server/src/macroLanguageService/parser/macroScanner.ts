@@ -158,6 +158,7 @@ export const _CAR = '\r'.charCodeAt(0);
 export const _LFD = '\f'.charCodeAt(0);
 export const _DQO = '"'.charCodeAt(0);
 export const _SQO = '\''.charCodeAt(0);
+export const _SLA = '/'.charCodeAt(0);
 export const _WSP = ' '.charCodeAt(0);
 export const _TAB = '\t'.charCodeAt(0);
 export const _SEM = ';'.charCodeAt(0);
@@ -508,12 +509,25 @@ export class Scanner {
 
 	private _unquotedChar(result: string[]): boolean {
 		const ch = this.stream.peekChar();
-		if (ch !== 0 && ch !== _SQO && ch !== _DQO && ch !== _WSP && ch !== _TAB && ch !== _NWL && ch !== _LFD && ch !== _CAR) {
-			this.stream.advance(1);
-			result.push(String.fromCharCode(ch));
-			return true;
+		switch (ch) {
+			case 0:
+			case _SQO:
+			case _DQO:	
+			case _WSP:
+			case _TAB:
+			case _NWL:
+			case _LFD:
+			case _CAR:
+			case _SEM:
+				return false;
+			case _SLA:
+				if (this.stream.peekChar(1) === _MUL) {
+					return false;
+				}
 		}
-		return false;
+		this.stream.advance(1);
+		result.push(String.fromCharCode(ch));
+		return true;
 	}
 
 	private _unquotedString(result: string[]): boolean {

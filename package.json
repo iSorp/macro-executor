@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -362,40 +362,47 @@
 					"description": "%macro.build.compilerParams.description%",
 					"$id": "3"
 				},
+				"macro.build.linkerParams": {
+					"type": "string",
+					"scope": "resource",
+					"default": "",
+					"description": "%macro.build.linkerParams.description%",
+					"$id": "4"
+				},
 				"macro.build.makeFile": {
 					"type": "string",
 					"scope": "resource",
 					"default": "",
 					"description": "%macro.build.makeFile.description%",
-					"$id": "4"
+					"$id": "5"
 				},
 				"macro.project.exportPath": {
 					"type": "string",
 					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.exportPath.description%",
-					"$id": "5"
+					"$id": "6"
 				},
 				"macro.project.sourcePath": {
 					"type": "string",
 					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.sourcePath.description%",
-					"$id": "6"
+					"$id": "7"
 				},
 				"macro.project.buildPath": {
 					"type": "string",
 					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.buildPath.description%",
-					"$id": "7"
+					"$id": "8"
 				},
 				"macro.project.linkPath": {
 					"type": "string",
 					"scope": "resource",
 					"default": "",
 					"description": "%macro.project.linkPath.description%",
-					"$id": "8"
+					"$id": "9"
 				}
 			}
 		},
