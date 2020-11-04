@@ -158,13 +158,13 @@ export const functionSignatures: { [name: string]: FunctionSignature[] } = {
 	],
 	'bin': [	
 		{ 
-			description: 'Conversion from BCD to binary function',
+			description: 'Conversion from BCD to binary',
 			param: [ { _bracket: '[' }, { _param: [ { value: 'value' } ] }, { _bracket: ']' } ]
 		}
 	],
 	'bcd': [	
 		{ 
-			description: 'Sine (in degrees)',
+			description: 'Conversion from binary to BCD',
 			param: [ { _bracket: '[' }, { _param: [ { value: 'value' } ] }, { _bracket: ']' } ]
 		}
 	],
