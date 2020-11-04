@@ -5,7 +5,10 @@
 'use strict';
 
 import * as nodes from '../parser/macroNodes';
-import { Symbols} from '../parser/macroSymbolScope';
+import { 
+	Symbols, 
+	SymbolContext 
+} from '../parser/macroSymbolScope';
 import {
 	TextDocument,
 	Position, 
@@ -267,8 +270,8 @@ export class MacroCompletion {
 							break;
 					}
 				}
-
-				const detail = symbol.node instanceof nodes.AbstractDeclaration ? this.getMarkedStringForDeclaration(type, <nodes.AbstractDeclaration>symbol.node) : '';
+				
+				const detail = symbol.node instanceof nodes.AbstractDeclaration ? this.getMarkedStringForDeclaration(type, <nodes.AbstractDeclaration>symbol.node, context) : '';
 				const doc = this.popCustomKeywordDescription(symbol.name);
 				const completionItem: CompletionItem = {
 					label: symbol.name,
@@ -411,8 +414,10 @@ export class MacroCompletion {
 		return this.defaultReplaceRange;
 	}
 
-	private getMarkedStringForDeclaration(type: string, node: nodes.AbstractDeclaration) : string {		
-		const comment = getComment(node.offset, this.textDocument.getText()).trim();
+	private getMarkedStringForDeclaration(type: string, node: nodes.AbstractDeclaration, context: SymbolContext) : string {		
+	
+		const macroFileType = this.fileProvider.get(context.uri);
+		const comment = getComment(node.offset, macroFileType.document.getText()).trim();
 		const name = node.getName();
 		const address = node.getValue()?.getText();
 		const valueType = node.valueType?.toString();
