@@ -1,3 +1,10 @@
+## 0.2.4  (November 10, 2020)
+- Bug fixes
+	- Completion symbol comment text fix
+	- bcd/bin function text
+- Allowed symbol char '$' added
+
+
 ## 0.2.3  (October 13, 2020)
 - Additional linker parameter
 - Bug fixes

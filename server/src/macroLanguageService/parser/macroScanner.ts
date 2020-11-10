@@ -575,6 +575,7 @@ export class Scanner {
 			ch === _DOT || // .
 			ch === _QUM || // ?
 			ch === _BNG || // !
+			ch === _DLR || // $
 			ch >= _a && ch <= _z || // a-z
 			ch >= _A && ch <= _Z || // A-Z
 			ch >= _0 && ch <= _9 || // 0/9
