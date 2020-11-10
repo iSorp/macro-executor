@@ -63,6 +63,7 @@ suite('Scanner', () => {
 		assertSingleToken(scanner, 'var.', 4, 0, 'var.', TokenType.Symbol);
 		assertSingleToken(scanner, 'var?', 4, 0, 'var?', TokenType.Symbol);
 		assertSingleToken(scanner, 'var!', 4, 0, 'var!', TokenType.Symbol);
+		assertSingleToken(scanner, 'var$abc', 7, 0, 'var$abc', TokenType.Symbol);
 	});
 
 	test('Token Dollar', function () {
