@@ -24,7 +24,8 @@ import {
 	MacroFileProvider, 
 	FileProviderParams,
 	TokenTypes,
-	TokenModifiers
+	TokenModifiers,
+	SemanticTokensLegend
 } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
@@ -190,7 +191,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.workspace && !!capabilities.workspace.workspaceFolders
 	);
 	
-	const result: InitializeResult & { capabilities: Proposed.SemanticTokensServerCapabilities } = {
+	const result: InitializeResult = {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			definitionProvider: true,
@@ -222,7 +223,7 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			semanticTokensProvider: {
 				legend: computeLegend(),
-				rangeProvider: false
+				range: false
 			}
 		}
 	};
@@ -532,7 +533,7 @@ function validate() {
 	});
 }
 
-function computeLegend(): Proposed.SemanticTokensLegend {
+function computeLegend(): SemanticTokensLegend {
 
 	const tokenTypes: string[] = [];
 	for (let i = 0; i < TokenTypes._; i++) {

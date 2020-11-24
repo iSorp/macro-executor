@@ -189,107 +189,183 @@
 				},
 				"macro.lint": {
 					"scope": "window",
-					"type" : "object",
+					"type": "object",
 					"description": "%macro.lint.description%",
 					"properties": {
-						"rules" : {
-							"type" : "object",
+						"rules": {
+							"type": "object",
 							"default": {},
 							"properties": {
 								"duplicateInclude": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"duplicateDeclaration": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"duplicateFunction": {
-									"type" : "string",
+									"type": "string",
 									"default": "warning",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"duplicateAddress": {
-									"type" : "string",
+									"type": "string",
 									"default": "ignore",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
-								"duplicateSequence":  {
-									"type" : "string",
+								"duplicateSequence": {
+									"type": "string",
 									"default": "warning",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
-								"duplicateLabel":   {
-									"type" : "string",
+								"duplicateLabel": {
+									"type": "string",
 									"default": "warning",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"duplicateLabelSequence": {
-									"type" : "string",
+									"type": "string",
 									"default": "warning",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"unknownSymbol": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"whileLogicOperator": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"doEndNumberTooBig": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"doEndNumberNotEqual": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"nestingTooDeep": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"duplicateDoEndNumber": {
-									"type" : "string",
+									"type": "string",
 									"default": "warning",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"mixedConditionals": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"tooManyConditionals": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"seqNotFound": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
-								},   
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
+								},
 								"incompleteParameter": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"includeNotFound": {
-									"type" : "string",
+									"type": "string",
 									"default": "error",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								},
 								"assignmentConstant": {
-									"type" : "string",
+									"type": "string",
 									"default": "warning",
-									"enum": ["error", "warning", "ignore"]
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								}
 							}
 						}
@@ -476,7 +552,6 @@
 				"id": "custom_5",
 				"description": "Style for compile-time custom symbol"
 			}
-			
 		],
 		"semanticTokenModifiers": [],
 		"semanticTokenScopes": [

@@ -15,7 +15,7 @@ import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
 	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
 	Location, TextDocument, CompletionList, CodeLens, 
-	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, Proposed
+	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens
 } from './macroLanguageTypes';
 import { MacroSemantic } from './services/macroSemantic';
 
@@ -38,7 +38,7 @@ export interface LanguageService {
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
-	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, documentSettings: LanguageSettings, range?:Range) : Proposed.SemanticTokens;
+	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, documentSettings: LanguageSettings, range?:Range) : SemanticTokens;
 }
 
 function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand, semantic:MacroSemantic): LanguageService {

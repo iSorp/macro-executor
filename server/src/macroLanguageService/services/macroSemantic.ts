@@ -6,7 +6,7 @@
 
 import {
 	TextDocument, LanguageSettings, CustomKeywords,
-	Proposed, SemanticTokensBuilder, TokenTypes, Range
+	SemanticTokens, SemanticTokensBuilder, TokenTypes, Range
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 
@@ -18,7 +18,7 @@ export class MacroSemantic {
 
 	constructor() {}
 	
-	public doSemanticHighlighting(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings, range:Range | undefined) : Proposed.SemanticTokens {
+	public doSemanticHighlighting(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings, range:Range | undefined) : SemanticTokens {
 		this.builder = new SemanticTokensBuilder();
 		this.document = document;
 		this.customKeywords = settings.keywords;

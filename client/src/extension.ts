@@ -12,16 +12,10 @@ import {
 
 import * as ls from 'vscode-languageserver-protocol';
 
-import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/common/semanticTokens.proposed';
+import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/common/semanticTokens';
 import registerCommands from './common/commands';
 
 import CompositeDisposable from './common/compositeDisposable';
-import { downloadAndUnzipVSCode } from 'vscode-test';
-
-import * as nls from 'vscode-nls';
-
-// The example uses the file message format.
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 let client: LanguageClient;
 let disposables = new CompositeDisposable();
@@ -75,12 +69,7 @@ export function activate(context: ExtensionContext) {
 		progressOnInitialization: true,
 		revealOutputChannelOn: RevealOutputChannelOn.Never,	
 		middleware: {
-			// Workaround for https://github.com/microsoft/vscode-languageserver-node/issues/576
-			async provideDocumentSemanticTokens(document: TextDocument, token: CancellationToken, next: DocumentSemanticsTokensSignature) {
-				const res = await next(document, token);
-				if (res === undefined) {throw new Error('busy');}
-				return res;
-			},
+
 			executeCommand: async (command:string, args:any[], next:ExecuteCommandSignature) => {
 				if (command === 'macro.codelens.references') {
 					const arg:CodeLensReferenceArgument = args[0];

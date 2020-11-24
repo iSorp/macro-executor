@@ -8,17 +8,16 @@ import { Macrofile } from './macroLanguageService';
 import { NodeType } from './parser/macroNodes';
 import  { TextDocument, Location } from 'vscode-languageserver-types';
 export { TextDocument } from 'vscode-languageserver-textdocument';
-export  { Proposed } from 'vscode-languageserver';
-export { SemanticTokensBuilder, SemanticTokensFeature } from 'vscode-languageserver/lib/common/semanticTokens.proposed';
+export { SemanticTokensBuilder } from 'vscode-languageserver/lib/common/semanticTokens';
 export * from './languageFacts/builtinData';
 export { 
 	SemanticTokenModifiers,
 	SemanticTokenTypes,
 	SemanticTokensParams,
 	SemanticTokensLegend,
-	SemanticTokensServerCapabilities,
+	SemanticTokens,
 	SemanticTokensClientCapabilities
-} from 'vscode-languageserver-protocol/lib/common/protocol.semanticTokens.proposed';
+} from 'vscode-languageserver-protocol/lib/common/protocol.semanticTokens';
 
 export * from 'vscode-languageserver-types';
 
