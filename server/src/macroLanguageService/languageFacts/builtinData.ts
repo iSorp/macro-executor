@@ -135,7 +135,7 @@ export const functionSignatures: { [name: string]: FunctionSignature[] } = {
 			param: [ { _bracket: '[' }, { _param: [ { value1: 'value1'} ] }, { _bracket: ']' }, { _escape: '/' }, { _bracket: '[' }, { _param: [ { value2: 'value2'} ] }, { _bracket: ']' } ]
 		},
 		{ 
-			description: 'Arc tangent (one parameter), ATN can also be used.',
+			description: 'Arc tangent (one parameter), ATN can also be used',
 			param: [ { _bracket: '[' }, { _param: [ { value: 'value'} ] }, { _bracket: ']' } ]
 		},
 		{ 
@@ -144,9 +144,30 @@ export const functionSignatures: { [name: string]: FunctionSignature[] } = {
 			param: [ { _bracket: '[' }, { _param: [ { value1: 'value1' } , { value2: 'value2'} ] }, { _bracket: ']' } ]
 		}
 	],
+	'atn': [
+		{ 
+			description: 'Arc tangent (two parameters)',
+			param: [ { _bracket: '[' }, { _param: [ { value1: 'value1'} ] }, { _bracket: ']' }, { _escape: '/' }, { _bracket: '[' }, { _param: [ { value2: 'value2'} ] }, { _bracket: ']' } ]
+		},
+		{ 
+			description: 'Arc tangent (one parameter)',
+			param: [ { _bracket: '[' }, { _param: [ { value: 'value'} ] }, { _bracket: ']' } ]
+		},
+		{ 
+			description: 'Arc tangent (two parameters)',
+			delimiter: ',', 
+			param: [ { _bracket: '[' }, { _param: [ { value1: 'value1' } , { value2: 'value2'} ] }, { _bracket: ']' } ]
+		}
+	],
 	'sqrt': [	
 		{ 
 			description: 'Square root, SQR can also be used',
+			param: [ { _bracket: '[' }, { _param: [ { value: 'value' } ] }, { _bracket: ']' } ]
+		}
+	],
+	'sqr': [	
+		{ 
+			description: 'Square root',
 			param: [ { _bracket: '[' }, { _param: [ { value: 'value' } ] }, { _bracket: ']' } ]
 		}
 	],
@@ -171,6 +192,12 @@ export const functionSignatures: { [name: string]: FunctionSignature[] } = {
 	'round': [	
 		{ 
 			description: 'Rounding off, RND can also be used',
+			param: [ { _bracket: '[' }, { _param: [ { value: 'value' } ] }, { _bracket: ']' } ]
+		}
+	],
+	'rnd': [	
+		{ 
+			description: 'Rounding off',
 			param: [ { _bracket: '[' }, { _param: [ { value: 'value' } ] }, { _bracket: ']' } ]
 		}
 	],

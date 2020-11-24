@@ -152,25 +152,49 @@
 	"atan": {
 		"prefix": "atan",
 		"body": "ATAN[${1:value}]",
-		"description": "Arc tangent (one parameter), ATN can also be used.",
+		"description": "Arc tangent (one parameter), ATN can also be used",
 		"scope": "source.macro"
 	},
 	"atan2": {
 		"prefix": "atan",
 		"body": "ATAN[${1:value1}]/[${2:value2}]",
-		"description": "Arc tangent (two parameters), ATN can also be used.",
+		"description": "Arc tangent (two parameters), ATN can also be used",
 		"scope": "source.macro"
 	},
 	"atan3": {
 		"prefix": "atan",
 		"body": "ATAN[${1:name1},${2:name2}]",
-		"description": "Arc tangent (two parameters), ATN can also be used.",
+		"description": "Arc tangent (two parameters), ATN can also be used",
+		"scope": "source.macro"
+	},
+	"atn": {
+		"prefix": "atn",
+		"body": "ATN[${1:value}]",
+		"description": "Arc tangent (one parameter)",
+		"scope": "source.macro"
+	},
+	"atn2": {
+		"prefix": "atn",
+		"body": "ATN[${1:value1}]/[${2:value2}]",
+		"description": "Arc tangent (two parameters)",
+		"scope": "source.macro"
+	},
+	"atn3": {
+		"prefix": "atn",
+		"body": "ATN[${1:name1},${2:name2}]",
+		"description": "Arc tangent (two parameters)",
 		"scope": "source.macro"
 	},
 	"sqrt": {
 		"prefix": "sqrt",
 		"body": "SQRT[${1:value}]",
 		"description": "Square root, SQR can also be used.",
+		"scope": "source.macro"
+	},
+	"sqr": {
+		"prefix": "sqr",
+		"body": "SQR[${1:value}]",
+		"description": "Square root",
 		"scope": "source.macro"
 	},
 	"abs": {
@@ -195,6 +219,12 @@
 		"prefix": "round",
 		"body": "ROUND[${1:value}]",
 		"description": "Rounding off, RND can also be used",
+		"scope": "source.macro"
+	},
+	"rnd": {
+		"prefix": "rnd",
+		"body": "RND[${1:value}]",
+		"description": "Rounding off",
 		"scope": "source.macro"
 	},
 	"fix": {

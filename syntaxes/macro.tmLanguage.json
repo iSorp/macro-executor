@@ -197,7 +197,7 @@
         },
         "functions_math" : {
             "name":"support.function.math.macro",
-            "match":"(?i)(?<=^|\\W|\\d)(SIN|COS|TAN|ASIN|ACOS|ATAN|SQRT|ABS|BIN|BCD|ROUND|FIX|FUP|LN|EXP|POW|ADP|PRM)(?=\\s*\\[)"
+            "match":"(?i)(?<=^|\\W|\\d)(SIN|COS|TAN|ASIN|ACOS|ATAN|ATN|SQRT|SQR|ABS|BIN|BCD|ROUND|RND|FIX|FUP|LN|EXP|POW|ADP|PRM)(?=\\s*\\[)"
         },
         "functions_command" : {
             "name":"support.function.macro",
