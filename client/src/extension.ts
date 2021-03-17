@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { workspace as Workspace, ExtensionContext, workspace, commands, window as Window, 
-	TextDocument, CancellationToken,Range, Uri, Position, Location, ProviderResult
+	TextDocument, CancellationToken,Range, Uri, Position, Location, ProviderResult, 
 } from 'vscode';
 
 import { 
@@ -161,8 +161,6 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 
-	client.registerFeature(new SemanticTokensFeature(client));
-
 	disposables.add(registerCommands());
 	context.subscriptions.push(disposables);
 	context.subscriptions.push(client.start());
@@ -173,16 +171,4 @@ export function deactivate(): Thenable<void> | undefined {
 		return undefined;
 	}
 	return client.stop();
-}
-
-function remapLocations(locations: any[]): ProviderResult<Location[]> {
-	const remapped = new Array<Location>();
-
-	for (const location of locations){
-		const l = new Location(Uri.parse(location.uri), 
-			new Range(new Position(location.range.start.line, location.range.start.character), 
-				new Position(location.range.end.line, location.range.end.character)));
-		remapped.push(l);
-	}
-	return remapped;
 }
