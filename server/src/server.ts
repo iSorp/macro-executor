@@ -7,12 +7,15 @@
 import * as nls from 'vscode-nls';
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
-import * as path from 'path';
-import { readFileSync } from 'fs';
+import { 
+	FileProvider,
+	getParsedDocument,
+	parsedDocuments
+} from './fileProvider';
+
 
 import { 
 	getMacroLanguageService, 
-	Macrofile,
 	LanguageService, 
 } from './macroLanguageService/macroLanguageService';
 
@@ -21,14 +24,10 @@ import {
 	MacroCodeLensType, 
 	MacroCodeLensCommand ,
 	LanguageSettings, 
-	MacroFileProvider, 
-	FileProviderParams,
 	TokenTypes,
 	TokenModifiers,
 	SemanticTokensLegend
 } from './macroLanguageService/macroLanguageTypes';
-import { Parser } from './macroLanguageService/parser/macroParser';
-import * as glob  from 'glob';  
 
 import {
 	createConnection,
@@ -39,23 +38,18 @@ import {
 	TextDocumentSyncKind,
 	InitializeResult,
 	DidChangeConfigurationNotification,
-	Files,
 	FileChangeType,
-	Proposed,
 	WorkspaceFolder
 } from 'vscode-languageserver/node';
 
 import {
-	TextDocument,
+	TextDocument
 } from 'vscode-languageserver-textdocument';
-
-import { URI } from 'vscode-uri';
 
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const documentSettings: Map<string, Promise<TextDocumentSettings>> = new Map<string, Promise<TextDocumentSettings>>();
-const parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>();
 const languageServices: Map<string, LanguageService> = new Map<string, LanguageService>();
 
 let hasConfigurationCapability: boolean = false;
@@ -66,120 +60,10 @@ interface TextDocumentSettings extends LanguageSettings {
 	workspaceFolder: WorkspaceFolder | undefined;
 }
 
-class FileProvider implements MacroFileProvider {
-
-	constructor(private workspaceFolder:string) {}
-
-	public get(file: string): MacroFileType | undefined {
-	
-		let uri = this.resolveReference(file);
-		if (uri) {
-			
-			let doc = getParsedDocument(uri, (document => {
-				let parser = new Parser(this);
-				return parser.parseMacroFile(document);
-			}));
-			if (!doc) {		
-				try {
-					const file = readFileSync(Files.uriToFilePath(uri)!, 'utf-8');
-					let document = TextDocument.create(uri!, 'macro', 1, file.toString());
-					try {
-						
-						let macrofile = new Parser(this).parseMacroFile(document);
-						doc = {
-							macrofile: macrofile,
-							document: document,
-							version: 1
-						};
-						parsedDocuments.set(uri, doc);
-					}
-					catch (err){
-						connection.console.log(err);
-					}
-				}
-				catch (err) {
-					connection.console.log(err);
-					return undefined;
-				}
-			}
-			return doc;
-		}
-		return undefined;
-	}
-	
-	public getAll(param?:FileProviderParams) {
-		let types:MacroFileType[] = [];
-	
-		try {
-			const dir = Files.uriToFilePath(this.workspaceFolder);
-			let files:string[] = [];
-			if (param?.uris){
-				files = param.uris;
-			}
-			else if (param?.glob) {
-				files = glob.sync(dir + param.glob);
-			}
-			else {
-				files = glob.sync(dir+'/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}');
-			}
-
-			for (const file of files) {
-				let type = this.get(file);
-				if (type){
-					types.push(type);
-				}
-			}
-		}catch (err){
-			connection.console.log(err);
-		}
-		return types;
-	}
-
-	/**
-	 * Returns a given path as uri
-	 * @param ref 
-	 * @param base 
-	 */
-	public resolveReference(ref: string, base?: string): string | undefined {
-
-		let file:string | undefined = '';
-		if (!path.isAbsolute(ref)) {
-			file = Files.uriToFilePath(this.workspaceFolder + '/' + ref);
-
-			// convert already existing URI
-			let filePath = Files.uriToFilePath(ref);
-			if (filePath && path.isAbsolute(filePath)) {
-				file = filePath;
-			}
-		}
-		else{
-			file = ref;
-		}
-
-		if (!file){
-			return undefined;
-		}
-
-		file = this.resolvePathCaseSensitive(file);
-
-		if (file) {
-			return URI.file(file).toString();
-		}
-		else {return '';}
-	}
-
-	private resolvePathCaseSensitive(file:string) {
-		let norm = path.normalize(file);
-		let root = path.parse(norm).root;
-		let p = norm.slice(Math.max(root.length - 1, 0));
-		return glob.sync(p, { nocase: true, cwd: root })[0];
-	}
-}
-
 connection.onInitialize((params: InitializeParams) => {
 	
 	params.workspaceFolders.forEach(workspace => {
-		languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri)}));
+		languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri, documents)}));
 	});
 
 	let capabilities = params.capabilities;
@@ -222,8 +106,12 @@ connection.onInitialize((params: InitializeParams) => {
 				]
 			},
 			semanticTokensProvider: {
+				documentSelector: [{ language: 'macro', scheme: 'file' }],
 				legend: computeLegend(),
-				range: false
+				range: true,
+				full: {
+					delta: false
+				}
 			}
 		}
 	};
@@ -245,7 +133,7 @@ connection.onInitialized(async () => {
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			for (const added of _event.added) {
-				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri)}));
+				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri, documents)}));
 				validateWorkspace(added.uri, true);
 			}
 			for (const removed of _event.removed) {
@@ -432,7 +320,7 @@ connection.languages.semanticTokens.onRange(event => {
 
 documents.onDidChangeContent(event => {
 	return execute(event.document.uri, (service, repo, settings) => {
-		validateTextDocument(getParsedDocument(event.document.uri, service.parseMacroFile));
+		validateTextDocument(getParsedDocument(documents, event.document.uri, service.parseMacroFile));
 
 		// TODO validate only related files
 		if (event.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
@@ -447,13 +335,14 @@ connection.listen();
 async function execute<T>(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => T) : Promise<T> {
 	return getSettings(uri).then(settings => {
 		const service = languageServices.get(settings.workspaceFolder.uri);
-		const repo = getParsedDocument(uri, service.parseMacroFile);
+		const repo = getParsedDocument(documents, uri, service.parseMacroFile);
 		if (!repo || !service) {
 			return null;
 		}
 		return runService(service, repo, settings);
 	}).catch(error => {
-		connection.console.error(error);
+		connection.console.error(error.message);
+		connection.console.error(error.stack);
 		return null;
 	});
 }
@@ -472,30 +361,6 @@ function getSettings(uri: string): Promise<TextDocumentSettings> {
 	return resultPromise;
 }
 
-function getParsedDocument(uri: string, parser:((document:TextDocument) => Macrofile), parse:boolean=false) : MacroFileType | undefined {
-	let document = documents.get(uri);
-	if (document) {
-		let parsed = parsedDocuments.get(uri);
-		if (parsed) {
-			if (document.version !== parsed.version || parse) {
-				parsedDocuments.set(uri , {
-					macrofile: parser(document),
-					document: document,
-					version: document.version
-				});
-			}
-		}
-		else {
-			parsedDocuments.set(uri, {
-				macrofile: parser(document),
-				document: document,
-				version: document.version
-			});
-		}	
-	}
-	return parsedDocuments.get(uri);
-}
-
 function validateTextDocument(doc: MacroFileType | undefined) {
 	execute(doc.document.uri, (service, repo, settings) => {
 		try {
@@ -505,14 +370,15 @@ function validateTextDocument(doc: MacroFileType | undefined) {
 			connection.sendDiagnostics({ uri: doc.document.uri, diagnostics });
 		} catch (e) {
 			connection.console.error(`Error while validating ${doc.document.uri}`);
-			connection.console.error(e);
+			connection.console.error(e.messate);
+			connection.console.error(e.stack);
 		}
 	});
 }
 
 function validateWorkspace(uri:string, allFiles:boolean) {
 	if (allFiles && workspaceValidation) {
-		const fp = new FileProvider(uri);
+		const fp = new FileProvider(uri, documents);
 		for (const element of fp.getAll()){
 			validateTextDocument(element);
 		}
@@ -520,7 +386,7 @@ function validateWorkspace(uri:string, allFiles:boolean) {
 	else {
 		for (const document of documents.all()) {
 			const service = languageServices.get(uri);
-			validateTextDocument(getParsedDocument(document.uri, service.parseMacroFile,true));
+			validateTextDocument(getParsedDocument(documents, document.uri, service.parseMacroFile,true));
 		}
 	}
 }

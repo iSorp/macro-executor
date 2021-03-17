@@ -2,10 +2,11 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.2.4",
+	"version": "0.3.0-next-6",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
+	"preview": true,
 	"categories": [
 		"Programming Languages",
 		"Snippets"
@@ -27,7 +28,7 @@
 	},
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.45.0"
+		"vscode": "^1.52.0"
 	},
 	"enableProposedApi": true,
 	"activationEvents": [
@@ -188,7 +189,7 @@
 					}
 				},
 				"macro.lint": {
-					"scope": "window",
+					"scope": "resource",
 					"type": "object",
 					"description": "%macro.lint.description%",
 					"properties": {
@@ -360,7 +361,7 @@
 								},
 								"assignmentConstant": {
 									"type": "string",
-									"default": "warning",
+									"default": "ignore",
 									"enum": [
 										"error",
 										"warning",
@@ -533,6 +534,10 @@
 				"description": "Style for compile-time Address"
 			},
 			{
+				"id": "function",
+				"description": "Style for compile-time Function"
+			},
+			{
 				"id": "custom_1",
 				"description": "Style for compile-time custom symbol"
 			},
@@ -581,6 +586,9 @@
 					],
 					"address": [
 						"support.variable.property"
+					],
+					"function": [
+						"support.function.macro"
 					]
 				}
 			}
@@ -613,8 +621,9 @@
 		"gulp-typescript": "^5.0.1",
 		"mocha": "^7.2.0",
 		"run-sequence": "^2.2.1",
-		"typescript": "^3.9.3",
-		"vsce": "^1.75.0",
-		"vscode-nls-dev": "^3.3.1"
+		"typescript": "^4.1.3",
+		"intrinsic": "^2.0.1",
+		"vsce": "^1.85.0",
+		"vscode-nls-dev": "^3.3.2"
 	}
 }

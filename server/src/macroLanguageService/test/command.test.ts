@@ -41,11 +41,11 @@ function assertEdits(service: LanguageService, input: string, positions:Position
 		}
 
 		const expectedRange = Range.create(position, Position.create(position.line, position.character));
-		const start1 = document.offsetAt(expectedRange.start);
-		const start2 = document.offsetAt(edit.range.start);
-		assert.equal(start1, start2);
+		const start1 = document.offsetAt(edit.range.start);
+		const start2 = document.offsetAt(expectedRange.start);
+		assert.strictEqual(start1, start2);
 	}
-	assert.equal(nWrites, newTexts.length, input);
+	assert.strictEqual(nWrites, newTexts.length, input);
 }
 
 suite('Commands', () => {

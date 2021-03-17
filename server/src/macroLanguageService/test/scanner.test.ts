@@ -5,21 +5,39 @@
 'use strict';
 
 import * as assert from 'assert';
-import { Scanner, TokenType } from '../parser/macroScanner';
+import { IToken, Scanner, TokenType } from '../parser/macroScanner';
+
 
 suite('Scanner', () => {
 
-	function assertSingleToken(scan: Scanner, source: string, len: number, offset: number, text: string, ...tokenTypes: TokenType[]): void {
-		scan.setSource(source);
-		let token = scan.scan();
-		assert.equal(token.len, len);
-		assert.equal(token.offset, offset);
-		assert.equal(token.text, text);
-		assert.equal(token.type, tokenTypes[0]);
+	function assertSingleToken(scanner: Scanner, source: string, len: number, offset: number, text: string, ...tokenTypes: TokenType[]): void {
+		scanner.setSource(source);
+		let token = scanner.scan();
+		assert.strictEqual(token.len, len);
+		assert.strictEqual(token.offset, offset);
+		assert.strictEqual(token.text, text);
+		assert.strictEqual(token.type, tokenTypes[0]);
 		for (let i = 1; i < tokenTypes.length; i++) {
-			assert.equal(scan.scan().type, tokenTypes[i], source);
+			assert.strictEqual(scanner.scan().type, tokenTypes[i], source);
 		}
-		assert.equal(scan.scan().type, TokenType.EOF, source);
+		assert.strictEqual(scanner.scan().type, TokenType.EOF, source);
+	}
+
+	function assertSingleTokenNonSymolStatement(scanner: Scanner, source: string, len: number, offset: number, text: string, ...tokenTypes: TokenType[]): void {
+		scanner.setSource(source);
+		let token = scanner.scanNonSymbol();
+		if (tokenTypes.length > 0) {
+			assert.strictEqual(token.len, len);
+			assert.strictEqual(token.offset, offset);
+			assert.strictEqual(token.text, text);
+			assert.strictEqual(token.type, tokenTypes[0]);
+			for (let i = 1; i < tokenTypes.length; i++) {
+				assert.strictEqual(scanner.scanNonSymbol().type, tokenTypes[i], source);
+			}
+		}
+		else {
+			assert.strictEqual(token, null);
+		}
 	}
 
 	test('Whitespace', function () {
@@ -80,15 +98,14 @@ suite('Scanner', () => {
 
 	test('Token At', function () {
 		let scanner = new Scanner();
-		assertSingleToken(scanner, '@var', 4, 0, '@var', TokenType.AT);
-		assertSingleToken(scanner, '@', 1, 0, '@', TokenType.Delim);
+		assertSingleToken(scanner, '@var', 1, 0, '@', TokenType.AT, TokenType.Symbol);
 		
 	});
 
 	test('Token Gts', function () {
 		let scanner = new Scanner();
-		assertSingleToken(scanner, '>var', 4, 0, '>var', TokenType.GTS);
-		assertSingleToken(scanner, '>', 1, 0, '>', TokenType.Delim);
+		assertSingleToken(scanner, '>var', 1, 0, '>', TokenType.GTS, TokenType.Symbol);
+		assertSingleToken(scanner, '<', 1, 0, '<', TokenType.LTS);
 	});
 
 	test('Token Comments', function () {
@@ -121,8 +138,6 @@ suite('Scanner', () => {
 		assertSingleToken(scanner, '-', 1, 0, '-', TokenType.Delim);
 		assertSingleToken(scanner, '/', 1, 0, '/', TokenType.Delim);
 		assertSingleToken(scanner, '*', 1, 0, '*', TokenType.Delim);
-		assertSingleToken(scanner, '<  ', 1, 0, '<', TokenType.Delim);
-		assertSingleToken(scanner, '>  ', 1, 0, '>', TokenType.Delim);
 		assertSingleToken(scanner, '\'  ', 1, 0, '\'', TokenType.Delim);
 		assertSingleToken(scanner, '"', 1, 0, '"', TokenType.Delim);
 
@@ -147,6 +162,21 @@ suite('Scanner', () => {
 	test('Token functions', function () {
 		let scanner = new Scanner();
 		assertSingleToken(scanner, 'sin  ', 3, 0, 'sin', TokenType.Ffunc);
-		assertSingleToken(scanner, 'popen  ', 5, 0, 'popen', TokenType.Fcommand);
+		assertSingleToken(scanner, 'popen  ', 5, 0, 'popen', TokenType.Fcmd);
+	});
+
+	test('Token for nonsymbolic statement', function () {
+		let scanner = new Scanner();
+		assertSingleTokenNonSymolStatement(scanner, 'ANDSIN', 3, 0, 'AND', TokenType.KeyWord);
+		assertSingleTokenNonSymolStatement(scanner, 'R', 1, 0, 'R', TokenType.Parameter);
+		assertSingleTokenNonSymolStatement(scanner, '1', 1, 0, '1', TokenType.Number);
+		assertSingleTokenNonSymolStatement(scanner, '1.0', 3, 0, '1.0', TokenType.Number);
+		assertSingleTokenNonSymolStatement(scanner, 'G01G01', 1, 0, 'G', TokenType.Parameter, TokenType.Number, TokenType.Parameter, TokenType.Number);
+
+		assertSingleTokenNonSymolStatement(scanner, 'EQ', 2, 0, 'EQ', TokenType.KeyWord);
+		assertSingleTokenNonSymolStatement(scanner, 'R10EQ1', 1, 0, 'R', TokenType.Parameter, TokenType.Number, TokenType.KeyWord, TokenType.Number);
+
+		assertSingleTokenNonSymolStatement(scanner, 'R.0', 3, 0, 'R.0', TokenType.Symbol); 
+		assertSingleTokenNonSymolStatement(scanner, 'ABC', 3, 0, 'ABC', TokenType.Symbol); 
 	});
 });

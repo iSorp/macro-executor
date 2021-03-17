@@ -6,7 +6,6 @@
 
 import { FunctionSignature } from '../macroLanguageTypes';
 
-
 /**
  * Reserved interface properties
  * _bracket
@@ -255,7 +254,7 @@ export const functionSignatures: { [name: string]: FunctionSignature[] } = {
 	]
 };
 
-export const GCodeDescription: { [name: string]: string } = {
+export const NcCodeDescription: { [name: string]: string } = {
 	'G00':'Rapid positioning',
 	'G01':'Linear interpolation',
 	'G02':'Circular interpolation, clockwise',
@@ -365,3 +364,16 @@ export const GCodeDescription: { [name: string]: string } = {
 	'M98':'Subprogram call',
 	'M99':'Subprogram end'
 };
+
+export const SymbolText : { [node: string]: string } = {
+	Variable: 'variable',
+	Label: 'label',
+	String: 'string',
+	Numeric: 'number',
+	Constant: 'number',
+	Statement: 'statement',
+	GCode: 'g-code',
+	MCode: 'm-code',
+	Address: 'address',
+	Parameter: 'parameter',
+}

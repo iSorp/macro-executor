@@ -22,24 +22,21 @@ import {
 	LanguageSettings,
 	functionSignatures,
 	MarkupKind,
-	CustomKeywords
+	CustomKeywords,
+	SymbolText, 
 } from '../macroLanguageTypes';
 import { getComment } from '../parser/macroScanner';
 import { SignatureHelp, ParameterInformation, SignatureInformation } from 'vscode-languageserver';
 
 
-let macroStatementTypes:nodes.ValueType[] = [
-	nodes.ValueType.Address, 
-	nodes.ValueType.Constant, 
-	nodes.ValueType.Variable, 
-	nodes.ValueType.Numeric
+let macroStatementTypes:nodes.NodeType[] = [
+	nodes.NodeType.Address, 
+	nodes.NodeType.Variable, 
+	nodes.NodeType.Numeric
 ];
 
-let labelTypes:nodes.ValueType[] = [
-	nodes.ValueType.Numeric,
-	nodes.ValueType.Constant,
-	nodes.ValueType.Variable,
-	nodes.ValueType.String
+let labelTypes:nodes.NodeType[] = [
+	nodes.NodeType.Numeric
 ];
 
 let operators = [
@@ -146,40 +143,44 @@ export class MacroCompletion {
 
 			for (let i = this. nodePath.length - 1; i >= 0; i--) {
 				const node = this.nodePath[i];
-				
-				if (node.type === nodes.NodeType.Function) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable);
-					this.getSymbolProposals(result, nodes.ReferenceType.Label);
-					this.getKeyWordProposals(result);
-					this.getSequenceNumberSnippet(node, result);
+
+				switch (node.type) {
+					case nodes.NodeType.Program:
+						this.getSymbolProposals(result, nodes.ReferenceType.Symbol);
+						this.getSymbolProposals(result, nodes.ReferenceType.Label);
+						this.getKeyWordProposals(result);
+						this.getSequenceNumberSnippet(node, result);
+						break;	
+					case nodes.NodeType.Variable:
+						this.getSymbolProposals(result, nodes.ReferenceType.Symbol);
+						break;	
+					case nodes.NodeType.If:
+						this.getSymbolProposals(result, nodes.ReferenceType.Symbol, macroStatementTypes);
+						this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
+						break;
+					case nodes.NodeType.Then:
+					case nodes.NodeType.Else:	
+					case nodes.NodeType.While:
+						this.getSymbolProposals(result, nodes.ReferenceType.Symbol, macroStatementTypes);
+						this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
+						this.getKeyWordProposals(result);
+						this.getSequenceNumberSnippet(node, result);
+						break;
+					case nodes.NodeType.Goto:
+						this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
+						this.getSymbolProposals(result, nodes.ReferenceType.Symbol, labelTypes);
+						break;
+					case nodes.NodeType.ConditionalExpression: 
+					case nodes.NodeType.BinaryExpression: 
+					case nodes.NodeType.Assignment: 
+						this.getSymbolProposals(result, nodes.ReferenceType.Symbol, macroStatementTypes);
+						this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
+						this.getOperatorProposals(result);
+						break;
+					default:
+						continue;
 				}
-				else if (node.type === nodes.NodeType.Variable) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable);
-				}
-				else if (node.type === nodes.NodeType.If) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
-					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-				}
-				else if (node.type === nodes.NodeType.Then || node.type === nodes.NodeType.Else || node.type === nodes.NodeType.While) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
-					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-					this.getKeyWordProposals(result);
-					this.getSequenceNumberSnippet(node, result);
-				}
-				else if (node.type === nodes.NodeType.Goto) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable, labelTypes);
-				}
-				else if (node.type === nodes.NodeType.ConditionalExpression 
-					|| node.type === nodes.NodeType.BinaryExpression 
-					|| node.type === nodes.NodeType.Assignment) {
-					this.getSymbolProposals(result, nodes.ReferenceType.Variable, macroStatementTypes);
-					this.getSymbolProposals(result, nodes.ReferenceType.Label, labelTypes);
-					this.getOperatorProposals(result);
-				}
-				else {
-					continue;
-				}
+	
 				if (result.items.length > 0 || this.offset > node.offset) {
 					this.getCustomProposals(result);
 					return result;
@@ -201,15 +202,15 @@ export class MacroCompletion {
 		}
 	}
 
-	private getSymbolProposals(result: CompletionList, referenceType: nodes.ReferenceType, valueTypes: nodes.ValueType[] | undefined = undefined): CompletionList {
-		let types:nodes.ValueType[] | undefined = undefined;
+	private getSymbolProposals(result: CompletionList, referenceType: nodes.ReferenceType, valueTypes: nodes.NodeType[] | undefined = undefined): CompletionList {
+		let types:nodes.NodeType[] | undefined = undefined;
 		let kind:CompletionItemKind = CompletionItemKind.Variable; 
 
 		if (this.currentWord === '#') {
-			if (referenceType !== nodes.ReferenceType.Variable) {
+			if (referenceType !== nodes.ReferenceType.Symbol) {
 				return result;
 			}
-			types = [nodes.ValueType.Numeric];
+			types = [nodes.NodeType.Numeric];
 		}
 		else {
 			types = valueTypes;
@@ -220,30 +221,34 @@ export class MacroCompletion {
 		for (const context of symbols){
 	
 			for (const symbol of context.symbols) {
-				if (referenceType === nodes.ReferenceType.Variable) {
+				if (referenceType === nodes.ReferenceType.Symbol) {
 					type = 'symbol';
-					switch (symbol.valueType){
-						case nodes.ValueType.Address:
+					let def = <nodes.SymbolDefinition>symbol.node;
+					switch (symbol.valueType) {
+						case nodes.NodeType.Address:
 							sort = Sort.Address;
 							kind = CompletionItemKind.Interface;
 							break;
-						case nodes.ValueType.NcParam:
+						case nodes.NodeType.Parameter:
 							sort = Sort.Parameter;
 							kind = CompletionItemKind.Property;
 							break;
-						case nodes.ValueType.Constant:
-							sort = Sort.Constant;
-							kind = CompletionItemKind.Constant;
-							break;
-						case nodes.ValueType.Variable:
+						case nodes.NodeType.Variable:
 							sort = Sort.Value;
 							kind = CompletionItemKind.Variable;
 							break;
-						case nodes.ValueType.Numeric:
-							sort = Sort.Variable;
-							kind = CompletionItemKind.Value;
+						case nodes.NodeType.Numeric:
+							if (def.attrib === nodes.ValueAttribute.Constant) {
+								sort = Sort.Variable;
+								kind = CompletionItemKind.Constant;
+							}
+							else {
+								sort = Sort.Variable;
+								kind = CompletionItemKind.Value;
+							}
 							break;
-						case nodes.ValueType.NcCode:
+						case nodes.NodeType.Statement:
+						case nodes.NodeType.Code:
 							sort = Sort.Nc;
 							kind = CompletionItemKind.Event;
 							break;
@@ -256,11 +261,11 @@ export class MacroCompletion {
 				else if (referenceType === nodes.ReferenceType.Label) {
 					type = 'label';
 					switch (symbol.valueType){
-						case nodes.ValueType.Numeric:
+						case nodes.NodeType.Numeric:
 							sort = Sort.Label;
 							kind = CompletionItemKind.Constant;
 							break;
-						case nodes.ValueType.String:
+						case nodes.NodeType.String:
 							sort = Sort.Label;
 							kind = CompletionItemKind.Text;
 							break;
@@ -271,7 +276,7 @@ export class MacroCompletion {
 					}
 				}
 				
-				const detail = symbol.node instanceof nodes.AbstractDeclaration ? this.getMarkedStringForDeclaration(type, <nodes.AbstractDeclaration>symbol.node, context) : '';
+				const detail = symbol.node instanceof nodes.AbstractDefinition ? this.getMarkedStringForDeclaration(type, <nodes.AbstractDefinition>symbol.node, context) : '';
 				const doc = this.popCustomKeywordDescription(symbol.name);
 				const completionItem: CompletionItem = {
 					label: symbol.name,
@@ -356,7 +361,7 @@ export class MacroCompletion {
 
 	private getSequenceNumberSnippet(node: nodes.Node, result: CompletionList): CompletionList {
 
-		const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+		const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 		let seq = 0;
 		if (func) {
 			func.accept(candidate => {
@@ -414,16 +419,23 @@ export class MacroCompletion {
 		return this.defaultReplaceRange;
 	}
 
-	private getMarkedStringForDeclaration(type: string, node: nodes.AbstractDeclaration, context: SymbolContext) : string {		
+	private getMarkedStringForDeclaration(type: string, node: nodes.AbstractDefinition, context: SymbolContext) : string {		
 	
 		const macroFileType = this.fileProvider.get(context.uri);
 		const comment = getComment(node.offset, macroFileType.document.getText()).trim();
 		const name = node.getName();
 		const address = node.getValue()?.getText();
-		const valueType = node.valueType?.toString();
-		
-		
-		let text:string[] = [`(${type}:${valueType}) ` + `@${name} `+` ${address}`];
+		const valueType = SymbolText[nodes.NodeType[node?.value.type]];
+
+		let text:string[] = [];
+
+		if (valueType) {
+			text.push(`(${type}:${valueType}) ` + `@${name} `+` ${address}`);
+		}
+		else {
+			text.push(`(${type}) ` + `@${name} `+` ${address}`);
+		}	
+
 		if (comment){
 			text.push(`${comment}`);
 		}
@@ -439,7 +451,7 @@ export class MacroCompletion {
 
 		const paramNode = node.findAParent(nodes.NodeType.FuncParam);
 		const funcNode:nodes.Ffunc = <nodes.Ffunc>node.findAParent(nodes.NodeType.Ffunc);
-		const ident  = funcNode.getIdentifier()?.getText()?.toLocaleLowerCase();
+		const ident  = funcNode?.getIdentifier()?.getText().toLocaleLowerCase();
 		const children = funcNode?.getChildren();
 		if (!ident) {
 			return null;

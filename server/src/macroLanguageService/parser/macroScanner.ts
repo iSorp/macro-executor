@@ -22,11 +22,15 @@ export enum TokenType {
 	BracketR,
 	Whitespace,
 	Symbol,
+	Parameter,
+	Number,
+	Prog,
+	Sequence,
 	Ffunc,
-	Fcommand,
+	Fcmd,
 	KeyWord,
 	Comment,
-	Ampersand,		// axis number command
+	Ampersand,		
 	Delim,
 	EOF,
 }
@@ -138,7 +142,8 @@ export const _9 = '9'.charCodeAt(0);
 export const _N = 'N'.charCodeAt(0);
 export const _n = 'n'.charCodeAt(0);
 
-export const _MIN = '-'.charCodeAt(0);
+export const _POS = '+'.charCodeAt(0);
+export const _NEG = '-'.charCodeAt(0);
 export const _USC = '_'.charCodeAt(0);
 export const _MUL = '*'.charCodeAt(0);
 export const _LAN = '<'.charCodeAt(0);
@@ -198,18 +203,18 @@ staticKeywordTable['xor'] = TokenType.KeyWord;
 staticKeywordTable['mod'] = TokenType.KeyWord;
 
 const staticFunctionTable: { [key: string]: TokenType; } = {};
-staticFunctionTable['popen'] = TokenType.Fcommand;
-staticFunctionTable['pclos'] = TokenType.Fcommand;
-staticFunctionTable['dprnt'] = TokenType.Fcommand;
-staticFunctionTable['bprnt'] = TokenType.Fcommand;
-staticFunctionTable['setvn'] = TokenType.Fcommand;
-staticFunctionTable['fgen'] = TokenType.Fcommand;
-staticFunctionTable['fdel'] = TokenType.Fcommand;
-staticFunctionTable['fopen'] = TokenType.Fcommand;
-staticFunctionTable['fclos'] = TokenType.Fcommand;
-staticFunctionTable['fpset'] = TokenType.Fcommand;
-staticFunctionTable['fread'] = TokenType.Fcommand;
-staticFunctionTable['fwrit'] = TokenType.Fcommand;
+staticFunctionTable['popen'] = TokenType.Fcmd;
+staticFunctionTable['pclos'] = TokenType.Fcmd;
+staticFunctionTable['dprnt'] = TokenType.Fcmd;
+staticFunctionTable['bprnt'] = TokenType.Fcmd;
+staticFunctionTable['setvn'] = TokenType.Fcmd;
+staticFunctionTable['fgen'] = TokenType.Fcmd;
+staticFunctionTable['fdel'] = TokenType.Fcmd;
+staticFunctionTable['fopen'] = TokenType.Fcmd;
+staticFunctionTable['fclos'] = TokenType.Fcmd;
+staticFunctionTable['fpset'] = TokenType.Fcmd;
+staticFunctionTable['fread'] = TokenType.Fcmd;
+staticFunctionTable['fwrit'] = TokenType.Fcmd;
 
 staticFunctionTable['sin'] = TokenType.Ffunc;
 staticFunctionTable['cos'] = TokenType.Ffunc;
@@ -235,13 +240,14 @@ staticFunctionTable['prm'] = TokenType.Ffunc;
 
 export class Scanner {
 
-	constructor() {}
+	constructor(private symbolic = true) {}
 
 	public stream: MultiLineStream = new MultiLineStream('');
 	public ignoreComment = true;
 	public ignoreWhitespace = true;
 	public ignoreNewLine = false;
-	public inFunction = false;
+	public acceptAnySymbol =false;
+	public inFunction = false;	
 
 	public setSource(input: string): void {
 		this.stream = new MultiLineStream(input);
@@ -277,9 +283,47 @@ export class Scanner {
 		return null;
 	}
 
-	public scan(): IToken {
+	public scanNonSymbol(offset:number = this.stream.pos()):IToken {
+
+		// End of file/input
+		if (this.stream.eos()) {
+			return this.finishToken(offset, TokenType.EOF);
+		}
+
+		if (this._number()) {
+			return this.finishToken(offset, TokenType.Number);
+		}
+
+		const keyword:TokenType = this._keyword();
+		if (keyword) {
+			return this.finishToken(offset, keyword);
+		}
+
+		// O-keyword
+		if (this.stream.advanceIfChar(_O) || this.stream.advanceIfChar(_o)) {
+			return this.finishToken(offset, TokenType.Prog);
+		}
+
+		// N-keyword
+		if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {
+			return this.finishToken(offset, TokenType.Sequence);
+		}
+
+		if (this._parameter()) {
+			return this.finishToken(offset, TokenType.Parameter);
+		}
+
+		// symbol
+		if (this._symbol([])) {
+			return this.finishToken(offset, TokenType.Symbol);
+		}
+
+		return null;
+	}
+
+	public scan(symbolic:boolean = this.symbolic): IToken {
 		// processes all whitespaces and comments
-		const triviaToken = this.trivia();
+		const triviaToken = this._trivia();
 		if (triviaToken !== null) {
 			return triviaToken;
 		}
@@ -290,10 +334,10 @@ export class Scanner {
 		if (this.stream.eos()) {
 			return this.finishToken(offset, TokenType.EOF);
 		}
-		return this._scanNext(offset);
+		return this._scanNext(offset, symbolic);
 	}
 
-	private _scanNext(offset: number): IToken {
+	private _scanNext(offset: number, symbolic: boolean): IToken {
 
 		let content: string[] = [];
 		
@@ -308,27 +352,22 @@ export class Scanner {
 			}
 		}
 
+
 		// @-keyword
 		if (this.stream.advanceIfChar(_ATS)) {
-			content = ['@'];
-			if (this._symbol(content)) {
-				const paramText = content.join('');
-				return this.finishToken(offset, TokenType.AT, paramText);
-			} else {
-				return this.finishToken(offset, TokenType.Delim);
-			}
+			return this.finishToken(offset, TokenType.AT);
 		}
 
 		// >-keyword
 		if (this.stream.advanceIfChar(_RAN)) {
-			content = ['>'];
-			if (this._symbol(content)) {
-				const labelText = content.join('');
-				return this.finishToken(offset, TokenType.GTS, labelText);
-			} else {
-				return this.finishToken(offset, TokenType.Delim);
-			}
+			return this.finishToken(offset, TokenType.GTS);
 		}
+
+		// <-keyword
+		if (this.stream.advanceIfChar(_LAN)) {
+			return this.finishToken(offset, TokenType.LTS);
+		}
+
 		// #-keyword
 		if (this.stream.advanceIfChar(_HSH)) {
 			return this.finishToken(offset, TokenType.Hash);
@@ -351,25 +390,38 @@ export class Scanner {
 			return this.finishToken(offset, singleChToken);
 		}
 
-		// symbol / Static
-		content = [];
-		if (this._symbol(content)) {
-			let text = content.join('').toLocaleLowerCase();
-			let keyword = <TokenType>staticKeywordTable[text];
-			if (typeof keyword !== 'undefined') {
-				return this.finishToken(offset, keyword);
+		if (this.acceptAnySymbol) {
+			if (this._symbol(content)) {
+				return this.finishToken(offset, TokenType.Symbol);
 			}
-
-			let funcion = <TokenType>staticFunctionTable[text];
-			if (typeof funcion !== 'undefined') {
-				return this.finishToken(offset, funcion);
+		} 
+		else if (symbolic) {
+			content = [];
+			if (this._symbol(content)) {
+				let text = content.join('').toLocaleLowerCase();
+				let keyword = <TokenType>staticKeywordTable[text];
+				if (typeof keyword !== 'undefined') {
+					return this.finishToken(offset, keyword);
+				}
+	
+				let funcion = <TokenType>staticFunctionTable[text];
+				if (typeof funcion !== 'undefined') {
+					return this.finishToken(offset, funcion);
+				}
+	
+				return this.finishToken(offset, TokenType.Symbol);
 			}
-
-			return this.finishToken(offset, TokenType.Symbol);
+		}
+		else {
+			let token = this.scanNonSymbol();
+			if (token !== null) {
+				return token;
+			}
 		}
 
+			
 		// String, BadString
-		if (!this.inFunction){
+		if (!this.inFunction) {
 			content = [];
 			let tokenType = this._string(content);
 			if (tokenType !== null) {
@@ -382,10 +434,10 @@ export class Scanner {
 		return this.finishToken(offset, TokenType.Delim);
 	}
 
-	private trivia(): IToken | null {
+	private _trivia(): IToken | null {
 		while (true) {
 			const offset = this.stream.pos();
-			if (this._whitespace()) {
+			if (this.whitespace()) {
 				if (!this.ignoreWhitespace) {
 					return this.finishToken(offset, TokenType.Whitespace);
 				}
@@ -473,12 +525,10 @@ export class Scanner {
 			this.stream.nextChar();
 			result.push(String.fromCharCode(_LPA));
 			// &1
-			if (this.stream.peekChar() === _AMD){
-				this.stream.nextChar();
+			if (this.stream.peekChar() === _AMD && this.stream.peekChar(1) === _1){
+				this.stream.advance(2);
 			}
-			if (this.stream.peekChar() === _1){
-				this.stream.nextChar();
-			}
+	
 			let closeQuote:number = 0;
 			let closeQuotes:number[] = [];
 			if (this.stream.peekChar() === _SQO || this.stream.peekChar() === _DQO || this.stream.peekChar() === _MUL) {
@@ -541,7 +591,7 @@ export class Scanner {
 		return hasContent;
 	}
 
-	private _whitespace(): boolean {
+	public whitespace(): boolean {
 		const n = this.stream.advanceWhileChar((ch) => {
 			return ch === _WSP || ch === _TAB;
 		});
@@ -589,7 +639,121 @@ export class Scanner {
 		}
 		return false;
 	}
+
+	private _keyword() : TokenType | undefined {
+		const pos = this.stream.pos();
+		let content = [];
+		let tokenType: TokenType | undefined;
+		while (this._keywordChar(content)) {
+			if (content.length > 1 && content.length < 5) {
+				tokenType = <TokenType>staticKeywordTable[content.join('').toLocaleLowerCase()] || <TokenType>staticFunctionTable[content.join('').toLocaleLowerCase()];
+				if (tokenType) {
+
+					const ch = this.stream.peekChar();
+					if ((ch >= _0 && ch <= _9) ||
+						ch === _HSH || 
+						ch === _BRL || 
+						ch === _WSP || 
+						ch === _TAB ||
+						ch === _POS || 
+						ch === _NEG ||
+						ch === _CAR ||
+						ch === _LFD ||
+						ch === _NWL ||
+						this.stream.eos()) {
+						return tokenType;
+					} else {
+						const pos2 = this.stream.pos();
+						if (this._keyword()) {
+							this.stream.goBackTo(pos2);
+							return tokenType;
+						}
+						this.stream.goBackTo(pos2);
+					}
+					this.stream.goBackTo(pos);
+					return undefined;
+				}
+			}
+		}
+		this.stream.goBackTo(pos);
+		return undefined;
+	}
+
+	private _keywordChar(result: string[]): boolean {
+		const ch = this.stream.peekChar();
+		if (ch >= _a && ch <= _z || // a-z
+			ch >= _A && ch <= _Z 	// A-Z
+		) { // nonascii
+			this.stream.advance(1);
+			result.push(String.fromCharCode(ch));
+			return true;
+		}
+		return false;
+	}
+	
+	private _number() : boolean {
+		const pos = this.stream.pos();
+		const ch = this.stream.peekChar();
+		if (ch >= _0 && ch <= _9 || ch === _DOT)  {
+			this.stream.advance(1);
+			while (this._numberChar()) {
+				// loop
+			}
+			this.stream.advanceIfChar(_DOT);
+			while (this._numberChar()) {
+				// loop
+			}
+			return true;
+		}
+		this.stream.goBackTo(pos);
+		return false;
+	}
+
+	private _numberChar(): boolean {
+		const ch = this.stream.peekChar();
+		if (ch >= _0 && ch <= _9) { // nonascii
+			this.stream.advance(1);
+			return true;
+		}
+		return false;
+	}
+
+	private _parameter() : boolean {
+		const pos = this.stream.pos();
+		if (this._parameterFirstChar()) {
+
+			// Check second char
+			const ch = this.stream.peekChar();
+			if ((ch >= _0 && ch <= _9) ||
+				ch === _HSH || 
+				ch === _BRL || 
+				ch === _WSP || 
+				ch === _TAB ||
+				ch === _POS || 
+				ch === _NEG ||
+				ch === _CAR ||
+				ch === _LFD ||
+				ch === _NWL ||
+				this.stream.eos()) {
+				return true;
+			}
+		}
+		this.stream.goBackTo(pos);
+		return false;
+	}
+
+	private _parameterFirstChar(): boolean {
+		const ch = this.stream.peekChar();
+		if (ch >= _a && ch <= _z || // a-z
+			ch >= _A && ch <= _Z	// A-Z
+		) { 
+			this.stream.advance(1);
+			return true;
+		}
+		return false;
+	}
 }
+
 
 /**
  * Gets the comment of a declaration node
@@ -630,3 +794,4 @@ export function getComment(pos:number, text:string) : string {
 	let end = stream.pos();
 	return text.substr(start, end-start); 
 }	
+
