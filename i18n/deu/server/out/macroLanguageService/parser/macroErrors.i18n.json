@@ -16,7 +16,7 @@
 	"expected.ident": "Symbol erwartet",
 	"expected.funcident": "Funktionssymbol erwartet",
 	"expected.address": "Adresse erwartet",
-	"expected.macrovariable": "Variablewert (#) erwartet",
+	"expected.macrovariable": "Variable (#) erwartet",
 	"expected.body": "Body erwartet",
 	"expected.label": "Label erwartet",
 	"expected.term": "Term erwartet",
@@ -26,5 +26,6 @@
 	"expected.invalidstatement": "Ungültige Anweisung",
 	"expected.expression": "Ausdruck erwartet",
 	"expected.unexpectedToken": "Unerwartetes Token",
-	"expected.equalExpected": " = erwartet"
+	"expected.equalExpected": " = erwartet",
+	"symbol.symbolError": "Unangebrachte Symboldefinition"
 }
