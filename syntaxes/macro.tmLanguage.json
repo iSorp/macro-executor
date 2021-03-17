@@ -356,16 +356,52 @@
                     "include":"#string_statement"                  
                 },
                 {
+					"include":"#functions_math"	
+                },
+                {
+					"include":"#functions_command"	
+                },
+                {
+                    "include":"#conditionals_1"	
+                },  
+                {             
+                    "include":"#conditionals_2"	
+                },
+                {
+					"include":"#keyword_operator"	
+                },
+                {
+                    "include":"#keyword_operator_arithmetic"
+                },
+                {
+                    "include":"#keyword_operator_assignment"
+                },
+                {
+                    "include":"#boolean"
+                },
+                {
+                    "include":"#sequence"
+                },
+                {
 					"include":"#variable"	
                 },
-				{
+                {
 					"include":"#number"	
                 },
                 {
-                    "include":"#nc_code"	
+                    "include":"#assignment"
+                },
+                {
+					"include":"#nc_code"	
                 },
                 {
 					"include":"#parameter"
+                },
+                {
+					"include":"#symbol"	
+                },
+                {
+                    "include":"#brackets"
                 }
 			]
         }
