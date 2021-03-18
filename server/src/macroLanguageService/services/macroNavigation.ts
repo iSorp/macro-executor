@@ -13,8 +13,6 @@ import {
 import * as nodes from '../parser/macroNodes';
 import { Symbols } from '../parser/macroSymbolScope';
 import { CodeLens } from 'vscode-languageserver';
-import { type } from 'os';
-
 
 class FunctionMap {
 	private elements:Map<string, Location[]> = new Map<string,Location[]>();

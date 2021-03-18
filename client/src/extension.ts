@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { workspace as Workspace, ExtensionContext, workspace, commands, window as Window, 
-	TextDocument, CancellationToken,Range, Uri, Position, Location, ProviderResult, 
+	Location, 
 } from 'vscode';
 
 import { 
@@ -12,7 +12,6 @@ import {
 
 import * as ls from 'vscode-languageserver-protocol';
 
-import { SemanticTokensFeature, DocumentSemanticsTokensSignature } from 'vscode-languageclient/lib/common/semanticTokens';
 import registerCommands from './common/commands';
 
 import CompositeDisposable from './common/compositeDisposable';
