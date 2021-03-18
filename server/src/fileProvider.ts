@@ -4,8 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as nls from 'vscode-nls';
-
 import * as path from 'path';
 import { readFileSync } from 'fs';
 
@@ -23,14 +21,13 @@ import * as glob  from 'glob';
 
 import {
 	TextDocuments,
-	Files,
 } from 'vscode-languageserver/node';
 
 import {
 	TextDocument,
 } from 'vscode-languageserver-textdocument';
 
-import { URI } from 'vscode-uri';
+import { URI, Utils } from 'vscode-uri';
 
 const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
 
@@ -52,7 +49,7 @@ export class FileProvider implements MacroFileProvider {
 			}));
 			if (!doc) {		
 				try {
-					const file = readFileSync(Files.uriToFilePath(uri)!, 'utf-8');
+					const file = readFileSync(URI.parse(uri).fsPath, 'utf-8');
 					let document = TextDocument.create(uri!, 'macro', 1, file.toString());
 					try {
 						
@@ -82,7 +79,7 @@ export class FileProvider implements MacroFileProvider {
 		let types:MacroFileType[] = [];
 	
 		try {
-			const dir = Files.uriToFilePath(this.workspaceFolder);
+			const dir = URI.parse(this.workspaceFolder).fsPath;
 			let files:string[] = [];
 			if (param?.uris){
 				files = param.uris;
@@ -115,10 +112,9 @@ export class FileProvider implements MacroFileProvider {
 
 		let file:string | undefined = '';
 		if (!path.isAbsolute(ref)) {
-			file = Files.uriToFilePath(this.workspaceFolder + '/' + ref);
-
+			file = path.join(URI.parse(this.workspaceFolder).fsPath, ref)
 			// convert already existing URI
-			let filePath = Files.uriToFilePath(ref);
+			let filePath = URI.parse(ref).fsPath;
 			if (filePath && path.isAbsolute(filePath)) {
 				file = filePath;
 			}
