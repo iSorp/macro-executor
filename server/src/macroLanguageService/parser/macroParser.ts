@@ -631,6 +631,7 @@ export class Parser {
 			|| this.tryEol(this._parseNcStatement.bind(this))
 			|| this.tryEol(this._parseSequenceNumber.bind(this))
 			|| this.tryEol(this._parseMacroStatement.bind(this, false))
+			|| this.tryEol(this._parseGotoStatement.bind(this))
 
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {

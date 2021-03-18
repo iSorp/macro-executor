@@ -372,6 +372,8 @@ export const SymbolText : { [node: string]: string } = {
 	Numeric: 'number',
 	Constant: 'number',
 	Statement: 'statement',
+	Assignment: 'assignment',
+	Goto: 'goto',
 	GCode: 'g-code',
 	MCode: 'm-code',
 	Address: 'address',
