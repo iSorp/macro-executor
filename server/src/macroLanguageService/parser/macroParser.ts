@@ -242,15 +242,12 @@ export class Parser {
 	}
 
 	public tryEol(func: () => nodes.Node | null) {
-		const pos = this.mark();
 		const node = this.try(func);
 		if (node) {
-			this.processWhiteSpaces();
-			if (this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+			if (this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
 				return node;  
 			}
 		}
-		this.restoreAtMark(pos);
 		return null;
 	}
 
@@ -641,15 +638,20 @@ export class Parser {
 				while (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
 					this.consumeToken();
 				}
-
-				if (this.peek(TokenType.Whitespace)) {
-					this.markError(node, ParseError.InvalidStatement, [], [TokenType.NewLine]);
-				}
 				this.finish(statement);
 			}
 			else {
 				this.markError(node, ParseError.AddressExpected, [], [TokenType.NewLine]);
 			}
+		}
+
+		const pos = this.mark();
+		this.processWhiteSpaces();
+		if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+			this.markError(node, ParseError.InvalidStatement, [], [TokenType.NewLine]);
+		}
+		else {
+			this.restoreAtMark(pos);
 		}
 
 		if (statement?.type === nodes.NodeType.Numeric && isUpperCase) {
@@ -659,8 +661,9 @@ export class Parser {
 		this.scanner.ignoreWhitespace = true;
 		this.noDefinitions = false;
 		node.setValue(statement);
+		this.finish(node)
 		this.processWhiteSpaces();	
-		return this.finish(node);
+		return node;
 	}
 
 	public _parseLabelDefinition(): nodes.LabelDefinition | null {
@@ -695,10 +698,6 @@ export class Parser {
 				while (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
 					this.consumeToken();
 				}
-
-				if (this.peek(TokenType.Whitespace)) {
-					this.markError(node, ParseError.InvalidStatement, [], [TokenType.NewLine]);
-				}
 				this.finish(statement);
 			}
 			else {
@@ -706,11 +705,21 @@ export class Parser {
 			}
 		}
 
-		node.setValue(statement);
+		const pos = this.mark();
+		this.processWhiteSpaces();
+		if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+			this.markError(node, ParseError.InvalidStatement, [], [TokenType.NewLine]);
+		}
+		else {
+			this.restoreAtMark(pos);
+		}
+
 		this.scanner.ignoreWhitespace = true;
 		this.noDefinitions = false;
+		node.setValue(statement);
+		this.finish(node)
 		this.processWhiteSpaces();	
-		return this.finish(node);
+		return node;
 	}
 
 	public _setLocalDefinition(node:nodes.AbstractDefinition | null) {
