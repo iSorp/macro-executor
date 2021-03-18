@@ -16,14 +16,9 @@ import {
 	Rule 
 } from './lintRules';
 
-const _0 = '0'.charCodeAt(0);
-const _9 = '9'.charCodeAt(0);
-const _dot = '.'.charCodeAt(0);
-
 const MAX_CONDITIONALS = 4;
 const MAX_WHILE_DEPTH = 3;
 const MAX_IF_DEPTH = 10;
-
 
 export class LintVisitor implements nodes.IVisitor {
 
@@ -393,19 +388,6 @@ export class LintVisitor implements nodes.IVisitor {
 			++depth;
 		}
 		return true;
-	}
-
-	private isNumeric(text:string) : boolean {
-		let isNumber = (ch:number) => {
-			return ch >= _0 && ch <= _9 || ch ===_dot;
-		};
-		let len = 0;
-		for (; len < text.length; len++) {
-			if (!isNumber(text.charCodeAt(len))){
-				return false;
-			}
-		}
-		return true; 
 	}
 }
 
