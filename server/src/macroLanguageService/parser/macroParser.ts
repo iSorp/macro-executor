@@ -242,12 +242,14 @@ export class Parser {
 	}
 
 	public tryEol(func: () => nodes.Node | null) {
+		const pos = this.mark();
 		const node = this.try(func);
 		if (node) {
 			if (this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
 				return node;  
 			}
 		}
+		this.restoreAtMark(pos);
 		return null;
 	}
 
