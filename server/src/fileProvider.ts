@@ -103,43 +103,18 @@ export class FileProvider implements MacroFileProvider {
 		return types;
 	}
 
-	/**
-	 * Returns a given path as uri
-	 * @param ref 
-	 * @param base 
-	 */
-	public resolveReference(ref: string, base?: string): string | undefined {
+	public resolveReference(ref: string): string | undefined {
 
-		let file:string | undefined = '';
-		if (!path.isAbsolute(ref)) {
-			file = path.join(URI.parse(this.workspaceFolder).fsPath, ref)
-			// convert already existing URI
-			let filePath = URI.parse(ref).fsPath;
-			if (filePath && path.isAbsolute(filePath)) {
-				file = filePath;
-			}
-		}
-		else{
-			file = ref;
+		if (ref.startsWith('file:///')) {
+			return ref;
 		}
 
-		if (!file){
-			return undefined;
+		if (path.isAbsolute(ref)) {
+			return URI.file(ref).toString();
 		}
-
-		file = this.resolvePathCaseSensitive(file);
-
-		if (file) {
-			return URI.file(file).toString();
+		else {
+			return Utils.resolvePath(URI.parse(this.workspaceFolder), ref).toString();
 		}
-		else {return '';}
-	}
-
-	private resolvePathCaseSensitive(file:string) {
-		let norm = path.normalize(file);
-		let root = path.parse(norm).root;
-		let p = norm.slice(Math.max(root.length - 1, 0));
-		return glob.sync(p, { nocase: true, cwd: root })[0];
 	}
 }
 

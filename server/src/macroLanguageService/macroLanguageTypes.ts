@@ -5,10 +5,12 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
-export { NodeType } from './parser/macroNodes';
-import  { TextDocument, Location } from 'vscode-languageserver-types';
+import  { Location } from 'vscode-languageserver-types';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
 export { TextDocument } from 'vscode-languageserver-textdocument';
 export { SemanticTokensBuilder } from 'vscode-languageserver/lib/common/semanticTokens';
+export { NodeType } from './parser/macroNodes';
 export * from './languageFacts/builtinData';
 export { 
 	SemanticTokenModifiers,
@@ -74,9 +76,9 @@ export interface FileProviderParams {
 }
 
 export interface MacroFileProvider {
-	get(uri: string, base?: string, workspaceFolder?: string) : MacroFileType | undefined;
+	get(string, workspaceFolder?: string) : MacroFileType | undefined;
 	getAll(param?: FileProviderParams, base?: string, workspaceFolder?: string) : MacroFileType[]
-	resolveReference(ref: string, base?: string, workspaceFolder?: string): string | undefined
+	resolveReference(ref: string, workspaceFolder?: string): string | undefined
 }
 
 export interface MacroCodeLensType {
