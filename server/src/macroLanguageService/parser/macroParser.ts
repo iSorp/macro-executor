@@ -189,7 +189,7 @@ export class Parser {
 				}
 
 				symbolNode.attrib = definition.attrib;
-				symbolNode.nType = definition.value.type;
+				symbolNode.valueType = definition.value.type;
 				this.symbolNodeList.push(symbolNode);
 				this.definition = definition;
 				this.defScanner.setSource(value);

@@ -631,7 +631,7 @@ export class Program extends BodyDeclaration {
 
 export class Symbol extends Reference {
 	public referenceTypes: ReferenceType = ReferenceType.Symbol;
-	public nType: NodeType;
+	public valueType: NodeType;
 	public attrib: ValueAttribute = ValueAttribute.None;
 	public identifier: Node;
 
@@ -659,7 +659,7 @@ export class Symbol extends Reference {
 
 export class Label extends Reference {
 	public referenceTypes: ReferenceType = ReferenceType.Label;
-	public nType: NodeType;
+	public valueType: NodeType;
 	public attrib: ValueAttribute = ValueAttribute.None;
 	public identifier: Node;
 

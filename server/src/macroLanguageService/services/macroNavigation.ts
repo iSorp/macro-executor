@@ -171,9 +171,9 @@ export class MacroNavigation {
 
 			if (node.type === nodes.NodeType.Symbol) {
 				const symbol = <nodes.Symbol>node;
-				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) || symbol.nType === nodes.NodeType.Statement) {
+				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) || symbol.valueType === nodes.NodeType.Statement) {
 
-					switch (symbol.nType) {
+					switch (symbol.valueType) {
 						case nodes.NodeType.Address:
 							if (symbol.attrib === nodes.ValueAttribute.Parameter) {
 								entry.kind = SymbolKind.Property;
@@ -233,7 +233,7 @@ export class MacroNavigation {
 			else if (node.type === nodes.NodeType.Label) {
 				const label = <nodes.Label>node;
 				if (node.findAParent(nodes.NodeType.Program, nodes.NodeType.Goto)) {
-					if (label.nType === nodes.NodeType.Numeric) {
+					if (label.valueType === nodes.NodeType.Numeric) {
 						entry.name = label.getText();
 						entry.kind = SymbolKind.Constant;
 					} 

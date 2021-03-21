@@ -42,7 +42,7 @@ export class MacroSemantic {
 				
 				if (candidate.type === nodes.NodeType.Symbol) {
 					const symbol = <nodes.Symbol>candidate;
-					switch (symbol.nType) {
+					switch (symbol.valueType) {
 						case nodes.NodeType.Numeric:
 							if (symbol.getParent()?.type !== nodes.NodeType.Program) {
 
@@ -55,37 +55,37 @@ export class MacroSemantic {
 							} 
 							break;
 						case nodes.NodeType.Code:
-							this.build(symbol, symbol.nType, TokenTypes.code);
+							this.build(symbol, symbol.valueType, TokenTypes.code);
 							break;							
 						case nodes.NodeType.Parameter:
-							this.build(symbol, symbol.nType, TokenTypes.parameter);
+							this.build(symbol, symbol.valueType, TokenTypes.parameter);
 							break;
 						case nodes.NodeType.Statement:
 							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-								this.build(symbol, symbol.nType, TokenTypes.code);
+								this.build(symbol, symbol.valueType, TokenTypes.code);
 							}
 							else {
-								this.build(symbol, symbol.nType, TokenTypes.parameter);
+								this.build(symbol, symbol.valueType, TokenTypes.parameter);
 							}
 						case nodes.NodeType.Address:
 							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-								this.build(symbol, symbol.nType, TokenTypes.code);
+								this.build(symbol, symbol.valueType, TokenTypes.code);
 							}
 							else if (symbol.attrib === nodes.ValueAttribute.Parameter) {
-								this.build(symbol, symbol.nType, TokenTypes.parameter);
+								this.build(symbol, symbol.valueType, TokenTypes.parameter);
 							}
 							else {
-								this.build(symbol, symbol.nType, TokenTypes.address);
+								this.build(symbol, symbol.valueType, TokenTypes.address);
 							}
 							break;
 						case nodes.NodeType.SequenceNumber:
-							this.build(symbol, symbol.nType, TokenTypes.label);
+							this.build(symbol, symbol.valueType, TokenTypes.label);
 							break;					
 						case nodes.NodeType.Variable:
-							this.build(symbol, symbol.nType, TokenTypes.macrovar);
+							this.build(symbol, symbol.valueType, TokenTypes.macrovar);
 							break;	
 						default:
-							this.build(symbol, symbol.nType);
+							this.build(symbol, symbol.valueType);
 					}
 				}
 				else if (candidate.type === nodes.NodeType.Label) {
