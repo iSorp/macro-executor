@@ -55,37 +55,37 @@ export class MacroSemantic {
 							} 
 							break;
 						case nodes.NodeType.Code:
-							this.build(symbol, symbol.valueType, TokenTypes.code);
+							this.build(symbol, symbol.type, TokenTypes.code);
 							break;							
 						case nodes.NodeType.Parameter:
-							this.build(symbol, symbol.valueType, TokenTypes.parameter);
+							this.build(symbol, symbol.type, TokenTypes.parameter);
 							break;
 						case nodes.NodeType.Statement:
 							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-								this.build(symbol, symbol.valueType, TokenTypes.code);
+								this.build(symbol, symbol.type, TokenTypes.code);
 							}
 							else {
-								this.build(symbol, symbol.valueType, TokenTypes.parameter);
+								this.build(symbol, symbol.type, TokenTypes.parameter);
 							}
 						case nodes.NodeType.Address:
 							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-								this.build(symbol, symbol.valueType, TokenTypes.code);
+								this.build(symbol, symbol.type, TokenTypes.code);
 							}
 							else if (symbol.attrib === nodes.ValueAttribute.Parameter) {
-								this.build(symbol, symbol.valueType, TokenTypes.parameter);
+								this.build(symbol, symbol.type, TokenTypes.parameter);
 							}
 							else {
-								this.build(symbol, symbol.valueType, TokenTypes.address);
+								this.build(symbol, symbol.type, TokenTypes.address);
 							}
 							break;
 						case nodes.NodeType.SequenceNumber:
-							this.build(symbol, symbol.valueType, TokenTypes.label);
+							this.build(symbol, symbol.type, TokenTypes.label);
 							break;					
 						case nodes.NodeType.Variable:
-							this.build(symbol, symbol.valueType, TokenTypes.macrovar);
+							this.build(symbol, symbol.type, TokenTypes.macrovar);
 							break;	
 						default:
-							this.build(symbol, symbol.valueType);
+							this.build(symbol, symbol.type);
 					}
 				}
 				else if (candidate.type === nodes.NodeType.Label) {
@@ -96,6 +96,7 @@ export class MacroSemantic {
 						this.build(candidate, candidate.type);
 					}
 				}
+
 				return true;
 			});
 			return this.builder.build();
