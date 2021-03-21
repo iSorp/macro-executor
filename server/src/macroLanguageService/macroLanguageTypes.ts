@@ -100,13 +100,12 @@ export enum TokenTypes {
 	code 			= 6,
 	parameter 		= 7,
 	address 		= 8,
-	function		= 9,
-	custom_1 		= 10,
-	custom_2 		= 11,
-	custom_3 		= 12,
-	custom_4 		= 13,
-	custom_5 		= 14,
-	_				= 15,
+	custom_1 		= 9,
+	custom_2 		= 10,
+	custom_3 		= 11,
+	custom_4 		= 12,
+	custom_5 		= 13,
+	_				= 14,
 }
 
 

@@ -534,10 +534,6 @@
 				"description": "Style for compile-time Address"
 			},
 			{
-				"id": "function",
-				"description": "Style for compile-time Function"
-			},
-			{
 				"id": "custom_1",
 				"description": "Style for compile-time custom symbol"
 			},
@@ -586,9 +582,6 @@
 					],
 					"address": [
 						"support.variable.property"
-					],
-					"function": [
-						"support.function.macro"
 					]
 				}
 			}

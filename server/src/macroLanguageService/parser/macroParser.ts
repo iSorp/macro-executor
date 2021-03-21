@@ -632,8 +632,7 @@ export class Parser {
 			|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address	
 			|| this.tryEol(this._parseNcStatement.bind(this))
 			|| this.tryEol(this._parseSequenceNumber.bind(this))
-			|| this.tryEol(this._parseMacroStatement.bind(this, false))
-			|| this.tryEol(this._parseGotoStatement.bind(this))
+			|| this.tryEol(this._parseMacroStatement.bind(this, false));
 
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {

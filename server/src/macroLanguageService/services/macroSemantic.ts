@@ -54,11 +54,6 @@ export class MacroSemantic {
 								}
 							} 
 							break;
-						case nodes.NodeType.BinaryExpression:
-						case nodes.NodeType.ConditionalExpression:
-						case nodes.NodeType.Assignment:
-						case nodes.NodeType.If:
-						case nodes.NodeType.Goto:	
 						case nodes.NodeType.Code:
 							this.build(symbol, symbol.nType, TokenTypes.code);
 							break;							
@@ -88,10 +83,6 @@ export class MacroSemantic {
 							break;					
 						case nodes.NodeType.Variable:
 							this.build(symbol, symbol.nType, TokenTypes.macrovar);
-							break;
-						case nodes.NodeType.Fcmd:
-						case nodes.NodeType.Ffunc:
-							this.build(symbol, symbol.nType, TokenTypes.function);
 							break;	
 						default:
 							this.build(symbol, symbol.nType);
