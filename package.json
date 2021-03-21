@@ -181,7 +181,7 @@
 								"enum": [
 									"",
 									"Label",
-									"Variable",
+									"Symbol",
 									"Code"
 								]
 							}
@@ -560,7 +560,7 @@
 				"language": "macro",
 				"scopes": {
 					"number": [
-						"variable.other.numeric"
+						"constant.numeric"
 					],
 					"macrovar": [
 						"variable.other.field"
