@@ -428,12 +428,16 @@ export class MacroCompletion {
 		const valueType = SymbolText[nodes.NodeType[node?.value.type]];
 
 		let text:string[] = [];
+		let typeSign = '@';
+		if (type === 'label') {
+			typeSign = '>';
+		}
 
 		if (valueType) {
-			text.push(`(${type}:${valueType}) ` + `@${name} `+` ${address}`);
+			text.push(`(${type}:${valueType}) ` + `${typeSign}${name} `+` ${address}`);
 		}
 		else {
-			text.push(`(${type}) ` + `@${name} `+` ${address}`);
+			text.push(`(${type}) ` + `${typeSign}${name} `+` ${address}`);
 		}	
 
 		if (comment){
