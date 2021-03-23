@@ -749,7 +749,7 @@ export class Parser {
 		const node = <nodes.Program>this.create(nodes.Program);
 		this.consumeToken(); // O
 
-		if (!node.setIdentifier(this._verifySymbol(this._parseNumber(true, false, nodes.ReferenceType.Program)))) {
+		if (!node.setIdentifier(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Program)))) {
 			this.markError(node, ParseError.FunctionIdentExpected, [], [TokenType.NewLine]);
 		}
 
@@ -757,7 +757,7 @@ export class Parser {
 	}
 
 	public _parseProgramBodyStatement() : nodes.Node | null {
-		return this._verifySymbol(this._parseControlStatement(this._parseProgramBody.bind(this))
+		return this._parseUnknownSymbol(this._parseControlStatement(this._parseProgramBody.bind(this))
 			|| this._parseMacroStatement()
 			|| this._parseNcStatement()
 			|| this._parseString()
@@ -944,7 +944,7 @@ export class Parser {
 			return null;
 		}
 
-		return this._verifySymbol(this._parseNcCode() 
+		return this._parseUnknownSymbol(this._parseNcCode() 
 			|| this._parseNcParam() 
 			|| this._parseNumber());
 	}
@@ -985,7 +985,7 @@ export class Parser {
 				return this.finish(node);
 			}
 		}
-		else if (node.addChild(this._verifySymbol(/*this._parseLabel() || */this._parseVariable() || this._parseNumber()))) {
+		else if (node.addChild(this._parseUnknownSymbol(/*this._parseLabel() || */this._parseVariable() || this._parseNumber()))) {
 			return this.finish(node);
 		}
 		this.restoreAtMark(mark); 
@@ -1026,7 +1026,7 @@ export class Parser {
 				return this.finish(node);
 			}
 		}
-		else if (node.addChild(this._verifySymbol(this._parseVariable() || this._parseNumber()))) {
+		else if (node.addChild(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber()))) {
 			return this.finish(node);
 		}
 
@@ -1191,7 +1191,7 @@ export class Parser {
 			}
 		}
 		else {
-			if (!node.setLabel(this._verifySymbol(this._parseVariable() || this._parseNumber(true, false, nodes.ReferenceType.Sequence)))) 
+			if (!node.setLabel(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber(true, false, nodes.ReferenceType.Sequence)))) 
 			{
 				this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 			}
@@ -1216,7 +1216,7 @@ export class Parser {
 			this.markError(node, ParseError.DoExpected, [], [TokenType.Symbol, TokenType.NewLine]);
 		}
 
-		if (!node.setDoLabel(this._verifySymbol(this._parseNumber(true)))) {
+		if (!node.setDoLabel(this._parseUnknownSymbol(this._parseNumber(true)))) {
 			this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 		}
 
@@ -1226,7 +1226,7 @@ export class Parser {
 			return this.finish(node, ParseError.EndExpected, [], [TokenType.NewLine]);
 		}
 		
-		if (!node.setEndLabel(this._verifySymbol(this._parseNumber(true)))) { 
+		if (!node.setEndLabel(this._parseUnknownSymbol(this._parseNumber(true)))) { 
 			this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 		}
 
@@ -1238,7 +1238,7 @@ export class Parser {
 	}
 
 
-	public _verifySymbol(node: nodes.Node = null):nodes.Node | null {
+	public _parseUnknownSymbol(node: nodes.Node = null):nodes.Node | null {
 		if (node) {
 			return node;
 		}
@@ -1341,7 +1341,7 @@ export class Parser {
 	public _parseTerm(): nodes.Node | null {
 		const node = this.create(nodes.Term);
 		node.setOperator(this._parseUnaryOperator());
-		if (node.setExpression(this._verifySymbol(
+		if (node.setExpression(this._parseUnknownSymbol(
 			this._parseVariable() 
 			|| this._parseFfunc() 
 			|| this._parseAddress() 
@@ -1368,7 +1368,7 @@ export class Parser {
 			return this.finish(node);
 		} 
 
-		if (!node.setBody(this._verifySymbol(this._parseNumber(true, false, nodes.ReferenceType.Variable)))) {
+		if (!node.setBody(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Variable)))) {
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
 		
@@ -1521,7 +1521,7 @@ export class Parser {
 			}
 			else {
 				const parameter = this.createNode(nodes.NodeType.FuncParam);
-				while (this._verifySymbol(this._parseMacroStatement() || this._parseNcStatement())) {
+				while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement())) {
 					
 				}
 				node.addChild(parameter);
