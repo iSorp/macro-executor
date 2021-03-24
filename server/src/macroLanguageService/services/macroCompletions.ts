@@ -75,16 +75,16 @@ let keyWords = [
 ];
 
 enum Sort {
-	Undefinded 	= ' ',
-	Operators	= '1',
-	KeyWords	= '2',
-	Label		= '3',
-	Constant 	= '4',
-	Variable 	= '5',
-	Value 		= '6',
-	Address		= '7',
-	Parameter	= '8',
-	Nc			= '9',
+	Operators	= 'a',
+	KeyWords	= 'b',
+	Label		= 'c',
+	Constant 	= 'd',
+	Variable 	= 'e',
+	Value 		= 'f',
+	Address		= 'g',
+	Parameter	= 'h',
+	Nc			= 'i',
+	Undefinded 	= 'z',
 }
 
 export class MacroCompletion {
@@ -234,27 +234,21 @@ export class MacroCompletion {
 							kind = CompletionItemKind.Property;
 							break;
 						case nodes.NodeType.Variable:
-							sort = Sort.Value;
+							sort = Sort.Variable;
 							kind = CompletionItemKind.Variable;
 							break;
 						case nodes.NodeType.Numeric:
-							if (def.attrib === nodes.ValueAttribute.Constant) {
-								sort = Sort.Variable;
-								kind = CompletionItemKind.Constant;
-							}
-							else {
-								sort = Sort.Variable;
-								kind = CompletionItemKind.Value;
-							}
-							break;
+							sort = Sort.Value;
+							kind = CompletionItemKind.Value;
+						break;
 						case nodes.NodeType.Statement:
 						case nodes.NodeType.Code:
 							sort = Sort.Nc;
 							kind = CompletionItemKind.Event;
 							break;
 						default:
-							sort = Sort.Variable;
-							kind = CompletionItemKind.Variable;
+							sort = Sort.Undefinded;
+							kind = CompletionItemKind.Function;
 							break;
 					}
 				}
