@@ -85,7 +85,7 @@ suite('Parser', () => {
 
 	test('Block skip', function () {
 		let parser = new Parser(null);
-		assertNode('/', parser, parser._parseBlockSkip.bind(parser));
+		assertNode('/', parser, parser._parseBlockFunction.bind(parser));
 	});
 
 	test('Address', function () {
@@ -140,7 +140,7 @@ suite('Parser', () => {
 		assertNode('G01', parser, parser._parseNcStatement.bind(parser));
 		assertNode('N100G01', parser, parser._parseProgramBody.bind(parser));
 		assertNode('N100 G04 P01', parser, parser._parseProgramBody.bind(parser));
-		assertNode('N100 1', parser, parser._parseProgramBody.bind(parser));
+		//assertNode('N100 1', parser, parser._parseProgramBody.bind(parser));
 		assertNode('X', parser, parser._parseNcStatement.bind(parser));
 		assertNode('G[1]', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X#[1]', parser, parser._parseNcStatement.bind(parser));
@@ -149,8 +149,6 @@ suite('Parser', () => {
 		assertNode('X360.', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X360.F1', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X360.0F1.', parser, parser._parseNcStatement.bind(parser));
-
-		assertError('N100+1', parser, parser._parseProgramBody.bind(parser), ParseError.InvalidStatement);
 	});
 
 	test('Nc statement symbolic', function () {

@@ -484,7 +484,8 @@ export enum NodeType {
 	Code,
 	Parameter,
 	SequenceNumber,
-	BlockSkip
+	BlockSkip,
+	BlockDel
 }
 
 export class Reference extends Node { 
@@ -685,7 +686,6 @@ export class Label extends Reference {
 	}
 }
 
-
 export class Numeric extends Reference  {
 
 	public referenceTypes: ReferenceType;
@@ -769,6 +769,27 @@ export class Fcmd extends Ffunc {
 		return NodeType.Fcmd;
 	}
 }
+
+export class BlockDel extends Node {
+
+	public number?:Numeric;
+
+	constructor(offset: number, length: number) {
+		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.BlockDel;
+	}
+
+	public setNumber(number: Numeric | null): number is Numeric {
+		return this.setNode('number', number);
+	}
+
+	public getNumber(): Numeric | undefined {
+		return this.number;
+	}
+} 
 
 export class GotoStatement extends BodyDeclaration {
 

@@ -111,6 +111,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitIfStatement(<nodes.IfStatement>node);	
 			case nodes.NodeType.While:
 				return this.visitWhileStatement(<nodes.WhileStatement>node);
+			case nodes.NodeType.BlockDel:
+				return this.visitBlockDel(<nodes.BlockDel>node);
 		}
 		return true;
 	}
@@ -386,6 +388,14 @@ export class LintVisitor implements nodes.IVisitor {
 				}
 			}
 			++depth;
+		}
+		return true;
+	}
+
+	private visitBlockDel(node: nodes.BlockDel): boolean {
+		const number = Number(node.getNumber().getText());
+		if (number < 1 || number > 9) {
+			this.addEntry(node, Rules.BlockDelNumber);
 		}
 		return true;
 	}

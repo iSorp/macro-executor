@@ -772,7 +772,7 @@ export class Parser {
 		}
 		
 		// blocksip, sequence number and Label may leading a statement
-		let statement = this._parseBlockSkip();
+		let statement = this._parseBlockFunction();
 		let sequence = this._parseSequenceNumber();
 
 		statement ? statement.addChild(sequence) : statement = sequence;
@@ -858,15 +858,22 @@ export class Parser {
  		return this.finish(node);
 	}
 
-	public _parseBlockSkip() : nodes.Node | null {
+	public _parseBlockFunction() : nodes.Node | null {
 
 		if (!this.peekDelim('/')) {
 			return null;
 		}
 
-		const node = this.createNode(nodes.NodeType.BlockSkip);		
+		const nodeBs = this.createNode(nodes.NodeType.BlockSkip);		
+		const nodeBd = this.create(nodes.BlockDel);
  		this.consumeToken();
- 		return this.finish(node);
+
+		if (this.peek(TokenType.Number)) {
+			nodeBd.setNumber(this._parseNumber(true));
+			return this.finish(nodeBd);
+		}
+
+ 		return this.finish(nodeBs);
 	}
 
 	public _parseControlCommands(...keywords:string[]) : nodes.Node {
@@ -1622,7 +1629,7 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public _parseNumber(integer = false, signed = false, ...referenceTypes: nodes.ReferenceType[]) : nodes.Node | null {
+	public _parseNumber(integer = false, signed = false, ...referenceTypes: nodes.ReferenceType[]) : nodes.Numeric | null {
 
 		if (!this.peek(TokenType.Number) && !signed || signed && !this.peek(TokenType.Number) && !this.peekDelim('+') && !this.peekDelim('-')) {
 			return null;
