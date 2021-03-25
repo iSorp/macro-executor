@@ -1371,7 +1371,7 @@ export class Parser {
 		this.consumeToken();
 		
 		if (this.peek(TokenType.BracketL)) {
-			node.addChild(this._parseBinaryExpr());
+			node.setBody(this._parseBinaryExpr());
 			return this.finish(node);
 		} 
 
