@@ -125,7 +125,7 @@ export class MacroHover {
 						};
 						break;
 					}
-					else if (node.type === nodes.NodeType.Ffunc) {
+					else if (node.type === nodes.NodeType.Ffunc || node.type === nodes.NodeType.Fcmd) {
 						const text = this.getMarkedStringForFunction(<nodes.Ffunc>node);
 						hover =  {
 							contents: {
