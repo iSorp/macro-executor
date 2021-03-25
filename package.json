@@ -6,7 +6,7 @@
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
-	"preview": true,
+	"preview": false,
 	"categories": [
 		"Programming Languages",
 		"Snippets"
@@ -182,6 +182,7 @@
 									"",
 									"Label",
 									"Symbol",
+									"Variable",
 									"Code"
 								]
 							}

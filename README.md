@@ -12,7 +12,8 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 
 
 ## News
-- [Additional linker parameters](#extension-settings)
+- The Fanuc Macro Executor extension parses now any symbol definition, like GOTOs, Assignments, etc. 
+- Spaces between statements are no longer necessary.  
 
 ***
        
@@ -90,6 +91,7 @@ The global / local search behavior is equal to the reference search.
 Semantic highlighting is used to highlight the represented type of a symbol. Following types are supported:
 * M-Code and G-Code
 * Address
+* Parameter
 * Macro variable
 * Constant
 * Label
@@ -111,10 +113,10 @@ For some color themes, the semantic highlighting must be enabled in the settings
 
 ## Custom Keywords
 
-* Symbol highlighting
-* Symbol description for hover and completion
+* Highlighting
+* Description for hover and completion
 
-Out of the box the extension supports semantic highlighting for Labels (>symbol), Variables (@symbol) and M/G-Codes. Sometimes it could be useful to change the default highlighting for a particular symbol or for a type like a macro variable. 
+Out of the box the extension supports semantic highlighting for Labels ``>``, Symbols ``@`` and M/G-Codes and, Variables. Sometimes it could be useful to change the default highlighting for a particular symbol or for a type like a macro variable. 
 Such a customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
 
 
@@ -122,7 +124,7 @@ Such a customization can be achieved by adding custom keyword items to the confi
 |-------------|----------------------------|
 | symbol      | Symbol text                |
 | scope       | [Scopes](#Scopes)           |
-| nodeType    | Label, Code (M/G), Variable (all @ symbols)   |
+| nodeType    | Label, Symbol, Code (M/G), Variable   |
 | description | Markdown `string` \| `string[]`   |
 
 
@@ -211,7 +213,8 @@ Three levels are supported: `error`, `warning` and `ignore`.
               "seqNotFound":              "error",   
               "incompleteParameter":      "error",
               "includeNotFound":          "error",
-              "assignmentConstant":       "warning"
+              "assignmentConstant":       "Ignore",
+              "blockDelNumber":           "error"
        }
 ```
 
