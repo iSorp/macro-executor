@@ -1528,7 +1528,7 @@ export class Parser {
 			}
 			else {
 				const parameter = this.createNode(nodes.NodeType.FuncParam);
-				while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement())) {
+				while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement() || this._parseBinaryExpr())) {
 					
 				}
 				node.addChild(parameter);
