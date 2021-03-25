@@ -87,6 +87,9 @@ export class MacroSemantic {
 				else if (candidate.type === nodes.NodeType.Label) {
 					this.build(candidate, candidate.type, TokenTypes.label);
 				}
+				else if (candidate.type === nodes.NodeType.Variable) {
+					this.build((<nodes.Variable>candidate).body, candidate.type);
+				}
 				else if (!candidate.symbolLink) {
 					if (candidate.type === nodes.NodeType.Code) {
 						this.build(candidate, candidate.type);
