@@ -40,7 +40,7 @@ export const Rules = {
 	IncompleteParameter: new Rule('incompleteParameter', localize('rule.incompleteParameter', 'Incomplete parameter found. G-Code or M-Code may need a numeric value or a variable as parameter'), Error),
 	IncludeNotFound: new Rule('includeNotFound', localize('rule.includeNotFound', 'Include file not found'), Error),
 	AssignmentConstant: new Rule('assignmentConstant', localize('rule.assignmentConstant', 'Assignment to constant'), Ignore),
-	BlockDelNumber: new Rule('blockDelNumber', localize('symbol.symbolError', 'BLOCKDEL number not match 1-9'), Error),
+	BlockDelNumber: new Rule('blockDelNumber', localize('rule.blockDelNumber', 'BLOCKDEL number not match 1-9'), Error),
 
 };
 
