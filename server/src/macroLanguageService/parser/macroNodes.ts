@@ -140,6 +140,10 @@ export class Node {
 		return this.symbolLink?.getText() ?? this.getTextProvider()(this.offset, this.length);
 	}
 
+	public getNodeText(): string {
+		return this.getTextProvider()(this.offset, this.length);
+	}
+
 	public matches(str: string): boolean {
 		return this.length === str.length && this.getTextProvider()(this.offset, this.length) === str;
 	}
@@ -651,10 +655,6 @@ export class Symbol extends Reference {
 
 	public getText(): string {
 		return this.identifier.getText();
-	}
-
-	public getNodeText(): string {
-		return super.getText();
 	}
 }
 
