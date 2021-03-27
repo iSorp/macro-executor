@@ -123,14 +123,17 @@ export class Parser {
 	private scanDefinition(definition: nodes.AbstractDefinition) {
 		const tk = this.defScanner.scan();
 		if (tk) {
-			if (tk.type !== TokenType.EOF && definition.getValue()) {
-		
-				this.symbol = {
-					symNode: this.symbolNodeList[this.symbolNodeList.length-1],
-					getText: () => tk.text,	
-					defType: definition.type,
-					valType: definition.value?.type,
-				};
+			if (tk.type !== TokenType.EOF) {
+				
+				let node = nodes.getNodeAtOffset(definition.value, definition.value.offset + tk.offset)
+				if (node) {
+					this.symbol = {
+						symNode: this.symbolNodeList[this.symbolNodeList.length-1],
+						getText: () => tk.text,	
+						defType: definition.type,
+						valType: node.type,
+					};
+				}
 
 				// reference to the symbol location 
 				tk.len = this.token.len
@@ -632,7 +635,8 @@ export class Parser {
 			|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address	
 			|| this.tryEol(this._parseNcStatement.bind(this))
 			|| this.tryEol(this._parseSequenceNumber.bind(this))
-			|| this.tryEol(this._parseMacroStatement.bind(this, false));
+			|| this.tryEol(this._parseMacroStatement.bind(this, false))
+			|| this.tryEol(this._parseGotoStatement.bind(this));
 
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
@@ -912,7 +916,7 @@ export class Parser {
 			return null;
 		}
 
-		const node = this.create(nodes.NcStatement, nodes.NodeType.Address, nodes.NodeType.Parameter);
+		const node = this.create(nodes.NcStatement, nodes.NodeType.Address, nodes.NodeType.Parameter, nodes.NodeType.Code);
 		let first = this.symbol !== undefined;
 		while (true) {
 			let child = this._parseString(true) || this._parseNcStatementInternal();
@@ -964,7 +968,7 @@ export class Parser {
 
 		// G,M Code
 		const mark = this.mark();
-		const node = this.create(nodes.NcCode, nodes.NodeType.Statement, nodes.NodeType.Address);
+		const node = this.create(nodes.NcCode, nodes.NodeType.Address);
 		if (this.token.text.toLocaleLowerCase().charAt(0) === 'g') {
 			node.codeType = nodes.CodeType.G;
 		}
@@ -992,7 +996,7 @@ export class Parser {
 				return this.finish(node);
 			}
 		}
-		else if (node.addChild(this._parseUnknownSymbol(/*this._parseLabel() || */this._parseVariable() || this._parseNumber()))) {
+		else if (node.addChild(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber()))) {
 			return this.finish(node);
 		}
 		this.restoreAtMark(mark); 
@@ -1008,7 +1012,7 @@ export class Parser {
 			return null;
 		}
 
-		const node = this.create(nodes.Parameter, nodes.NodeType.Statement, nodes.NodeType.Address);
+		const node = this.create(nodes.Parameter, nodes.NodeType.Address);
 
 		// axis number command
 		this.accept(TokenType.Ampersand); 

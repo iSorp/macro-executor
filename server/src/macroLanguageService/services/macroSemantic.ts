@@ -63,6 +63,7 @@ export class MacroSemantic {
 							else {
 								this.build(symbol, symbol.type, TokenTypes.parameter);
 							}
+							break;
 						case nodes.NodeType.Address:
 							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
 								this.build(symbol, symbol.type, TokenTypes.code);
