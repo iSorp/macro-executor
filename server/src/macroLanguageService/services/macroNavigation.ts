@@ -169,14 +169,20 @@ export class MacroNavigation {
 				location: null!
 			};
 
-			if (node.type === nodes.NodeType.Symbol) {
-				const symbol = <nodes.Symbol>node;
-				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) || symbol.valueType === nodes.NodeType.Statement) {
+			const symbol = <nodes.Symbol>node;
+			if (node.type === nodes.NodeType.Symbol && symbol.valueType !== nodes.NodeType.Statement) {
+				
+				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) 
+					|| (symbol?.valueType == nodes.NodeType.Address
+						&& (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode))) {
 
 					switch (symbol.valueType) {
 						case nodes.NodeType.Address:
 							if (symbol.attrib === nodes.ValueAttribute.Parameter) {
 								entry.kind = SymbolKind.Property;
+							}
+							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
+								entry.kind = SymbolKind.Event;
 							}
 							else {
 								entry.kind = SymbolKind.Interface;
@@ -199,22 +205,6 @@ export class MacroNavigation {
 						case nodes.NodeType.SequenceNumber:
 							entry.kind = SymbolKind.Field;
 							break;
-						case nodes.NodeType.Statement:
-							if (node.getChildren().length > 1) {
-								result.push({
-									name: symbol.getNodeText(),
-									kind: SymbolKind.Field,
-									location: Location.create(document.uri, this.getRange(node, document))
-								});
-							}
-
-							if (symbol.attrib === nodes.ValueAttribute.Parameter) {
-								entry.kind = SymbolKind.Property;
-							}
-							else {
-								entry.kind = SymbolKind.Event;
-							}
-							break;
 						case nodes.NodeType.Code:
 							entry.kind = SymbolKind.Event;
 							break;
@@ -232,14 +222,26 @@ export class MacroNavigation {
 			}
 			else if (node.type === nodes.NodeType.Label) {
 				const label = <nodes.Label>node;
-				if (node.findAParent(nodes.NodeType.Program, nodes.NodeType.Goto)) {
+				if (node.parent?.type === nodes.NodeType.Program || node.parent?.type === nodes.NodeType.Goto) {
 					if (label.valueType === nodes.NodeType.Numeric) {
 						entry.name = label.getText();
 						entry.kind = SymbolKind.Constant;
 					} 
 				}
 			} 
+			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
+				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
+					if (node.symbolLink) {
+						entry.name = node.getNodeText();
+					}
+					else {
+						entry.name = node.getText();
+					}
+					entry.kind = SymbolKind.Field;
+				}
+			}
 			else if (!node.symbolLink) {
+
 				if (node.type === nodes.NodeType.SymbolDef) {
 					entry.name = (<nodes.SymbolDefinition>node).getName();
 					entry.kind = SymbolKind.Variable;
@@ -268,12 +270,7 @@ export class MacroNavigation {
 						entry.kind = SymbolKind.Field;
 					}
 				}
-				else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
-					if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
-						entry.name = node.getText();
-						entry.kind = SymbolKind.Field;
-					}
-				}
+
 				else if (node.type === nodes.NodeType.Code) {
 					entry.name = (<nodes.NcCode>node).getText();
 					entry.kind = SymbolKind.Event;
