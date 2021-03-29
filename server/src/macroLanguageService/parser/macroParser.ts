@@ -442,6 +442,9 @@ export class Parser {
 		if (type === 'def'){
 			return this.internalParse(text, this._parseDefFile, this.textProvider);
 		}
+		else if (type === 'lnk'){
+			return this.internalParse(text, this._parseLnkFile, this.textProvider);
+		}
 		else  {
 			return this.internalParse(text, this._parseMacroFile, this.textProvider);
 		}	
@@ -490,6 +493,20 @@ export class Parser {
 				node.addChild(child);
 				hasMatch = true;
 			}
+			this.consumeToken();
+	
+		} while (!this.peek(TokenType.EOF));
+		return this.finish(node);
+	}
+
+	public _parseLnkFile(): nodes.MacroFile {
+		const node = this.createNode(nodes.NodeType.DefFile);
+		let hasMatch = false;
+		do {			
+			if (this.peek(TokenType.EOF)) {
+				break;
+			}
+
 			this.consumeToken();
 	
 		} while (!this.peek(TokenType.EOF));
