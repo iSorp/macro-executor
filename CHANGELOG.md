@@ -1,4 +1,4 @@
-## 0.3.0  (March 27, 2021)
+## 0.3.0  (March 29, 2021)
 - Advanced Parser
 	- A virtual symbol replacement allows any definition value
 	- Concatenated statements are now valid (no blanks required)

@@ -35,9 +35,17 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 * 中文 `zh-cn`
 
 ## Required file extensions
-* Macro files`.src`
+* Macro files `.src`
 * Include files `.def` 
 * Link files `.lnk` 
+
+To associate other file extensions with the macro executor language, see the following setting sample:
+
+```json
+   "files.associations": {
+        "*.PRG": "macro"
+    }
+```
 
 ## Coding conventions
 * `$Include` paths must be absolute or relative to the workspace folder
