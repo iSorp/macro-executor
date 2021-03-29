@@ -237,7 +237,12 @@ export class MacroNavigation {
 					else {
 						entry.name = node.getText();
 					}
-					entry.kind = SymbolKind.Field;
+					if (node.getChild(0).type === nodes.NodeType.Code){
+						entry.kind = SymbolKind.Event;
+					}
+					else {
+						entry.kind = SymbolKind.Property;
+					}
 				}
 			}
 			else if (!node.symbolLink) {
