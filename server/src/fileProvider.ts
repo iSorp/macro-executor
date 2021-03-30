@@ -113,7 +113,7 @@ export class FileProvider implements MacroFileProvider {
 			absolutPath = Utils.resolvePath(URI.parse(this.workspaceFolder), ref).fsPath;
 		}
 		absolutPath = this.resolvePathCaseSensitive(absolutPath)
-		return URI.file(absolutPath).toString();
+		return absolutPath ? URI.file(absolutPath).toString() :undefined;
 	}
 
 	private resolvePathCaseSensitive(file:string) {

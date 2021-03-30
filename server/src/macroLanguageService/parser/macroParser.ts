@@ -308,6 +308,9 @@ export class Parser {
 		this.scanner.goBackTo(this.token.offset);
 		const unquoted = this.scanner.scanUnquotedString();
 		if (unquoted) {
+			// Remove white spaces
+			unquoted.text = unquoted.text.trimEnd();
+			unquoted.len = unquoted.text.length;
 			this.token = unquoted;
 			this.consumeToken();
 			return true;
@@ -600,7 +603,7 @@ export class Parser {
 		if (this.token.text !== '$INCLUDE'){
 			return this.finish(node, ParseError.UnknownKeyword, [TokenType.NewLine]);
 		}
-
+	
 		this.consumeToken(); // $include
 		const path = this.createNode(nodes.NodeType.StringLiteral);
 
@@ -609,16 +612,15 @@ export class Parser {
 		}
 
 		node.addChild(this.finish(path));
-
-
-		if (this.prevToken?.text.split('.').pop()?.toLocaleLowerCase() !== 'def') {
-			this.markError(node, ParseError.DefinitionExpected);
+		
+		if (this.prevToken.text.split('.').pop()?.toLocaleLowerCase() !== 'def') {
+			this.markError(path, ParseError.DefinitionExpected);
 		}
-		this.finish(node);
-		if (this.textProvider) {
+		else if (this.textProvider) {
 			this._resolveIncludes(this.textProvider(path.offset, path.length));
 		}
-		return node; 
+
+		return this.finish(node); 
 	}
 	//#endregion
 
