@@ -125,7 +125,7 @@ export class Parser {
 		if (tk) {
 			if (tk.type !== TokenType.EOF) {
 				
-				let node = nodes.getNodeAtOffset(definition.value, definition.value.offset + tk.offset)
+				let node = nodes.getNodeAtOffset(definition.value, definition.value.offset + tk.offset);
 				if (node) {
 					this.symbol = {
 						symNode: this.symbolNodeList[this.symbolNodeList.length-1],
@@ -136,8 +136,8 @@ export class Parser {
 				}
 
 				// reference to the symbol location 
-				tk.len = this.token.len
-				tk.offset = this.token.offset
+				tk.len = this.token.len;
+				tk.offset = this.token.offset;
 				this.token = tk;
 				return true;
 			}
@@ -430,7 +430,7 @@ export class Parser {
 	// #region Global scope 
 	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
 		this.symbolMap.clear();
-		this.symbolNodeList = []
+		this.symbolNodeList = [];
 		this.includes = [];
 		const versionId = textDocument.version;
 		const text = textDocument.getText();
@@ -686,7 +686,7 @@ export class Parser {
 		this.scanner.ignoreWhitespace = true;
 		this.noDefinitions = false;
 		node.setValue(statement);
-		this.finish(node)
+		this.finish(node);
 		this.processWhiteSpaces();	
 		return node;
 	}
@@ -742,7 +742,7 @@ export class Parser {
 		this.scanner.ignoreWhitespace = true;
 		this.noDefinitions = false;
 		node.setValue(statement);
-		this.finish(node)
+		this.finish(node);
 		this.processWhiteSpaces();	
 		return node;
 	}
@@ -941,21 +941,6 @@ export class Parser {
 			let child = this._parseString(true) || this._parseNcStatementInternal();
 			if (child) {
 				node.addChild(child);
-
-				if (first && node.symbolLink) {
-					first = false;
-					if (child instanceof nodes.NcCode) {
-						if (child.codeType === nodes.CodeType.G) {
-							node.symbolLink.symNode.attrib = nodes.ValueAttribute.GCode;
-						}
-						else if (child.codeType === nodes.CodeType.M) {
-							node.symbolLink.symNode.attrib = nodes.ValueAttribute.MCode;
-						}
-					}
-					else {
-						node.symbolLink.symNode.attrib = nodes.ValueAttribute.Parameter;
-					}
-				}
 			}
 			else {break;}
 		}
@@ -990,9 +975,15 @@ export class Parser {
 		const node = this.create(nodes.NcCode, nodes.NodeType.Address);
 		if (this.token.text.toLocaleLowerCase().charAt(0) === 'g') {
 			node.codeType = nodes.CodeType.G;
+			if (node.symbolLink) {
+				node.symbolLink.symNode.attrib = nodes.ValueAttribute.GCode;
+			}
 		}
 		else if (this.token.text.toLocaleLowerCase().charAt(0) === 'm') {
 			node.codeType = nodes.CodeType.M;
+			if (node.symbolLink) {
+				node.symbolLink.symNode.attrib = nodes.ValueAttribute.MCode;
+			}
 		}
 		else {
 			return null;
@@ -1032,6 +1023,9 @@ export class Parser {
 		}
 
 		const node = this.create(nodes.Parameter, nodes.NodeType.Address);
+		if (node.symbolLink) {
+			node.symbolLink.symNode.attrib = nodes.ValueAttribute.Parameter;
+		}
 
 		// axis number command
 		this.accept(TokenType.Ampersand); 
@@ -1671,7 +1665,7 @@ export class Parser {
 			this.markError(node, ParseError.IntegerExpected);
 		}
 
-		node.addReferenceType(...referenceTypes)
+		node.addReferenceType(...referenceTypes);
 
 		this.consumeToken();
 
