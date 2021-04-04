@@ -19,7 +19,7 @@ export class MacroCommand {
 		let edit:TextDocumentEdit | null = null;
 		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
 		if (node){
-			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 			const inc = settings?.sequence?.increment ? Number(settings?.sequence?.increment) : 10;
 			let seq = settings?.sequence?.base ? Number(settings?.sequence?.base) : 1000;
 			let gotoLabelList: nodes.Node[] = [];
@@ -29,9 +29,9 @@ export class MacroCommand {
 				func.accept(candidate => {
 					if (candidate.type === nodes.NodeType.Goto) {
 						const gnode = (<nodes.GotoStatement>candidate).getLabel();
-						if (gnode) {
+						if (gnode && !gnode.symbolLink) {
 							const gotoNumber = Number(gnode.getText());
-							if (Number.isInteger(gotoNumber)){
+							if (Number.isInteger(gotoNumber)) {
 								gotoLabelList.push(gnode);
 							}
 							return false;
@@ -44,9 +44,9 @@ export class MacroCommand {
 					this.skip(candidate, () => {
 						if (candidate.type === nodes.NodeType.SequenceNumber) {
 							const nnode = (<nodes.SequenceNumber>candidate).getNumber();
-							const labels = gotoLabelList.filter(a => a.getText() === nnode?.getText());
-	
-							if (nnode) {
+							
+							if (nnode && !nnode.symbolLink) {
+								const labels = gotoLabelList.filter(a => a.getText() === nnode?.getText());
 								const start = document.positionAt(nnode.offset);
 								const end = document.positionAt(nnode.end);
 								textEdits.push(TextEdit.del(Range.create(start, end)));
@@ -85,7 +85,7 @@ export class MacroCommand {
 		let edit:TextDocumentEdit | null = null;
 		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
 		if (node) {
-			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 			const inc = settings?.sequence?.increment ? Number(settings?.sequence?.increment) : 10;
 			let seq = this.getMaxSequenceNumber(func);
 			if (seq <= 0) {

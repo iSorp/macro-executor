@@ -1,3 +1,10 @@
+## 0.3.0  (March 29, 2021)
+- Advanced Parser
+	- A virtual symbol replacement allows any definition value
+	- Concatenated statements are now valid (no blanks required)
+	- BLOCKDEL support
+- Additional unit tests
+
 ## 0.2.4  (November 10, 2020)
 - Bug fixes
 	- Completion symbol comment text fix

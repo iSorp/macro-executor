@@ -7,10 +7,16 @@
 import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
 import { getComment } from '../parser/macroScanner';
-import { TextDocument, Range, Position, Location, Hover, MarkedString, MarkupContent, 
-	MacroFileProvider, functionSignatures, GCodeDescription as CodeDescription, LanguageSettings, MacroFileType 
+import { 
+	TextDocument, Range, Position, Location, Hover, 
+	MacroFileProvider, functionSignatures, 
+	NcCodeDescription, 
+	SymbolText, 
+	LanguageSettings, 
+	MacroFileType 
 } from '../macroLanguageTypes';
 import { MarkupKind } from 'vscode-languageserver';
+
 
 export class MacroHover {
 
@@ -30,103 +36,79 @@ export class MacroHover {
 			const offset = document.offsetAt(position);
 			const nodepath = nodes.getNodePath(macroFile, offset);
 		
-			let declaraion:MacroFileType = null;
+			let defFile:MacroFileType = null;
+
 			const location = navigation.findDefinition(document, position, macroFile);
 			if (location) {
-				declaraion = this.fileProvider?.get(location.uri);
+				defFile = this.fileProvider?.get(location.uri);
 			}
 
-			for (let i = 0; i < nodepath.length; i++) {
+			for (let i = nodepath.length-1; i >= 0; i--) {
 				const node = nodepath[i];
 	
-				if (location && declaraion) {
-					let type = '';
-					if (node.type === nodes.NodeType.VariableDef) {
-						const vardef = <nodes.VariableDeclaration>node;
-						const custom = this.getCustomKeywordDescription(vardef.getName(), nodes.NodeType.Variable);
-						hover =  {
-							contents: {
-								kind:MarkupKind.Markdown,
-								value: [`${custom}`].join('\n')
-							},
-							range: this.getRange(vardef.getSymbol())
-						};
-					}
-					else if (node.type === nodes.NodeType.labelDef) {
-						const labeldef = <nodes.LabelDeclaration>node;
-						const custom = this.getCustomKeywordDescription(labeldef.getName(), nodes.NodeType.Label);
-						hover =  {
-							contents: {
-								kind:MarkupKind.Markdown,
-								value: [`${custom}`].join('\n')
-							},
-							range: this.getRange(labeldef.getSymbol())
-						};
-					}
-					else if (node.type === nodes.NodeType.Variable) {
-						type = 'symbol';
+				if (location && defFile) {
+					if (node.type === nodes.NodeType.Label) {
 						let text:string[] = [];
-						let detail = '';
-						let comment = '';
-						if ((<nodes.Variable>node).declaration) {
-							detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
-							comment = getComment(declaraion.document.offsetAt(location.range.start), declaraion.document.getText()).trim();
-						}
-						const custom = this.getCustomKeywordDescription((<nodes.Variable>node).getName(), nodes.NodeType.Variable);			
-						if (detail){
+						const detail = this.getMarkedStringForDefinition(node, <nodes.Node>defFile!.macrofile, defFile!.document, location);
+						const comment = getComment(defFile.document.offsetAt(location.range.start), defFile.document.getText()).trim();
+						const custom = this.getCustomKeywordDescription(node.getText(), node.type);
+						if (detail) {
 							text.push(detail);
 							if (custom || comment){
 								text.push('','***','');	
 							}
 						}
 						if (comment) {
-							text.push(comment);	
+							text.push(comment);
 						}
 						if (custom) {
-							text.push(custom);	
+							text.push(custom);
 						}
+				
 						hover =  {
 							contents: {
 								kind:MarkupKind.Markdown,
 								value: text.join('\n\n')
 							},
-							range: this.getRange(node)
+							range: this.getRange((<nodes.Label>node).identifier)
 						};
+						break;
 					}
-					else if (node.type === nodes.NodeType.Label) {
-						type = 'label';
+					else if (node.type === nodes.NodeType.Symbol) {
 						let text:string[] = [];
-						let detail = '';
-						let comment = '';
-						if ((<nodes.Label>node).declaration) {
-							detail = this.getMarkedStringForDeclaration(type, <nodes.Node>declaraion!.macrofile, declaraion!.document, location);
-							comment = getComment(declaraion.document.offsetAt(location.range.start), declaraion.document.getText()).trim();
-						}
-						const custom = this.getCustomKeywordDescription((<nodes.Label>node).getName(), nodes.NodeType.Label);
-						if (detail){
+						const detail = this.getMarkedStringForDefinition(node, <nodes.Node>defFile!.macrofile, defFile!.document, location);
+						const comment = getComment(defFile.document.offsetAt(location.range.start), defFile.document.getText()).trim();
+						const custom = this.getCustomKeywordDescription(node.getText(), node.type);
+						if (detail) {
 							text.push(detail);
 							if (custom || comment){
 								text.push('','***','');	
 							}
 						}
 						if (comment) {
-							text.push(comment);	
+							text.push(comment);
 						}
 						if (custom) {
-							text.push(custom);	
+							text.push(custom);
 						}
+
 						hover =  {
 							contents: {
 								kind:MarkupKind.Markdown,
 								value: text.join('\n\n')
 							},
-							range: this.getRange(node)
+							range: this.getRange((<nodes.Symbol>node).identifier)
 						};
+						break;
 					}
-					else if (node.type === nodes.NodeType.Code) {
+				}
+
+				
+				if (!node.symbolLink) {
+					if (node.type === nodes.NodeType.Code) {
 						let text:string[] = [];
 						const custom = this.getCustomKeywordDescription(node.getText(), nodes.NodeType.Code);
-						const desc = CodeDescription[node.getText()];
+						const desc = NcCodeDescription[node.getText()];
 						const type = (<nodes.NcCode>node).codeType + '-code';
 						text.push(['```macro',`(${type}) ` + `${node.getText()}`,'```'].join('\n'));
 
@@ -147,21 +129,25 @@ export class MacroHover {
 							},
 							range: this.getRange(node)
 						};
+						break;
 					}
-				}
-				else if (node.type === nodes.NodeType.Ffunc) {
-					const text = this.getMarkedStringForFunction(<nodes.Ffunc>node);
-					hover =  {
-						contents: {
-							kind:MarkupKind.Markdown,
-							value: [`${text}`].join('\n')
-						},
-						range: this.getRange(node)
-					};
+					else if (node.type === nodes.NodeType.Ffunc || node.type === nodes.NodeType.Fcmd) {
+						const text = this.getMarkedStringForFunction(<nodes.Ffunc>node);
+						hover =  {
+							contents: {
+								kind:MarkupKind.Markdown,
+								value: [`${text}`].join('\n')
+							},
+							range: this.getRange(node)
+						};
+					}
 				}
 			}
 			return hover;
 		} 
+		catch (error) {
+			this.settings = null!;
+		}
 		finally {
 			this.textDocument = null!;
 			this.settings = null!;
@@ -179,13 +165,31 @@ export class MacroHover {
 		return '';
 	}
 
-	private getMarkedStringForDeclaration(type: string, macroFile: nodes.Node, document:TextDocument, location:Location) : string {
+	private getMarkedStringForDefinition(node: nodes.Node, macroFile: nodes.Node, document:TextDocument, location:Location) : string {
 		let text:string[] = [];
-		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(location.range.start));
-		if (node instanceof nodes.AbstractDeclaration){
-			const name = node.getName();
-			const address = node.getValue()?.getText();
-			const valueType = node.valueType?.toString();
+		
+		const def = nodes.getNodeAtOffset(macroFile, document.offsetAt(location.range.start));
+
+		if (def instanceof nodes.AbstractDefinition) {
+			let type = '';
+			if (def.type === nodes.NodeType.SymbolDef) {
+				type = 'symbol';
+			}
+			else {
+				type = 'label';
+			}
+
+			const name = def.getName();
+			const address = def.getValue()?.getText();
+
+			let valueType = '';
+			if (node['attrib'] !== nodes.ValueAttribute.None) {
+				valueType = SymbolText[nodes.ValueAttribute[node['attrib']]];
+			}
+			else {
+				valueType = SymbolText[nodes.NodeType[def?.value.type]];
+			}
+
 			let punctation = '';
 			if (type === 'label') {
 				punctation = '>';
@@ -193,7 +197,13 @@ export class MacroHover {
 			else if (type === 'symbol') {
 				punctation = '@';
 			}
-			text.push('```macro',`(${type}:${valueType}) ` + `${punctation}${name} `+` ${address}`, '```');
+
+			if (valueType) {
+				text.push('```macro',`(${type}:${valueType}) ` + `${punctation}${name} `+` ${address}`, '```');
+			}
+			else {
+				text.push('```macro',`(${type}) ` + `${punctation}${name} `+` ${address}`, '```');
+			}	
 		}
 		return text.join('\n');
 	}
@@ -201,7 +211,7 @@ export class MacroHover {
 	private getMarkedStringForFunction(node: nodes.Ffunc) : string {
 		const func:nodes.Ffunc = <nodes.Ffunc>node;
 		const ident = func.getIdentifier()?.getText().toLocaleLowerCase();
-		if (!ident){
+		if (!ident) {
 			return '';
 		}
 		const signatureIndex = func.getData('signature');

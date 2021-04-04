@@ -2,10 +2,11 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "0.2.4",
+	"version": "0.3.0",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
+	"preview": false,
 	"categories": [
 		"Programming Languages",
 		"Snippets"
@@ -27,7 +28,7 @@
 	},
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.45.0"
+		"vscode": "^1.52.0"
 	},
 	"enableProposedApi": true,
 	"activationEvents": [
@@ -180,6 +181,7 @@
 								"enum": [
 									"",
 									"Label",
+									"Symbol",
 									"Variable",
 									"Code"
 								]
@@ -188,7 +190,7 @@
 					}
 				},
 				"macro.lint": {
-					"scope": "window",
+					"scope": "resource",
 					"type": "object",
 					"description": "%macro.lint.description%",
 					"properties": {
@@ -360,7 +362,7 @@
 								},
 								"assignmentConstant": {
 									"type": "string",
-									"default": "warning",
+									"default": "ignore",
 									"enum": [
 										"error",
 										"warning",
@@ -559,7 +561,7 @@
 				"language": "macro",
 				"scopes": {
 					"number": [
-						"variable.other.numeric"
+						"variable.macro"
 					],
 					"macrovar": [
 						"variable.other.field"
@@ -600,21 +602,22 @@
 		"unit-test": "npm run compile && mocha"
 	},
 	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^14.0.9",
-		"@typescript-eslint/parser": "^3.1.0",
-		"del": "^5.1.0",
-		"eslint": "^7.1.0",
+		"@types/glob": "^7.1.3",
+		"@types/mocha": "^8.2.2",
+		"@types/node": "^14.14.37",
+		"@typescript-eslint/parser": "^4.20.0",
+		"del": "^6.0.0",
+		"eslint": "^7.23.0",
 		"event-stream": "^4.0.1",
 		"gulp": "^4.0.2",
 		"gulp-filter": "^6.0.0",
-		"gulp-sourcemaps": "^2.6.5",
+		"gulp-sourcemaps": "^3.0.0",
 		"gulp-typescript": "^5.0.1",
-		"mocha": "^7.2.0",
+		"mocha": "^8.3.2",
 		"run-sequence": "^2.2.1",
-		"typescript": "^3.9.3",
-		"vsce": "^1.75.0",
-		"vscode-nls-dev": "^3.3.1"
+		"typescript": "^4.2.3",
+		"intrinsic": "^2.0.1",
+		"vsce": "^1.87.1",
+		"vscode-nls-dev": "^3.3.2"
 	}
 }

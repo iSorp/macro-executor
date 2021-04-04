@@ -17,5 +17,6 @@
 	"rule.duplicateDoEndNumber": "DO或END号码重复",
 	"rule.incompleteParameter": "参数不完整，G代码或M代码需要数值或变量做参数",
 	"rule.includeNotFound": "预加载文件未找到",
-	"rule.assignmentConstant": "常数已赋值"
+	"rule.assignmentConstant": "常数已赋值",
+	"rule.blockDelNumber" : "BLOCKDEL number not match 1-9"
 }

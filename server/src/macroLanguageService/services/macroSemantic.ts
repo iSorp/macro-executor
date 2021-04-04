@@ -39,46 +39,66 @@ export class MacroSemantic {
 						return false;
 					} 
 				}
-				if (candidate.type === nodes.NodeType.Code) {
-					this.build(candidate, candidate.type);
+				
+				if (candidate.type === nodes.NodeType.Symbol) {
+					const symbol = <nodes.Symbol>candidate;
+					switch (symbol.valueType) {
+						case nodes.NodeType.Numeric:
+							if (symbol.getParent()?.type !== nodes.NodeType.Program) {
+								if (symbol.attrib === nodes.ValueAttribute.Constant) {
+									this.build(symbol, candidate.type, TokenTypes.constant);
+								}
+								else {
+									this.build(symbol, candidate.type, TokenTypes.number);
+								}
+							} 
+							break;
+						case nodes.NodeType.Code:
+							this.build(symbol, symbol.type, TokenTypes.code);
+							break;							
+						case nodes.NodeType.Parameter:
+							this.build(symbol, symbol.type, TokenTypes.parameter);
+							break;
+						case nodes.NodeType.Statement:
+							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
+								this.build(symbol, symbol.type, TokenTypes.code);
+							}
+							else {
+								this.build(symbol, symbol.type, TokenTypes.parameter);
+							}
+							break;
+						case nodes.NodeType.Address:
+							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
+								this.build(symbol, symbol.type, TokenTypes.code);
+							}
+							else if (symbol.attrib === nodes.ValueAttribute.Parameter) {
+								this.build(symbol, symbol.type, TokenTypes.parameter);
+							}
+							else {
+								this.build(symbol, symbol.type, TokenTypes.address);
+							}
+							break;
+						case nodes.NodeType.SequenceNumber:
+							this.build(symbol, symbol.type, TokenTypes.label);
+							break;					
+						case nodes.NodeType.Variable:
+							this.build(symbol, symbol.type, TokenTypes.macrovar);
+							break;	
+						default:
+							this.build(symbol, symbol.type);
+					}
 				}
 				else if (candidate.type === nodes.NodeType.Label) {
-					const label = <nodes.Label>candidate;
-					if (label.symbol){
-						this.build(label.symbol, label.type, TokenTypes.label);
+					this.build(candidate, candidate.type, TokenTypes.label);
+				}
+				else if (!candidate.symbolLink) {
+					if (candidate.type === nodes.NodeType.Variable) {
+						this.build((<nodes.Variable>candidate)?.body, candidate.type);
+					}
+					else if (candidate.type === nodes.NodeType.Code) {
+						this.build(candidate, candidate.type);
 					}
 				}
-				else if (candidate.type === nodes.NodeType.Variable) {	
-					const variable = <nodes.Variable>candidate;
-					if (variable.symbol) {
-						const type = variable.declaration?.valueType;
-						if (type === nodes.ValueType.Constant && candidate.getParent()?.type !== nodes.NodeType.Function) {
-							this.build(variable.symbol, variable.type, TokenTypes.constant);
-						}
-						else if (type === nodes.ValueType.Numeric && candidate.getParent()?.type !== nodes.NodeType.Function) {
-							this.build(variable.symbol, variable.type, TokenTypes.number);
-						}
-						else if (type === nodes.ValueType.NcCode) {
-							this.build(variable.symbol, variable.type, TokenTypes.code);
-						}
-						else if (type === nodes.ValueType.NcParam) {
-							this.build(variable.symbol, variable.type, TokenTypes.parameter);
-						}
-						else if (type === nodes.ValueType.Address) {
-							this.build(variable.symbol, variable.type, TokenTypes.address);
-						}
-						else if (type === nodes.ValueType.Sequence) {
-							this.build(variable.symbol, variable.type, TokenTypes.label);
-						}
-						else if (type === nodes.ValueType.Variable) {
-							this.build(variable.symbol, variable.type, TokenTypes.macrovar);
-						}
-						else {
-							this.build(variable.symbol, variable.type);
-						}
-					}
-				}
-
 				return true;
 			});
 			return this.builder.build();
@@ -91,15 +111,24 @@ export class MacroSemantic {
 	}
 
 	private build(node:nodes.Node, type:nodes.NodeType, tokenType?:TokenTypes) {
+		if (!node) {
+			return;
+		}
+
 		const pos = this.document.positionAt(node.offset);
 		let token:TokenTypes = tokenType;
 		const customKey = this.customKeywords.find(a => a.symbol === node.getText() && (!a.nodeType || nodes.NodeType[a.nodeType] === type));
 		if (customKey && customKey.scope) {
 			token = TokenTypes[customKey.scope];
 		}
-		
+
 		if (token) {
-			this.builder.push(pos.line, pos.character, node.length, token, 0);
+			if (node.type === nodes.NodeType.Symbol || node.type === nodes.NodeType.Label) {
+				this.builder.push(pos.line, pos.character, node.getText().length, token, 0);
+			}
+			else {
+				this.builder.push(pos.line, pos.character, node.length, token, 0);
+			}
 		}
 	}
 }

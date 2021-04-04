@@ -5,7 +5,6 @@
 'use strict';
 
 import * as nodes from './macroNodes';
-import { Context } from 'mocha';
 
 export class Scope {
 
@@ -58,10 +57,10 @@ export class Symbol {
 
 	public name: string;
 	public refType: nodes.ReferenceType;
-	public valueType: nodes.ValueType = nodes.ValueType.Undefinded;
+	public valueType: nodes.NodeType;
 	public node: nodes.Node;
 
-	constructor(name: string, node: nodes.Node, refType: nodes.ReferenceType, valueType:nodes.ValueType = nodes.ValueType.Undefinded) {
+	constructor(name: string, node: nodes.Node, refType: nodes.ReferenceType, valueType:nodes.NodeType = undefined) {
 		this.name = name;
 		this.node = node;
 		this.refType = refType;
@@ -77,7 +76,7 @@ export class ScopeBuilder implements nodes.IVisitor {
 		this.scope = scope;
 	}
 
-	private addSymbol(node: nodes.Node, name: string, refType: nodes.ReferenceType, valueType: nodes.ValueType | undefined = undefined): void {
+	private addSymbol(node: nodes.Node, name: string, refType: nodes.ReferenceType, valueType: nodes.NodeType = undefined): void {
 		if (node.offset !== -1) {
 			const current = this.scope;
 			if (current) {
@@ -90,26 +89,27 @@ export class ScopeBuilder implements nodes.IVisitor {
 	}
 
 	public visitNode(node: nodes.Node): boolean {
+
 		switch (node.type) {
-			case nodes.NodeType.VariableDef:
-				const vardef = (<nodes.VariableDeclaration>node);
-				this.addSymbol(node, vardef.getName(), nodes.ReferenceType.Variable, vardef.valueType);
-				return true;
-			case nodes.NodeType.labelDef:
-				const label = (<nodes.VariableDeclaration>node);
-				this.addSymbol(node, label.getName(), nodes.ReferenceType.Label, label.valueType);
-				return true;
+			case nodes.NodeType.SymbolDef:
+				const symbol = (<nodes.SymbolDefinition>node);
+				this.addSymbol(node, symbol.getName(), nodes.ReferenceType.Symbol, symbol.getValue().type);
+				return false;
+			case nodes.NodeType.LabelDef:
+				const label = (<nodes.LabelDefinition>node);
+				this.addSymbol(node, label.getName(), nodes.ReferenceType.Label, label.getValue().type);
+				return false;
 			case nodes.NodeType.SequenceNumber:
 				const sequence = (<nodes.SequenceNumber>node);
-				this.addSymbol(node, sequence.getNumber().getText(), nodes.ReferenceType.Sequence);
+				this.addSymbol(node, sequence.getNumber()?.getText(), nodes.ReferenceType.Sequence);
 				return true;
 			case nodes.NodeType.Code:
 				this.addSymbol(node, node.getText(), nodes.ReferenceType.Code);
 				return true;
-			case nodes.NodeType.Variable:		
+			case nodes.NodeType.Variable:
 				const variable = (<nodes.Variable>node);
-				this.addSymbol(node, variable.getName(), nodes.ReferenceType.Variable);
-				return true;
+				this.addSymbol(node, variable.getText(), nodes.ReferenceType.Variable);	
+				return true;		
 			case nodes.NodeType.Address:
 				this.addSymbol(node, node.getText(), nodes.ReferenceType.Address);
 				return true;
@@ -132,7 +132,7 @@ export class Symbols {
 		return this.global;
 	}
 
-	public findSymbols(referenceType: nodes.ReferenceType, valueTypes:nodes.ValueType[] | undefined = undefined): SymbolContext[] {
+	public findSymbols(referenceType: nodes.ReferenceType, valueTypes:nodes.NodeType[] | undefined = undefined): SymbolContext[] {
 		let scope = this.global;
 		const result: SymbolContext[] = [];
 		const names: { [name: string]: boolean } = {};	
@@ -142,7 +142,7 @@ export class Symbols {
 			const symbolFound:Symbol[] = [];
 			for (let i = 0; i < symbols.length; i++) {
 				const symbol = symbols[i];
-				if (valueTypes){
+				if (valueTypes) {
 					if (symbol.refType === referenceType && valueTypes.indexOf(symbol.valueType) !== -1 && !names[symbol.name]) {
 						symbolFound.push(symbol);
 						names[symbol.name] = true;
@@ -166,10 +166,8 @@ export class Symbols {
 		return result;
 	}
 
-	private internalFindSymbol(node: nodes.Node, referenceTypes: nodes.ReferenceType[]): Symbol | null {
-		let scopeNode: nodes.Node | undefined = node;
-
-		if (!scopeNode) {
+	private internalFindSymbol(node: nodes.Reference): Symbol | null {
+		if (!node) {
 			return null;
 		}
 
@@ -177,24 +175,30 @@ export class Symbols {
 		let scope = this.global; // only global scope available
 
 		if (scope) {
-			for (let index = 0; index < referenceTypes.length; index++) {
-				const type = referenceTypes[index];
-				const symbol = scope.getSymbol(name, type);
-				if (symbol) {
-					return symbol;
+			for (let value in nodes.ReferenceType) {
+				let num = Number(value);
+				if (isNaN(num)) {
+					continue;
+				}
+
+				if (node.hasReferenceType(num)) {
+					const symbol = scope.getSymbol(name, num);
+					if (symbol) {
+						return symbol;
+					}
 				}
 			}
 		}
 		return null;
 	}
 
-	private evaluateReferenceTypes(node: nodes.Node): nodes.ReferenceType[] | null {
-		if ('referenceTypes' in node) {
-			const referenceTypes = (<nodes.Reference>node).referenceTypes;
-			if (referenceTypes) {
-				return referenceTypes;
-			}
+	private evaluateReferenceTypes(node: nodes.Node): nodes.ReferenceType | null {
+		
+		const referenceTypes = (<nodes.Reference>node).referenceTypes;
+		if (referenceTypes) {
+			return referenceTypes;
 		}
+		
 		return null;
 	}
 
@@ -202,10 +206,8 @@ export class Symbols {
 		if (!node) {
 			return null;
 		}
-
-		const referenceTypes = this.evaluateReferenceTypes(node);
-		if (referenceTypes) {
-			return this.internalFindSymbol(node, referenceTypes);
+		if (this.evaluateReferenceTypes(node)) {
+			return this.internalFindSymbol(<nodes.Reference>node);
 		}
 		return null;
 	}
@@ -215,16 +217,17 @@ export class Symbols {
 			return false;
 		}
 
-		if (!node.matches(symbol.name)) {
+		if (node.getText() !== symbol.name) {
 			return false;
 		}
 
-		const referenceTypes = this.evaluateReferenceTypes(node);
-		if (!referenceTypes || referenceTypes.indexOf(symbol.refType) === -1) {
-			return false;
+		if (node instanceof nodes.Reference) {
+			if (!(<nodes.Reference>node).hasReferenceType(symbol.refType)) {
+				return false;
+			}
+			const nodeSymbol = this.internalFindSymbol(<nodes.Reference>node);
+			return nodeSymbol === symbol;
 		}
-
-		const nodeSymbol = this.internalFindSymbol(node, referenceTypes);
-		return nodeSymbol === symbol;
+		return false;
 	}
 }

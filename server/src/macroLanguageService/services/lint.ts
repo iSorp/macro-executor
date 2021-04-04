@@ -16,14 +16,9 @@ import {
 	Rule 
 } from './lintRules';
 
-const _0 = '0'.charCodeAt(0);
-const _9 = '9'.charCodeAt(0);
-const _dot = '.'.charCodeAt(0);
-
 const MAX_CONDITIONALS = 4;
 const MAX_WHILE_DEPTH = 3;
 const MAX_IF_DEPTH = 10;
-
 
 export class LintVisitor implements nodes.IVisitor {
 
@@ -34,9 +29,9 @@ export class LintVisitor implements nodes.IVisitor {
 		return visitor.getEntries();
 	}
 
-	private declarations:Map<string,nodes.AbstractDeclaration> = new Map<string,nodes.AbstractDeclaration>()
-	private sequenceList:FunctionMap<nodes.Function, nodes.Node> = new FunctionMap();
-	private gotoList:FunctionMap<nodes.Function, nodes.GotoStatement> = new FunctionMap();
+	private definitions:Map<string,nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>()
+	private sequenceList:FunctionMap<nodes.Program, nodes.Node> = new FunctionMap();
+	private gotoList:FunctionMap<nodes.Program, nodes.GotoStatement> = new FunctionMap();
 	private duplicateList: string[] = [];
 	private imports: string[] = [];
 
@@ -70,23 +65,16 @@ export class LintVisitor implements nodes.IVisitor {
 					if (Number(jumpLabel.getText())) {
 						number = jumpLabel.getText();
 					}
-					else if (jumpLabel instanceof nodes.Label){
-						number = (<nodes.Label>jumpLabel).declaration?.getValue()?.getText();
-					}
-					else if (jumpLabel instanceof nodes.Variable) {
-						const delc = (<nodes.Variable>jumpLabel).declaration;
-						if (delc.valueType === nodes.ValueType.Numeric || delc.valueType === nodes.ValueType.Constant || delc.valueType === nodes.ValueType.Sequence) {
-							number = (<nodes.Variable>jumpLabel).declaration?.getValue()?.getText();
-						}
-						else {
-							continue;
-						}
+					else if (jumpLabel.symbolLink) {
+						number = jumpLabel.symbolLink.getText();
 					}
 					else {
 						continue;
 					}
 
-					if (sequences && sequences.some(a => a.getText() === number)) {
+					if (sequences && sequences.some(a => {
+						return a.symbolLink && a.symbolLink.getText() === number || a.getText() === number;						
+					})) {
 						continue;
 					}
 					else {
@@ -94,7 +82,6 @@ export class LintVisitor implements nodes.IVisitor {
 					}
 				}
 			}
-	
 		}
 	}
 
@@ -106,18 +93,14 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitIncludes(<nodes.Include>node);
 			case nodes.NodeType.Symbol:
 				return this.visitSymbols(<nodes.Symbol>node);
-			case nodes.NodeType.Variable:
-				return this.visitVariables(<nodes.Variable>node);
-			case nodes.NodeType.Label:
-				return this.visitLabels(<nodes.Label>node);
-			case nodes.NodeType.VariableDef:
-				return this.visitDeclarations(<nodes.VariableDeclaration>node, true);
-			case nodes.NodeType.labelDef:
-				return this.visitDeclarations(<nodes.LabelDeclaration>node, true);
-			case nodes.NodeType.Function:
-				return this.visitFunction(<nodes.Function>node);
-			case nodes.NodeType.Statement:
-				return this.visitStatement(<nodes.NcStatement>node);
+			case nodes.NodeType.SymbolDef:
+				return this.visitDefinition(<nodes.SymbolDefinition>node, true);
+			case nodes.NodeType.LabelDef:
+				return this.visitDefinition(<nodes.LabelDefinition>node, true);
+			case nodes.NodeType.Program:
+				return this.visitFunction(<nodes.Program>node);
+			case nodes.NodeType.Parameter:
+				return this.visitParameter(<nodes.Parameter>node);
 			case nodes.NodeType.Goto:
 				return this.visitGoto(<nodes.GotoStatement>node);
 			case nodes.NodeType.SequenceNumber:
@@ -128,6 +111,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitIfStatement(<nodes.IfStatement>node);	
 			case nodes.NodeType.While:
 				return this.visitWhileStatement(<nodes.WhileStatement>node);
+			case nodes.NodeType.BlockDel:
+				return this.visitBlockDel(<nodes.BlockDel>node);
 		}
 		return true;
 	}
@@ -141,16 +126,15 @@ export class LintVisitor implements nodes.IVisitor {
 		if (this.imports.indexOf(uri?.getText()) > -1){
 			this.addEntry(node, Rules.DuplicateInclude);
 		}
-		else{
+		else {
 			this.imports.push(uri.getText());
 			let declaration = this.fileProvider?.get(uri.getText());
 			
 			if (declaration) {
 				(<nodes.Node>declaration?.macrofile).accept(candidate => {
 					let found = false;
-					if (candidate.type === nodes.NodeType.VariableDef || candidate.type === nodes.NodeType.labelDef) {
-						const count = this.duplicateList.length;
-						this.visitDeclarations(candidate, false);
+					if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
+						this.visitDefinition(candidate, false);
 						found = true;
 					}
 					return !found;
@@ -167,94 +151,41 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private visitFunction(node: nodes.Function): boolean {
 
-		let ident = node.getIdentifier();
-		let number:string | undefined;
+	private visitFunction(node: nodes.Program): boolean {
+
+		const ident = node.getIdentifier();
 		if (ident) {
-			if (ident instanceof nodes.Variable){
-				let nr = (<nodes.Variable>ident).declaration?.getValue()?.getText();
-				if (nr){
-					number = nr;
-				}
-			}
-			else {
-				number = ident?.getText();
-			}
-			if (number && this.functionList.indexOf(number) === -1) {
+			const number = ident.getText();
+			if (this.functionList.indexOf(number) === -1) {
 				this.functionList.push(number);
 			}
-			else{
+			else {
 				this.addEntry(ident, Rules.DuplicateFunction);
 			}
 		}
 		return true;
-	}	
+	}
 
 	private visitSymbols(node: nodes.Symbol) : boolean {
 
-		// Check references
-		if (!this.declarations.has(node.getText())) {
-			if (!this.isNumeric(node.getText())) {
-				this.addEntry(node, Rules.UnknownSymbol);
-			}
-		}
-		return true;
-	}
-
-	private visitVariables(node: nodes.Variable) : boolean {
-		if (this.duplicateList.indexOf(node.getName()) !== -1) {
-			this.addEntry(node, Rules.DuplicateDeclaration);
-		}
-
-		if (node.declaration?.valueType === nodes.ValueType.Sequence) {
-			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			const value = (<nodes.SequenceNumber>node.declaration.getValue())?.getNumber();
-			if (value && func) {		
-				this.addSequenceNumber(node, func, value);
-			}
-		}
-		return true;
-	}
-
-	private visitLabels(node: nodes.Label) : boolean {
-		const parentType = node.getParent().type;
-		if (parentType === nodes.NodeType.Function 
-			|| parentType === nodes.NodeType.Else 
-			|| parentType === nodes.NodeType.Then 
-			|| parentType === nodes.NodeType.While) {
-			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-			const value = node.declaration?.value;
-			if (value && func) {		
-				this.addSequenceNumber(node, func, value);
-			}
-		}
-		return true;
-	}
-
-	private addSequenceNumber(node:nodes.Node, func:nodes.Function, value:nodes.Node) {
-		const list = this.sequenceList.get(func);
-		const duplicate = list?.some(a => {
-			if (a.getText() === value.getText()) {
-				if (a.type !== value.type){
-					this.addEntry(node, Rules.DuplicateLabelSequence);
-				}
-				else {
-					this.addEntry(node, Rules.DuplicateLabel);
-				}
-				return true;
-			}
+		if (node.getParent()?.type === nodes.NodeType.SymbolDef) {
 			return false;
-		});
-		if (!duplicate) {
-			this.sequenceList.add(func, value);
 		}
-	}
 
+		// Check references
+		if (!this.definitions.has(node.getText())) {
+			this.addEntry(node, Rules.UnknownSymbol);
+		}
+		
+		return true;
+	}
 
 	private visitGoto(node: nodes.GotoStatement) : boolean {
-		const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
-		this.gotoList.add(func, node);
+		const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
+		if (func) {
+			this.gotoList.add(func, node);
+		}
 		return true;
 	}
 
@@ -263,49 +194,57 @@ export class LintVisitor implements nodes.IVisitor {
 	 * @param node 
 	 * @param local if true execute some checks only for the current file 
 	 */
-	private visitDeclarations(node: nodes.Node, local:boolean) : boolean {
+	private visitDefinition(node: nodes.Node, local:boolean) : boolean {
 		// scan local declarations
-		let def = <nodes.AbstractDeclaration>node;
+		let def = <nodes.AbstractDefinition>node;
 		let ident = def.getName();
 
-		if (ident){
-			if (this.declarations.has(ident)) {
+		if (ident) {
+			if (this.definitions.has(ident)) {
 				this.duplicateList.push(ident);
 				if (local) {
 					this.addEntry(def, Rules.DuplicateDeclaration);
 				}
 			}
 			
-			if (local){
+			if (local) {
 				const value = def.getValue()?.getText();
-				for (const element of this.declarations.values()){
-					if ((def.valueType ===  nodes.ValueType.Address 
-						|| def.valueType ===  nodes.ValueType.NcCode 
-						|| def.valueType ===  nodes.ValueType.Numeric) 
+				for (const element of this.definitions.values()) {
+					if ((def.type ===  nodes.NodeType.Address 
+						|| def.type ===  nodes.NodeType.Numeric) 
 						&& (def.type ===  element.type &&  element.getValue()?.getText() === value)) {
 						this.addEntry(def, Rules.DuplicateAddress);
 					}
 				}
 			}
 			
-			if (node.type === nodes.NodeType.VariableDef) {
-				this.declarations.set(ident, <nodes.VariableDeclaration>node);
+			if (node.type === nodes.NodeType.SymbolDef) {
+				this.definitions.set(ident, <nodes.SymbolDefinition>node);
 			}
-			else if (node.type === nodes.NodeType.labelDef) {
-				this.declarations.set(ident, <nodes.LabelDeclaration>node);
+			else if (node.type === nodes.NodeType.LabelDef) {
+				this.definitions.set(ident, <nodes.LabelDefinition>node);
 			}
 		}
 		return true;
 	}
 
-	private visitStatement(node: nodes.NcStatement): boolean {
+	/*private visitStatement(node: nodes.NcStatement): boolean {
 		for (const statement of node.getChildren()) {
-			if (!statement.findAParent(nodes.NodeType.VariableDef)) {
+			if (!statement.findAParent(nodes.NodeType.SymbolDef)) {
 				if (statement.type === nodes.NodeType.Parameter || statement.type === nodes.NodeType.Code) {
-					if (statement.getText().length <= 1){
+					if (!statement.hasChildren()) {
 						this.addEntry(statement, Rules.IncompleteParameter);
 					}
 				}
+			}
+		}
+		return true;
+	}*/
+
+	private visitParameter(node: nodes.Parameter): boolean {
+		if (!node.findAParent(nodes.NodeType.SymbolDef)) {
+			if (!node.hasChildren()) {
+				this.addEntry(node, Rules.IncompleteParameter);
 			}
 		}
 		return true;
@@ -315,15 +254,20 @@ export class LintVisitor implements nodes.IVisitor {
 
 		const number = node.getNumber();
 		if (number) {
-			const func = <nodes.Function>node.findAParent(nodes.NodeType.Function);
+			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 			const list = this.sequenceList.get(func);
 			const duplicate = list?.some(a => {
 				if (a.getText() === number.getText()) {
-					if (a.type !== number.type){
+					if (a.symbolLink?.symNode.type !== number.symbolLink?.symNode.type) {
 						this.addEntry(number, Rules.DuplicateLabelSequence);
 					}
 					else {
-						this.addEntry(number, Rules.DuplicateSequence);
+						if (number.symbolLink?.symNode instanceof nodes.Label) {
+							this.addEntry(number, Rules.DuplicateLabel);
+						}
+						else {
+							this.addEntry(number, Rules.DuplicateSequence);
+						}
 					}
 					return true;
 				}
@@ -337,11 +281,14 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitAssignment(node: nodes.Assignment): boolean {
-		if (node.getVariable() instanceof nodes.Variable){
-			const variable = <nodes.Variable>node.getVariable();
-			if (variable.declaration?.valueType === nodes.ValueType.Constant){
-				this.addEntry(variable, Rules.AssignmentConstant);
+		if (node.getLeft() instanceof nodes.Variable) {
+			const symbol = <nodes.Symbol>(<nodes.Variable>node.getLeft()).getBody()?.getParent();
+			if (symbol instanceof nodes.Symbol) {
+				if (symbol.attrib === nodes.ValueAttribute.Constant) {
+					this.addEntry(symbol, Rules.AssignmentConstant);
+				}
 			}
+
 		}
 		return true;
 	}
@@ -417,13 +364,6 @@ export class LintVisitor implements nodes.IVisitor {
 					this.addEntry(node.endlabel, Rules.DoEndNumberTooBig);
 				}
 			}
-			else if (node.dolabel instanceof nodes.Label){
-				doNumber = Number((<nodes.Label>node.dolabel).declaration?.getValue()?.getText());
-				if (doNumber > MAX_WHILE_DEPTH) {
-					this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
-					this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
-				}
-			}
 		}
 
 		const path = nodes.getNodePath(node, node.offset);
@@ -443,14 +383,7 @@ export class LintVisitor implements nodes.IVisitor {
 
 			// Check duplicate DO number
 			if (depth > 0) {
-				let childDoNumber = -1;
-				if (child.dolabel instanceof nodes.Label) {
-					childDoNumber = Number(child.dolabel.declaration?.getValue()?.getText());
-				}
-				else {
-					childDoNumber = Number(child.dolabel?.getText());
-				}
-				if (doNumber === childDoNumber) {
+				if (doNumber === Number(child.dolabel?.getText())) {
 					this.addEntry(child.dolabel!, Rules.DuplicateDoEndNumber);
 				}
 			}
@@ -459,17 +392,12 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private isNumeric(text:string) : boolean {
-		let isNumber = (ch:number) => {
-			return ch >= _0 && ch <= _9 || ch ===_dot;
-		};
-		let len = 0;
-		for (; len < text.length; len++) {
-			if (!isNumber(text.charCodeAt(len))){
-				return false;
-			}
+	private visitBlockDel(node: nodes.BlockDel): boolean {
+		const number = Number(node.getNumber().getText());
+		if (number < 1 || number > 9) {
+			this.addEntry(node, Rules.BlockDelNumber);
 		}
-		return true; 
+		return true;
 	}
 }
 

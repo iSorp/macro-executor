@@ -5,7 +5,7 @@
 @CALL     M98P
 @RETURN   M99
 
-@LOOP_I   10
+@LOOP_I   1
 
 @PARAM      F
 

@@ -29,7 +29,7 @@ export function assertError(text: string, parser: Parser, f: () => nodes.Node | 
 		assert.ok(false, 'no errors but error expected: ' + error.message);
 	} else {
 		markers = markers.sort((a, b) => { return a.getOffset() - b.getOffset(); });
-		assert.equal(markers[0].getRule().id, error.id, 'incorrect error returned from parsing: ' + text);
+		assert.strictEqual(markers[0].getRule().id, error.id, 'incorrect error returned from parsing: ' + text);
 	}
 }
 
@@ -56,43 +56,26 @@ suite('Parser', () => {
 		assertNode('$INCLUDE test.def', parser, parser._parseIncludes.bind(parser));
 		assertNode('$INCLUDE test/test.def', parser, parser._parseIncludes.bind(parser));
 		assertNode('$INCLUDE test\\test.def', parser, parser._parseIncludes.bind(parser));
-
 		assertError('$INCLUDE ', parser, parser._parseIncludes.bind(parser), ParseError.DefinitionExpected);
 	});
 
-	test('Symbol declaration', function () {
+	test('Symbol definition', function () {
 		let parser = new Parser(null);
-		assertNode('@var #100', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var 100', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var 100.', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var 100.1', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var R100', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var R100.1', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var F', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var G04', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var G04P', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var G04P1', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var #1<1>', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var #1<#1>', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var [1]', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var [#1+1]', parser, parser._parseVariableDeclaration.bind(parser));
-		assertNode('@var &A', parser, parser._parseVariableDeclaration.bind(parser));
-
-		assertError('@var ', parser, parser._parseVariableDeclaration.bind(parser), ParseError.AddressExpected);
-		assertError('@var &', parser, parser._parseVariableDeclaration.bind(parser), ParseError.InvalidStatement);
+		assertNode('@var 100', parser, parser._parseSymbolDefinition.bind(parser));
+		assertError('@var ', parser, parser._parseSymbolDefinition.bind(parser), ParseError.AddressExpected);
 	});
 
 	test('Label declaration', function () {
 		let parser = new Parser(null);
-		assertNode('>label 1', parser, parser._parseLabelDeclaration.bind(parser));
-		assertError('>label ', parser, parser._parseLabelDeclaration.bind(parser), ParseError.AddressExpected);
+		assertNode('>label 1', parser, parser._parseLabelDefinition.bind(parser));
+		assertError('>label ', parser, parser._parseLabelDefinition.bind(parser), ParseError.AddressExpected);
 	});
 
 	test('Sub Program declaration', function () {
 		let parser = new Parser(null);
-		assertNode('O 1000\n', parser, parser._parseFunction.bind(parser));
-		assertNode('O test\n', parser, parser._parseFunction.bind(parser));
-		assertError('O ', parser, parser._parseFunction.bind(parser), ParseError.FunctionIdentExpected);
+		assertNode('O 1000\n', parser, parser._parseProgram.bind(parser));
+		assertNode('O test\n', parser, parser._parseProgram.bind(parser));
+		assertError('O ', parser, parser._parseProgram.bind(parser), ParseError.FunctionIdentExpected);
 	});
 
 	test('Sequence number', function () {
@@ -102,7 +85,7 @@ suite('Parser', () => {
 
 	test('Block skip', function () {
 		let parser = new Parser(null);
-		assertNode('/', parser, parser._parseBlockSkip.bind(parser));
+		assertNode('/', parser, parser._parseBlockFunction.bind(parser));
 	});
 
 	test('Address', function () {
@@ -127,10 +110,10 @@ suite('Parser', () => {
 		assertError('#100< ', parser, parser._parseVariable.bind(parser), ParseError.RightAngleBracketExpected);
 	});
 
-	test('Label', function () {
+	/*test('Label', function () {
 		let parser = new Parser(null);
 		assertNode('TEST', parser, parser._parseLabel.bind(parser));
-	});
+	});*/
 
 	test('String', function () {
 		let parser = new Parser(null);
@@ -147,18 +130,19 @@ suite('Parser', () => {
 
 	test('Numeric', function () {
 		let parser = new Parser(null);
-		assertNode('100', parser, parser._parseNumeric.bind(parser));
-		assertNode('100.', parser, parser._parseNumeric.bind(parser));
-		assertNode('100.0', parser, parser._parseNumeric.bind(parser));
+		assertNode('100', parser, parser._parseNumber.bind(parser));
+		assertNode('100.', parser, parser._parseNumber.bind(parser));
+		assertNode('100.0', parser, parser._parseNumber.bind(parser));
 	});
 
 	test('Nc statement', function () {
 		let parser = new Parser(null);
 		assertNode('G01', parser, parser._parseNcStatement.bind(parser));
-		assertNode('N100G01', parser, parser._parseFunctionBody.bind(parser));
-		assertNode('N100 G04 P01', parser, parser._parseFunctionBody.bind(parser));
+		assertNode('N100G01', parser, parser._parseProgramBody.bind(parser));
+		assertNode('N100 G04 P01', parser, parser._parseProgramBody.bind(parser));
+		//assertNode('N100 1', parser, parser._parseProgramBody.bind(parser));
 		assertNode('X', parser, parser._parseNcStatement.bind(parser));
-		assertNode('X[1]', parser, parser._parseNcStatement.bind(parser));
+		assertNode('G[1]', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X#[1]', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X+1', parser, parser._parseNcStatement.bind(parser));
 		assertNode('X-1', parser, parser._parseNcStatement.bind(parser));
@@ -174,8 +158,8 @@ suite('Parser', () => {
 
 	test('Control command', function () {
 		let parser = new Parser(null);
-		assertNode('$EJECT', parser, parser._parseControlCommands.bind(parser, ['$eject']));
-		assertError('$eject', parser, parser._parseControlCommands.bind(parser, ['$eject']), ParseError.UnknownKeyword);
+		assertNode('$EJECT', parser, parser._parseControlCommands.bind(parser, '$eject'));
+		assertError('$eject', parser, parser._parseControlCommands.bind(parser, '$eject'), ParseError.UnknownKeyword);
 	});
 
 	test('Macro statement', function () {
@@ -191,11 +175,13 @@ suite('Parser', () => {
 		assertNode('IF [1] THEN #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
 		assertNode('IF [1] THEN #1 = 1\nELSE #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
 		assertNode('IF [1] THEN \nELSE #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
-		assertNode('IF [1] THEN\n#1 = 1\nELSE\nENDIF', parser, parser._parseIfStatement.bind(parser, parser._parseMacroStatement.bind(parser, false)));
+		assertNode('IF [1] THEN\n#1 = 1\nELSE\nENDIF', parser, parser._parseIfStatement.bind(parser, parser._parseMacroStatement.bind(parser)));
 		assertNode('IF [1] THEN\nENDIF', parser, parser._parseIfStatement.bind(parser, ()=> {}));
 		assertNode('IF [1] THEN\nELSE\nENDIF', parser, parser._parseIfStatement.bind(parser, ()=> {}));
 		assertNode('IF [1] THEN\nIF [1] THEN #1 = 1\nIF [1] THEN #1 = 1\nENDIF\nENDIF', parser, parser._parseIfStatement.bind(parser, parser._parseIfStatement.bind(parser, () => {})));
 		assertNode('IF [1] GOTO 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
+
+		assertNode('IF [1EQ1] THEN #1 = 1', parser, parser._parseIfStatement.bind(parser, ()=> {}));
 
 		assertError('IF ', parser, parser._parseIfStatement.bind(parser), ParseError.LeftSquareBracketExpected);
 		assertError('IF [ ', parser, parser._parseIfStatement.bind(parser), ParseError.ExpressionExpected);
@@ -231,7 +217,7 @@ suite('Parser', () => {
 		assertNode('#[1+1]', parser, parser._parseBinaryExpr.bind(parser));
 		assertNode('#[1+[1]]', parser, parser._parseBinaryExpr.bind(parser));
 		assertNode('#[1+#[1]]', parser, parser._parseBinaryExpr.bind(parser));
-
+	
 		assertError('[ ', parser, parser._parseBinaryExpr.bind(parser), ParseError.TermExpected);
 		assertError('[1 ', parser, parser._parseBinaryExpr.bind(parser), ParseError.RightSquareBracketExpected);
 		assertError('[1+[ ', parser, parser._parseBinaryExpr.bind(parser), ParseError.TermExpected);
@@ -240,13 +226,13 @@ suite('Parser', () => {
 
 	test('Conditional expression', function () {
 		let parser = new Parser(null);
-		assertNode('1 EQ 1', parser, parser._parseConditionalExpression.bind(parser));
-		assertNode('1 || 1', parser, parser._parseConditionalExpression.bind(parser));
-		assertNode('1 EQ 1 || 1', parser, parser._parseConditionalExpression.bind(parser));
-		assertNode('1 EQ 1 || 1 EQ 1', parser, parser._parseConditionalExpression.bind(parser));
+		assertNode('1 EQ 1', parser, parser._parseConditionalExpression.bind(parser, false));
+		assertNode('1 || 1', parser, parser._parseConditionalExpression.bind(parser, false));
+		assertNode('1 EQ 1 || 1', parser, parser._parseConditionalExpression.bind(parser, false));
+		assertNode('1 EQ 1 || 1 EQ 1', parser, parser._parseConditionalExpression.bind(parser, false));
 
-		assertError('1 EQ ', parser, parser._parseConditionalExpression.bind(parser), ParseError.TermExpected);
-		assertError('1 EQ 1 || ', parser, parser._parseConditionalExpression.bind(parser), ParseError.TermExpected);
+		assertError('1 EQ ', parser, parser._parseConditionalExpression.bind(parser, false), ParseError.TermExpected);
+		assertError('1 EQ 1 || ', parser, parser._parseConditionalExpression.bind(parser, false), ParseError.ExpressionExpected);
 	});
 
 	test('Unary operator', function () {
@@ -285,8 +271,8 @@ suite('Parser', () => {
 
 	test('New line', function () {
 		let parser = new Parser(null);
-		assertError('@var1  1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
-		assertError('>var2  1  N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('@var1  1 10 ', parser, parser._parseMacroFile.bind(parser), ParseError.InvalidStatement);
+		assertError('>var2  1 10 ', parser, parser._parseMacroFile.bind(parser), ParseError.InvalidStatement);
 		assertError('O 100 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n #100 = 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n IF [1] THEN #1 = 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
@@ -339,6 +325,11 @@ suite('Parser', () => {
 		assertNode('fpset(1,1,1)', parser, parser._parseFcommand.bind(parser));
 		assertNode('fread(1,1,1)', parser, parser._parseFcommand.bind(parser));
 		assertNode('fwrit(1,1,1)', parser, parser._parseFcommand.bind(parser));
+	});
+
+	test('Non Symbol Statement', function () {
+		let parser = new Parser(null);
+		assertNode('1AND2EQ#1AND#1||1ANDSIN[1]', parser, parser._parseConditionalExpression.bind(parser, false));
 	});
 
 });
