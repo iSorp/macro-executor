@@ -124,7 +124,7 @@ For some color themes, the semantic highlighting must be enabled in the settings
 * Highlighting
 * Description for hover and completion
 
-Out of the box the extension supports semantic highlighting for Labels ``>``, Symbols ``@`` and M/G-Codes and, Variables. Sometimes it could be useful to change the default highlighting for a particular symbol or for a type like a macro variable. 
+Out of the box the extension supports semantic highlighting for ``>``Labels, ``@``Symbols, M/G-Codes and, Variables. Sometimes it could be useful to change the default highlighting for a particular symbol or for a type like a macro variable. 
 Such a customization can be achieved by adding custom keyword items to the configuration property `macro.keywords` in the user/workspace settings:
 
 

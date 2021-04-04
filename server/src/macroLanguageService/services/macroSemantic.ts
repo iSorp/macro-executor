@@ -48,6 +48,9 @@ export class MacroSemantic {
 								if (symbol.attrib === nodes.ValueAttribute.Constant) {
 									this.build(symbol, candidate.type, TokenTypes.constant);
 								}
+								else {
+									this.build(symbol, candidate.type, TokenTypes.number);
+								}
 							} 
 							break;
 						case nodes.NodeType.Code:
@@ -88,15 +91,14 @@ export class MacroSemantic {
 				else if (candidate.type === nodes.NodeType.Label) {
 					this.build(candidate, candidate.type, TokenTypes.label);
 				}
-				else if (candidate.type === nodes.NodeType.Variable) {
-					this.build((<nodes.Variable>candidate).body, candidate.type);
-				}
 				else if (!candidate.symbolLink) {
-					if (candidate.type === nodes.NodeType.Code) {
+					if (candidate.type === nodes.NodeType.Variable) {
+						this.build((<nodes.Variable>candidate)?.body, candidate.type);
+					}
+					else if (candidate.type === nodes.NodeType.Code) {
 						this.build(candidate, candidate.type);
 					}
 				}
-
 				return true;
 			});
 			return this.builder.build();
@@ -109,13 +111,17 @@ export class MacroSemantic {
 	}
 
 	private build(node:nodes.Node, type:nodes.NodeType, tokenType?:TokenTypes) {
+		if (!node) {
+			return;
+		}
+
 		const pos = this.document.positionAt(node.offset);
 		let token:TokenTypes = tokenType;
 		const customKey = this.customKeywords.find(a => a.symbol === node.getText() && (!a.nodeType || nodes.NodeType[a.nodeType] === type));
 		if (customKey && customKey.scope) {
 			token = TokenTypes[customKey.scope];
 		}
-		
+
 		if (token) {
 			if (node.type === nodes.NodeType.Symbol || node.type === nodes.NodeType.Label) {
 				this.builder.push(pos.line, pos.character, node.getText().length, token, 0);

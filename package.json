@@ -561,7 +561,7 @@
 				"language": "macro",
 				"scopes": {
 					"number": [
-						"constant.numeric"
+						"variable.macro"
 					],
 					"macrovar": [
 						"variable.other.field"

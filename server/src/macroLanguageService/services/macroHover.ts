@@ -58,9 +58,12 @@ export class MacroHover {
 								text.push('','***','');	
 							}
 						}
-						
-						!comment ?? text.push(comment);
-						!custom ?? text.push(custom);
+						if (comment) {
+							text.push(comment);
+						}
+						if (custom) {
+							text.push(custom);
+						}
 				
 						hover =  {
 							contents: {
@@ -82,10 +85,13 @@ export class MacroHover {
 								text.push('','***','');	
 							}
 						}
-						
-						!comment ?? text.push(comment);
-						!custom ?? text.push(custom);
-				
+						if (comment) {
+							text.push(comment);
+						}
+						if (custom) {
+							text.push(custom);
+						}
+
 						hover =  {
 							contents: {
 								kind:MarkupKind.Markdown,
