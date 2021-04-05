@@ -941,6 +941,20 @@ export class Parser {
 			let child = this._parseString(true) || this._parseNcStatementInternal();
 			if (child) {
 				node.addChild(child);
+				if (first && node.symbolLink) {
+					first = false;
+					if (child instanceof nodes.NcCode) {
+						if (child.codeType === nodes.CodeType.G) {
+							node.symbolLink.symNode.attrib = nodes.ValueAttribute.GCode;
+						}
+						else if (child.codeType === nodes.CodeType.M) {
+							node.symbolLink.symNode.attrib = nodes.ValueAttribute.MCode;
+						}
+					}
+					else {
+						node.symbolLink.symNode.attrib = nodes.ValueAttribute.Parameter;
+					}
+				}
 			}
 			else {break;}
 		}
@@ -975,15 +989,9 @@ export class Parser {
 		const node = this.create(nodes.NcCode, nodes.NodeType.Address);
 		if (this.token.text.toLocaleLowerCase().charAt(0) === 'g') {
 			node.codeType = nodes.CodeType.G;
-			if (node.symbolLink) {
-				node.symbolLink.symNode.attrib = nodes.ValueAttribute.GCode;
-			}
 		}
 		else if (this.token.text.toLocaleLowerCase().charAt(0) === 'm') {
 			node.codeType = nodes.CodeType.M;
-			if (node.symbolLink) {
-				node.symbolLink.symNode.attrib = nodes.ValueAttribute.MCode;
-			}
 		}
 		else {
 			return null;
@@ -1023,9 +1031,6 @@ export class Parser {
 		}
 
 		const node = this.create(nodes.Parameter, nodes.NodeType.Address);
-		if (node.symbolLink) {
-			node.symbolLink.symNode.attrib = nodes.ValueAttribute.Parameter;
-		}
 
 		// axis number command
 		this.accept(TokenType.Ampersand); 
