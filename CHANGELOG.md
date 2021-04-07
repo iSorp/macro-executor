@@ -1,3 +1,7 @@
+## 0.3.2  (April 07, 2021)
+- Bug fixes
+	- Appropriate string statements
+
 ## 0.3.0  (March 29, 2021)
 - Advanced Parser
 	- A virtual symbol replacement allows any definition value
