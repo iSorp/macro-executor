@@ -173,6 +173,10 @@ export class LintVisitor implements nodes.IVisitor {
 			return false;
 		}
 
+		if (this.duplicateList.indexOf(node.getText()) !== -1) {
+			this.addEntry(node, Rules.DuplicateDeclaration);
+		}
+
 		// Check references
 		if (!this.definitions.has(node.getText())) {
 			this.addEntry(node, Rules.UnknownSymbol);

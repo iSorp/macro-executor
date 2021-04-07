@@ -307,6 +307,7 @@ export class MacroNavigation {
 
 		// local search
 		if (macroFile.type === nodes.NodeType.MacroFile) {
+
 			macroFile.accept(candidate => {
 				if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
 					return false;
@@ -314,24 +315,15 @@ export class MacroNavigation {
 				else if (candidate.type === nodes.NodeType.Symbol || candidate.type === nodes.NodeType.Label) {
 					const node = (<nodes.Symbol>candidate);
 					if (node) {
-						/*const t:MacroCodeLensType = {
-							title: node.symbolLink?.value,
-						};
-						codeLenses.push(
-							{
-								range: getRange(node, document), 
-								data:t
-							});*/
-
 						definitions.add(node.getText(), {
 							uri:document.uri,  
 							range: this.getRange(node, document)
 						});
 					}
-					return false;
-				}			
+				}
 				return true;
 			});
+
 		}
 		// global search
 		else {

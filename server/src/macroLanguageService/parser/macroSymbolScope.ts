@@ -93,11 +93,11 @@ export class ScopeBuilder implements nodes.IVisitor {
 		switch (node.type) {
 			case nodes.NodeType.SymbolDef:
 				const symbol = (<nodes.SymbolDefinition>node);
-				this.addSymbol(node, symbol.getName(), nodes.ReferenceType.Symbol, symbol.getValue().type);
+				this.addSymbol(node, symbol.getName(), nodes.ReferenceType.Symbol, symbol.getValue()?.type);
 				return false;
 			case nodes.NodeType.LabelDef:
 				const label = (<nodes.LabelDefinition>node);
-				this.addSymbol(node, label.getName(), nodes.ReferenceType.Label, label.getValue().type);
+				this.addSymbol(node, label.getName(), nodes.ReferenceType.Label, label.getValue()?.type);
 				return false;
 			case nodes.NodeType.SequenceNumber:
 				const sequence = (<nodes.SequenceNumber>node);

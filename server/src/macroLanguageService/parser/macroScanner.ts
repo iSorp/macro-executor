@@ -566,8 +566,8 @@ export class Scanner {
 			case 0:
 			case _SQO:
 			case _DQO:	
-			//case _WSP:
-			//case _TAB:
+			case _WSP:
+			case _TAB:
 			case _NWL:
 			case _LFD:
 			case _CAR:

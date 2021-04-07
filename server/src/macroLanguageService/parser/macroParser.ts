@@ -308,9 +308,6 @@ export class Parser {
 		this.scanner.goBackTo(this.token.offset);
 		const unquoted = this.scanner.scanUnquotedString();
 		if (unquoted) {
-			// Remove white spaces
-			unquoted.text = unquoted.text.trimEnd();
-			unquoted.len = unquoted.text.length;
 			this.token = unquoted;
 			this.consumeToken();
 			return true;
@@ -476,12 +473,15 @@ export class Parser {
 				hasMatch = false;
 
 				const child = this._parseControlCommands('$nolist', '$list') || this._parseSymbolDefinition() || this._parseLabelDefinition();
-
-				// check new line after statement
-				if (this._needsLineBreakAfter(child) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
-					this.markError(child, ParseError.NewLineExpected);
-				}
-				if (child){
+				if (child) {
+					
+					child.addChild(this._parseString());
+				
+					// check new line after statement
+					if (this._needsLineBreakAfter(child) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+						this.markError(child, ParseError.NewLineExpected);
+					}
+			
 					node.addChild(child);
 					hasMatch = true;
 				}
@@ -612,14 +612,16 @@ export class Parser {
 		}
 
 		node.addChild(this.finish(path));
-		
-		if (this.prevToken.text.split('.').pop()?.toLocaleLowerCase() !== 'def') {
-			this.markError(path, ParseError.DefinitionExpected);
-		}
-		else if (this.textProvider) {
-			this._resolveIncludes(this.textProvider(path.offset, path.length));
-		}
 
+		if (this.textProvider) {
+			const pathstr = this.textProvider(path.offset, path.length);
+			if (pathstr.split('.').pop()?.toLocaleLowerCase() === 'def') {
+				this._resolveIncludes(pathstr);
+			}
+			else {
+				this.markError(path, ParseError.DefinitionExpected);
+			}
+		}
 		return this.finish(node); 
 	}
 	//#endregion
@@ -672,7 +674,7 @@ export class Parser {
 
 		const pos = this.mark();
 		this.processWhiteSpaces();
-		if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+		if (!this.peekAny(TokenType.NewLine, TokenType.EOF, TokenType.String)) {
 			this.markError(node, ParseError.InvalidStatement, [], [TokenType.NewLine]);
 		}
 		else {
@@ -732,7 +734,7 @@ export class Parser {
 
 		const pos = this.mark();
 		this.processWhiteSpaces();
-		if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+		if (!this.peekAny(TokenType.NewLine, TokenType.EOF, TokenType.String)) {
 			this.markError(node, ParseError.InvalidStatement, [], [TokenType.NewLine]);
 		}
 		else {
@@ -775,6 +777,8 @@ export class Parser {
 		if (!node.setIdentifier(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Program)))) {
 			this.markError(node, ParseError.FunctionIdentExpected, [], [TokenType.NewLine]);
 		}
+
+		node.addChild(this._parseString());
 
 		return this._parseBody(node, this._parseProgramBody.bind(this));
 	}
@@ -836,7 +840,6 @@ export class Parser {
 	//#region Function helper
 	public _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildes=true): T {
 		
-		node.addChild(this._parseString());
 		if (this._needsLineBreakBefore(node) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.NewLineExpected, [], [TokenType.NewLine]);
 		}
@@ -1094,6 +1097,8 @@ export class Parser {
 			if (!node.setRight(this._parseBinaryExpr())) {
 				return this.finish(node, ParseError.TermExpected, [TokenType.NewLine]);
 			}
+
+			node.addChild(this._parseString());
 
 			return this.finish(node); 
 		}
