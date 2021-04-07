@@ -1,6 +1,8 @@
 ## 0.3.2  (April 07, 2021)
 - Bug fixes
 	- Appropriate string statements
+	- Bug fix for Local codelens references
+	- Error message for duplicate imported symbols
 
 ## 0.3.0  (March 29, 2021)
 - Advanced Parser
