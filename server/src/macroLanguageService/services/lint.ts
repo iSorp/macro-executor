@@ -105,6 +105,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitGoto(<nodes.GotoStatement>node);
 			case nodes.NodeType.SequenceNumber:
 				return this.visitSequenceNumber(<nodes.SequenceNumber>node);		
+			case nodes.NodeType.NNAddress:
+				return this.visitNNAddress(node);		
 			case nodes.NodeType.Assignment:
 				return this.visitAssignment(<nodes.Assignment>node);
 			case nodes.NodeType.If:
@@ -281,6 +283,17 @@ export class LintVisitor implements nodes.IVisitor {
 				this.sequenceList.add(func, number);
 			}
 		}
+		return true;
+	}
+
+	private visitNNAddress(node: nodes.Node): boolean  {
+		const parent = node.findAParent(nodes.NodeType.Program)
+		for (let child of parent.getChildren()) {
+			if (child.type === nodes.NodeType.Statement && child.getText().toLocaleLowerCase().includes('g10')) {
+				return false;
+			}
+		}
+		this.addEntry(node, Rules.UnsuitableNNAddress);
 		return true;
 	}
 

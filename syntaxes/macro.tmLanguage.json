@@ -104,6 +104,9 @@
                     "include":"#sequence"
                 },
                 {
+                    "include":"#nnAddress"
+                },
+                {
 					"include":"#variable"	
                 },
                 {
@@ -226,6 +229,10 @@
         "sequence" : {
             "name":"punctuation.section.tag.macro",
             "match":"(?i)((?<=\\/)|(^\\s*))(\\s*N\\d+)"
+        },
+        "nnAddress" : {
+            "name":"keyword.other.macro",
+            "match":"(?i)(\\s*NN)(?=\\s|#|\\d)"
         },
 		"number": {	
 			"name":"constant.numeric.macro",
@@ -381,6 +388,9 @@
                 },
                 {
                     "include":"#sequence"
+                },
+                {
+                    "include":"#nnAddress"
                 },
                 {
 					"include":"#variable"	

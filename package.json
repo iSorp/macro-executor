@@ -368,6 +368,24 @@
 										"warning",
 										"ignore"
 									]
+								},
+								"blockDelNumber": {
+									"type": "string",
+									"default": "ignore",
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
+								},
+								"unsuitableNNAddress": {
+									"type": "string",
+									"default": "ignore",
+									"enum": [
+										"error",
+										"warning",
+										"ignore"
+									]
 								}
 							}
 						}

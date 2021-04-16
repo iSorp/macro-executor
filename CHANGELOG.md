@@ -1,3 +1,6 @@
+## 0.3.3  (April 16, 2021)
+- NN address parsing
+
 ## 0.3.2  (April 07, 2021)
 - Bug fixes
 	- Appropriate string statements

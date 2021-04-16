@@ -26,6 +26,7 @@ export enum TokenType {
 	Number,
 	Prog,
 	Sequence,
+	NNAddress,
 	Ffunc,
 	Fcmd,
 	KeyWord,
@@ -304,9 +305,14 @@ export class Scanner {
 			return this.finishToken(offset, TokenType.Prog);
 		}
 
-		// N-keyword
+		// N-keyword, NN-keyword
 		if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {
-			return this.finishToken(offset, TokenType.Sequence);
+			if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {		
+				return this.finishToken(offset, TokenType.NNAddress);
+			}
+			else {
+				return this.finishToken(offset, TokenType.Sequence);
+			}
 		}
 
 		if (this._parameter()) {

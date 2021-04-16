@@ -222,7 +222,8 @@ Three levels are supported: `error`, `warning` and `ignore`.
               "incompleteParameter":      "error",
               "includeNotFound":          "error",
               "assignmentConstant":       "Ignore",
-              "blockDelNumber":           "error"
+              "blockDelNumber":           "error",
+              "unsuitableNNAddress":      "warning"
        }
 ```
 
