@@ -83,6 +83,17 @@ suite('Parser', () => {
 		assertNode('N100', parser, parser._parseSequenceNumber.bind(parser));
 	});
 
+	test('NN Address', function () {
+		let parser = new Parser(null);
+		assertNode('NN100', parser, parser._parseNNAddress.bind(parser));
+		assertNode('NN[100]', parser, parser._parseNNAddress.bind(parser));
+		assertNode('NN100R100', parser, parser._parseNNAddress.bind(parser));
+		assertNode('NN#100R#100', parser, parser._parseNNAddress.bind(parser));
+		assertNode('NN#[100]R#[100]', parser, parser._parseNNAddress.bind(parser));
+
+		assertError('NNR100', parser, parser._parseNNAddress.bind(parser), ParseError.InvalidStatement);
+	});
+
 	test('Block skip', function () {
 		let parser = new Parser(null);
 		assertNode('/', parser, parser._parseBlockFunction.bind(parser));

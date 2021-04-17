@@ -878,10 +878,20 @@ export class Parser {
 		const node = this.createNode(nodes.NodeType.NNAddress);
 		this.consumeToken();
 
-		if (!node.addChild(this._parseNumber() || this._parseVariable())) {
+		if (this.peekAny(TokenType.Number, TokenType.Hash, TokenType.BracketL)) {
+			if (!node.addChild(this._parseBinaryExpr())) {
+				this.markError(node, ParseError.InvalidStatement);
+			}
+			if (this.peekAny(TokenType.Parameter)) {
+				if (!node.addChild(this._parseAddress())) {
+					this.markError(node, ParseError.TermExpected, [TokenType.NewLine]);
+				}
+			}
+		}
+		else {
 			this.markError(node, ParseError.InvalidStatement);
 		}
-		node.addChild(this._parseNcParam());
+
 
 		return this.finish(node);
 	}
