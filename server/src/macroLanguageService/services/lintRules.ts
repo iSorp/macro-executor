@@ -41,7 +41,7 @@ export const Rules = {
 	IncludeNotFound: new Rule('includeNotFound', localize('rule.includeNotFound', 'Include file not found'), Error),
 	AssignmentConstant: new Rule('assignmentConstant', localize('rule.assignmentConstant', 'Assignment to constant'), Ignore),
 	BlockDelNumber: new Rule('blockDelNumber', localize('rule.blockDelNumber', 'BLOCKDEL number not match 1-9'), Error),
-
+	UnsuitableNNAddress: new Rule('unsuitableNNAddress', localize('rule.unsuitableNNAddress', 'Address NN is outside of a G10/G11 block'), Warning),
 };
 
 export class LintConfiguration {

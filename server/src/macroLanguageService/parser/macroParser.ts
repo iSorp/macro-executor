@@ -788,7 +788,8 @@ export class Parser {
 			|| this._parseMacroStatement()
 			|| this._parseNcStatement()
 			|| this._parseString()
-			|| this._parseFcommand());
+			|| this._parseFcommand()) 
+			|| this._parseNNAddress();
 	}
 
 	public _parseProgramBody(): nodes.Node | null {
@@ -868,6 +869,34 @@ export class Parser {
 	/**
 	 * e.g N100G01
 	 */
+	public _parseNNAddress() : nodes.Node | null {
+
+		if (!this.peek(TokenType.NNAddress)) {
+			return null;
+		}
+
+		const node = this.createNode(nodes.NodeType.NNAddress);
+		this.consumeToken();
+
+		if (this.peekAny(TokenType.Number, TokenType.Hash, TokenType.BracketL)) {
+			if (!node.addChild(this._parseBinaryExpr())) {
+				this.markError(node, ParseError.InvalidStatement);
+			}
+			if (this.peekAny(TokenType.Parameter)) {
+				if (!node.addChild(this._parseAddress())) {
+					this.markError(node, ParseError.TermExpected, [TokenType.NewLine]);
+				}
+			}
+		}
+		else {
+			this.markError(node, ParseError.InvalidStatement);
+		}
+
+
+		return this.finish(node);
+	}
+	
+
 	public _parseSequenceNumber() : nodes.Node | null {
 
 		if (!this.peek(TokenType.Sequence) && !(this.peek(TokenType.Number) && this.symbol?.defType === nodes.NodeType.LabelDef)) {
@@ -875,7 +904,6 @@ export class Parser {
 		}
 
 		const node = this.create(nodes.SequenceNumber, nodes.NodeType.Numeric);
-	
 		this.accept(TokenType.Sequence);
 
 		if (!node.setNumber(this._parseNumber(true, false, nodes.ReferenceType.JumpLabel, nodes.ReferenceType.Sequence))) {

@@ -18,5 +18,6 @@
 	"rule.incompleteParameter": "参数不完整，G代码或M代码需要数值或变量做参数",
 	"rule.includeNotFound": "预加载文件未找到",
 	"rule.assignmentConstant": "常数已赋值",
-	"rule.blockDelNumber" : "BLOCKDEL number not match 1-9"
+	"rule.blockDelNumber" : "BLOCKDEL number not match 1-9",
+	"rule.unsuitableNNAddress" : "Address NN is outside of a G10/G11 block"
 }

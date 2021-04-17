@@ -179,4 +179,14 @@ suite('Scanner', () => {
 		assertSingleTokenNonSymolStatement(scanner, 'R.0', 3, 0, 'R.0', TokenType.Symbol); 
 		assertSingleTokenNonSymolStatement(scanner, 'ABC', 3, 0, 'ABC', TokenType.Symbol); 
 	});
+
+	test('Token N', function () {
+		let scanner = new Scanner();
+		assertSingleTokenNonSymolStatement(scanner, 'N', 1, 0, 'N', TokenType.Sequence);
+	});
+
+	test('Token NN', function () {
+		let scanner = new Scanner();
+		assertSingleTokenNonSymolStatement(scanner, 'NN', 2, 0, 'NN', TokenType.NNAddress);
+	});
 });

@@ -488,6 +488,7 @@ export enum NodeType {
 	Code,
 	Parameter,
 	SequenceNumber,
+	NNAddress,
 	BlockSkip,
 	BlockDel
 }
