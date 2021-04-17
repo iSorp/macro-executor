@@ -286,11 +286,24 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
+	private inG10 = false;
 	private visitNNAddress(node: nodes.Node): boolean  {
+		this.inG10 = false;
 		const parent = node.findAParent(nodes.NodeType.Program)
 		for (let child of parent.getChildren()) {
-			if (child.type === nodes.NodeType.Statement && child.getText().toLocaleLowerCase().includes('g10')) {
-				return false;
+			if (child.type === nodes.NodeType.SequenceNumber){
+				child = child.getChild(1);
+			}
+			if (child && child.type === nodes.NodeType.Statement) {
+				if (child.getText().toLocaleLowerCase().includes('g10')) {
+					this.inG10 = true;
+				}
+
+				if (child.getText().toLocaleLowerCase().includes('g11')) {
+					if (this.inG10) {
+						return false;
+					}
+				}
 			}
 		}
 		this.addEntry(node, Rules.UnsuitableNNAddress);
