@@ -15,6 +15,7 @@ import {
 	MacroFileType, 
 	MacroFileProvider, 
 	FileProviderParams,
+	ALL_FILES
 } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
@@ -29,10 +30,7 @@ import {
 
 import { URI, Utils } from 'vscode-uri';
 
-const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
-
 export const parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>();
-
 
 export class FileProvider implements MacroFileProvider {
 
@@ -112,7 +110,7 @@ export class FileProvider implements MacroFileProvider {
 		if (!path.isAbsolute(ref)) {
 			absolutPath = Utils.resolvePath(URI.parse(this.workspaceFolder), ref).fsPath;
 		}
-		absolutPath = this.resolvePathCaseSensitive(absolutPath)
+		absolutPath = this.resolvePathCaseSensitive(absolutPath);
 		return absolutPath ? URI.file(absolutPath).toString() :undefined;
 	}
 

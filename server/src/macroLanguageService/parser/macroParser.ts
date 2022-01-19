@@ -129,9 +129,8 @@ export class Parser {
 				if (node) {
 					this.symbol = {
 						symNode: this.symbolNodeList[this.symbolNodeList.length-1],
-						getText: () => tk.text,	
 						defType: definition.type,
-						valType: node.type,
+						valNode: node,
 					};
 				}
 
@@ -342,7 +341,7 @@ export class Parser {
 
 	public createNode(nodeType: nodes.NodeType): nodes.Node {
 		const node = new nodes.Node(this.token.offset, this.token.len, null, nodeType);
-		if (this.symbol && (this.symbol.valType === node.type || this.symbol.valType === nodes.NodeType.Undefined)) {
+		if (this.symbol && (this.symbol.valNode.type === node.type || this.symbol.valNode.type === nodes.NodeType.Undefined)) {
 			node.symbolLink = this.symbol;
 		}
 		return node;
@@ -350,7 +349,7 @@ export class Parser {
 
 	public create<T extends nodes.Node>(ctor: nodes.NodeConstructor<T>, ...valueType: nodes.NodeType[]): T {
 		const node = new ctor(this.token.offset, this.token.len);
-		if (this.symbol && (this.symbol.valType === node.type || this.symbol.valType === nodes.NodeType.Undefined || valueType.includes(this.symbol.valType))) {
+		if (this.symbol && (this.symbol.valNode.type === node.type || this.symbol.valNode.type === nodes.NodeType.Undefined || valueType.includes(this.symbol.valNode.type))) {
 			node.symbolLink = this.symbol;
 		}
 		return node;
@@ -435,7 +434,7 @@ export class Parser {
 			if (textDocument.version !== versionId) {
 				throw new Error(`Underlying model has changed, AST is no longer valid: \n ${textDocument.uri}`);
 			}
-			return text.substr(offset, length);
+			return text.substring(offset, offset+length);
 		};
 
 		let type = textDocument.uri.split('.').pop()?.toLocaleLowerCase() ;

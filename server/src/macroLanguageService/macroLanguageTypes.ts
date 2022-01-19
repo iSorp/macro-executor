@@ -23,6 +23,9 @@ export {
 
 export * from 'vscode-languageserver-types';
 
+export const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
+export const SRC_FILES:string = '/**/*.[sS][rR][cC]';
+
 export interface LanguageSettings {
 	validate? : {
 		enable: boolean;
@@ -37,6 +40,7 @@ export interface LanguageSettings {
 	}
 	lint?: LintSettings;
 	keywords?: CustomKeywords[];
+	callFunctions?: string[];
 }
 export type LintSettings = { 
 	rules : {

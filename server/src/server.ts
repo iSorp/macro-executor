@@ -112,7 +112,8 @@ connection.onInitialize((params: InitializeParams) => {
 				full: {
 					delta: false
 				}
-			}
+			},
+			callHierarchyProvider: true,
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -317,6 +318,23 @@ connection.languages.semanticTokens.onRange(event => {
 	return execute(event.textDocument.uri, (service, repo, settings) =>
 		service.doSemanticHighlighting(repo.document, repo.macrofile, settings, event.range));
 });
+
+connection.languages.callHierarchy.onPrepare((params) => {
+	return execute(params.textDocument.uri, (service, repo, settings) =>
+		service.doPrepareCallHierarchy(repo.document, params.position, repo.macrofile));
+});
+
+connection.languages.callHierarchy.onIncomingCalls((params) => {
+	return execute(params.item.uri, (service, repo, settings) =>
+		service.doIncomingCalls(repo.document, params.item, repo.macrofile, settings));
+});
+
+connection.languages.callHierarchy.onOutgoingCalls((params) => {
+	/*return execute(params.textDocument.uri, (service, repo, settings) =>
+		service.doOutgoingCallsrepo.document, params.item, repo.macrofile));*/
+	return [];
+});
+
 
 documents.onDidChangeContent(event => {
 	return execute(event.document.uri, (service, repo, settings) => {

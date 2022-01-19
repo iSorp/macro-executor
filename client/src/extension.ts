@@ -34,6 +34,7 @@ interface ConfigurationSettings {
 	lint?: Object;
 	keywords: Object[],
 	workspaceFolder?: WorkspaceFolder | undefined;
+	callFunctions?: string[];
 }
 
 interface CodeLensReferenceArgument { 
@@ -135,6 +136,7 @@ export function activate(context: ExtensionContext) {
 							sequence: config.get('sequence'),
 							validate: config.get('validate'),
 							keywords: config.get('keywords'),
+							callFunctions: config.get('callFunctions'),
 						};
 		
 						if (workspaceFolder !== undefined) {

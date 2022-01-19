@@ -66,14 +66,14 @@ export class LintVisitor implements nodes.IVisitor {
 						number = jumpLabel.getText();
 					}
 					else if (jumpLabel.symbolLink) {
-						number = jumpLabel.symbolLink.getText();
+						number = jumpLabel.symbolLink?.valNode.getText();
 					}
 					else {
 						continue;
 					}
 
 					if (sequences && sequences.some(a => {
-						return a.symbolLink && a.symbolLink.getText() === number || a.getText() === number;						
+						return a.symbolLink && a.symbolLink?.valNode.getText() === number || a.getText() === number;						
 					})) {
 						continue;
 					}
@@ -289,7 +289,7 @@ export class LintVisitor implements nodes.IVisitor {
 	private inG10 = false;
 	private visitNNAddress(node: nodes.Node): boolean  {
 		this.inG10 = false;
-		const parent = node.findAParent(nodes.NodeType.Program)
+		const parent = node.findAParent(nodes.NodeType.Program);
 		for (let child of parent.getChildren()) {
 			if (child.type === nodes.NodeType.SequenceNumber){
 				child = child.getChild(1);

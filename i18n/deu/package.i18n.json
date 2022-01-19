@@ -7,6 +7,7 @@
 	"macro.setControlType": "Steuerungstyp auswählen",
 	"macro.action.addsequeces": "Fehlende Sequenznummern hinzufügen",
 	"macro.action.refactorsequeces": "Sequenznummern neu ordnen",
+	"macro.callFunctions.description": "Benutzerdefinierte Funktionen zum Aufrufen von Unterprogrammen",
 	"macro.lint.description": "Lint Einstellungen",
 	"macro.sequence.base.description": "Startnummer der Sequenzen für das Refactoring",
 	"macro.sequence.increment.description": "Inkrement der Sequenzen für Refactoring",

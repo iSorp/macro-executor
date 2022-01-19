@@ -6,9 +6,9 @@
 
 import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
-	Position, Range, SymbolInformation, SymbolKind, TextEdit, 
+	Position, Range, SymbolInformation, SymbolKind, TextEdit,
 	MacroCodeLensCommand, TextDocument, MacroFileProvider, 
-	WorkspaceEdit, MacroCodeLensType, MacroFileType
+	WorkspaceEdit, MacroCodeLensType, MacroFileType, SRC_FILES, ALL_FILES
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols } from '../parser/macroSymbolScope';
@@ -31,9 +31,6 @@ class FunctionMap {
 type EditEntries = {
 	[key:string]:TextEdit[];
 }
-
-const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
-const SRC_FILES:string = '/**/*.[sS][rR][cC]';
 
 export class MacroNavigation {
 
@@ -173,7 +170,7 @@ export class MacroNavigation {
 			if (node.type === nodes.NodeType.Symbol && symbol.valueType !== nodes.NodeType.Statement) {
 				
 				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) 
-					|| (symbol?.valueType == nodes.NodeType.Address
+					|| (symbol?.valueType === nodes.NodeType.Address
 						&& (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode))) {
 
 					switch (symbol.valueType) {
@@ -231,12 +228,8 @@ export class MacroNavigation {
 			} 
 			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
 				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
-					if (node.symbolLink) {
-						entry.name = node.getNodeText();
-					}
-					else {
-						entry.name = node.getText();
-					}
+					entry.name = node.getText();
+	
 					if (node.getChild(0).type === nodes.NodeType.Code){
 						entry.kind = SymbolKind.Event;
 					}

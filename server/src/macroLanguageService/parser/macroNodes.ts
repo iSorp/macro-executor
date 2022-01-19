@@ -5,6 +5,7 @@
 'use strict';
 
 import { basename } from 'path';
+import { integer } from 'vscode-languageserver';
 
 export enum ReferenceType {
 	Undefined 	= 1 << 0,
@@ -72,9 +73,8 @@ export interface ITextProvider {
 
 export interface ISymbolLink {
 	symNode: Symbol | Label;
-	getText(): string;
 	defType: NodeType;
-	valType: NodeType;	
+	valNode: Node;	
 }
 
 export class Node {
@@ -137,7 +137,7 @@ export class Node {
 	}
 
 	public getText(): string {
-		return this.symbolLink?.getText() ?? this.getTextProvider()(this.offset, this.length);
+		return this.symbolLink?.valNode.getText() ?? this.getTextProvider()(this.offset, this.length);
 	}
 
 	public getNodeText(): string {
@@ -313,6 +313,29 @@ export class Node {
 
 	public encloses(candidate: Node): boolean {
 		return this.offset <= candidate.offset && this.offset + this.length >= candidate.offset + candidate.length;
+	}
+
+	public getChildIndex(): integer | null {
+		if (this.parent.children) {
+			let current: Node | null = null;
+			for (let i = 0; i < this.parent.children.length; i++) {
+				current = this.parent.children[i];
+				if (current.offset === this.offset && current.length === this.length) {
+					return i;
+				}
+			}
+		}
+		return null;
+	}
+
+	public getLastSibling(): Node | null {
+		if (this.parent.hasChildren()) {
+			const index = this.getChildIndex();
+			if (index !== null) {
+				return this.parent.getChild(index-1);
+			}
+		}
+		return null;
 	}
 
 	public getParent(): Node | null {

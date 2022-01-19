@@ -8,6 +8,7 @@
 	"macro.action.addsequeces": "Add missing sequence numbers",
 	"macro.action.refactorsequeces": "Reorganize sequence numbers",
 
+	"macro.callFunctions.description": "Custom call functions",
 	"macro.lint.description": "Lint settings",
 	"macro.sequence.base.description": "Sequences start number for refactoring",
 	"macro.sequence.increment.description": "Sequences increment for refactoring",

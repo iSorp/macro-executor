@@ -30,7 +30,6 @@
 	"engines": {
 		"vscode": "^1.52.0"
 	},
-	"enableProposedApi": true,
 	"activationEvents": [
 		"onLanguage:macro"
 	],
@@ -141,6 +140,18 @@
 			"type": "object",
 			"title": "Macro Executor",
 			"properties": {
+				"macro.callFunctions" : {
+					"scope": "resource",
+					"default": [
+						"M98",
+						"G65"
+					],
+					"description": "%macro.callFunctions.description%",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
 				"macro.keywords": {
 					"scope": "resource",
 					"type": "array",
