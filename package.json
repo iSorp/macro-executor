@@ -140,7 +140,7 @@
 			"type": "object",
 			"title": "Macro Executor",
 			"properties": {
-				"macro.callFunctions" : {
+				"macro.callFunctions": {
 					"scope": "resource",
 					"default": [
 						"M98",
@@ -628,7 +628,8 @@
 		"clean": "rimraf client/out && rimraf server/out",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh",
-		"unit-test": "npm run compile && mocha"
+		"unit-test": "npm run compile && mocha",
+		"deploy": "vsce publish --yarn"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.3",
@@ -642,11 +643,11 @@
 		"gulp-filter": "^6.0.0",
 		"gulp-sourcemaps": "^3.0.0",
 		"gulp-typescript": "^5.0.1",
+		"intrinsic": "^2.0.1",
 		"mocha": "^8.3.2",
 		"run-sequence": "^2.2.1",
 		"typescript": "^4.2.3",
-		"intrinsic": "^2.0.1",
-		"vsce": "^1.87.1",
+		"vsce": "^1.103.1",
 		"vscode-nls-dev": "^3.3.2"
 	}
 }
