@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { basename } from 'path';
 import { integer } from 'vscode-languageserver';
 
 export enum ReferenceType {
@@ -83,6 +82,8 @@ export class Node {
 
 	public offset: number;
 	public length: number;
+	public progOffset: number;
+	public progLength: number;
 	private _symbolLink: ISymbolLink | undefined;
 
 	public get end() { return this.offset + this.length; }
@@ -90,16 +91,19 @@ export class Node {
 	public options: { [name: string]: any; } | undefined;
 
 	public textProvider: ITextProvider | undefined; // only set on the root node
-
+	public textProviderProg: ITextProvider | undefined; // only set on the root node
+	
 	private children: Node[] | undefined;
 	private issues: IMarker[] | undefined;
 
 	private nodeType: NodeType | undefined;
 
-	constructor(offset: number = -1, len: number = -1, symbol?: ISymbolLink, nodeType?: NodeType) {
+	constructor(offset: number = -1, len: number = -1, symbol?: ISymbolLink, progOffset: number = -1, progLen: number = -1, nodeType?: NodeType) {
 		this.parent = null;
 		this.offset = offset;
 		this.length = len;
+		this.progOffset = progOffset;
+		this.progLength = progLen;
 		if (nodeType) {
 			this.nodeType = nodeType;
 		}
@@ -136,8 +140,19 @@ export class Node {
 		return () => { return 'unknown'; };
 	}
 
+	public getTextProviderProg(): ITextProvider {
+		let node: Node | null = this;
+		while (node && !node.textProviderProg) {
+			node = node.parent;
+		}
+		if (node) {
+			return node.textProviderProg!;
+		}
+		return () => { return 'unknown'; };
+	}
+
 	public getText(): string {
-		return this.symbolLink?.valNode.getText() ?? this.getTextProvider()(this.offset, this.length);
+		return this.getTextProviderProg()(this.progOffset, this.progLength);
 	}
 
 	public getNodeText(): string {
@@ -520,6 +535,10 @@ export class Reference extends Node {
 
 	public referenceTypes: ReferenceType;
 
+	constructor(offset: number, length: number, symbol:ISymbolLink, progOffset: number, ProgLength: number) {
+		super(offset, length, symbol, progOffset, ProgLength);
+	}
+
 	public addReferenceType(...referenceTypes: ReferenceType[]) {
 		for (const ref of referenceTypes) {
 			this.referenceTypes |= ref;
@@ -583,8 +602,8 @@ export class NcCode extends Reference {
 	public referenceTypes: ReferenceType = ReferenceType.Code | ReferenceType.Symbol;
 	public codeType?:CodeType;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
+		super(offset, length, undefined, progOffset, ProgLength);
 	}
 
 	public get type(): NodeType {
@@ -596,8 +615,8 @@ export class Parameter extends Reference {
 
 	public referenceTypes: ReferenceType = ReferenceType.Symbol;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
+		super(offset, length, progOffset, ProgLength);
 	}
 
 	public get type(): NodeType {
@@ -610,8 +629,8 @@ export class SequenceNumber extends Reference {
 	public referenceTypes: ReferenceType = ReferenceType.Symbol;
 	public number?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
+		super(offset, length, undefined,progOffset, ProgLength);
 	}
 
 	public get type(): NodeType {
@@ -664,8 +683,8 @@ export class Symbol extends Reference {
 	public attrib: ValueAttribute = ValueAttribute.None;
 	public identifier: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, ProgLength: number, definition?: AbstractDefinition) {
+		super(offset, length, undefined, progOffset, ProgLength);
 		this.setIdentifier(new Node(offset, length));
 	}
 
@@ -688,8 +707,8 @@ export class Label extends Reference {
 	public attrib: ValueAttribute = ValueAttribute.None;
 	public identifier: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, ProgLength: number, definition?: AbstractDefinition) {
+		super(offset, length, undefined, progOffset, ProgLength);
 		this.setIdentifier(new Node(offset, length));
 	}
 
@@ -714,8 +733,8 @@ export class Numeric extends Reference  {
 
 	public referenceTypes: ReferenceType;
 
-	constructor(offset: number, length: number, symbol: ISymbolLink) {
-		super(offset, length, symbol);
+	constructor(offset: number, length: number, symbol:ISymbolLink, progOffset: number, ProgLength: number) {
+		super(offset, length, symbol, progOffset, ProgLength);
 	}
 
 	public get type(): NodeType {
@@ -728,8 +747,8 @@ export class Variable extends Reference {
 	public referenceTypes: ReferenceType = ReferenceType.Variable;
 	public body?: Node;
 
-	constructor(offset: number, length: number, symbol: ISymbolLink) {
-		super(offset, length, symbol);
+	constructor(offset: number, length: number, symbol:ISymbolLink, progOffset: number, ProgLength: number) {
+		super(offset, length, symbol, progOffset, ProgLength);
 	}
 
 	public get type(): NodeType {
@@ -753,8 +772,8 @@ export class Address extends Reference {
 
 	public referenceTypes: ReferenceType = ReferenceType.Address | ReferenceType.Symbol;
 
-	constructor(offset: number, length: number, symbol:ISymbolLink) {
-		super(offset, length, symbol);
+	constructor(offset: number, length: number, symbol:ISymbolLink, progOffset: number, ProgLength: number) {
+		super(offset, length, symbol, progOffset, ProgLength);
 	}
 
 	public get type(): NodeType {

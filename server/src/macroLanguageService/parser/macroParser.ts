@@ -14,6 +14,9 @@ import {
 } from '../macroLanguageTypes';
 
 interface IMark {
+	prevParsedToken?: IParsedToken;
+	parsedToken: IParsedToken;
+	prog: string;
 	prev?: IToken;
 	curr: IToken;
 	pos: number;
@@ -23,17 +26,11 @@ interface IMark {
 	func: () => boolean;
 }
 
-interface ITokenInformation {
-	token: IToken;
-	defoffs: number;
-	symbol: string;
+export interface IParsedToken {
+	text: string;
+	offset: number;
+	len: number;
 }
-
-interface IDefInformation {
-	defoffs: number;
-	value:string;
-}
-
 
 export class Parser {
 	
@@ -43,6 +40,9 @@ export class Parser {
 	private token: IToken;
 	private prevToken?: IToken;
 	private lastErrorToken?: IToken;
+	private prevProgToken?: IParsedToken;
+	private progToken: IParsedToken;
+	private progString: string = '';
 	private definition: nodes.AbstractDefinition;
 	private textProvider?: nodes.ITextProvider;
 	private definitionMap:Map<string, nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>();
@@ -55,6 +55,8 @@ export class Parser {
 	constructor(private fileProvider: MacroFileProvider) {
 		this.token = { type: TokenType.EOF, offset: -1, len: 0, text: '' };
 		this.prevToken = undefined;
+		this.progToken = { offset: -1, len: 0, text: '' };
+		this.prevProgToken = undefined;
 	}
 
 	public peekKeyword(text: string): boolean {
@@ -103,6 +105,16 @@ export class Parser {
 		this.scan();
 	}
 
+	public addProgToken() {
+		this.prevProgToken = this.progToken;
+		this.progToken = {
+			text: this.token.text,
+			offset: this.progString.length,
+			len: this.token.text.length,
+		};
+		this.progString += this.token.text;
+	}
+
 	public addSymbolNodes(node: nodes.Node) {
 		node.accept(candidate => {
 			if (candidate.symbolLink && candidate.type !== nodes.NodeType.Symbol && candidate.type !== nodes.NodeType.Label) {
@@ -138,13 +150,14 @@ export class Parser {
 				tk.len = this.token.len;
 				tk.offset = this.token.offset;
 				this.token = tk;
+				this.addProgToken();
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private scanNonSymbol() {
+	private scanNonSymbol() : boolean{
 		const tk = this.scanner.scanNonSymbol();
 		if (tk) {
 			if (tk.type === TokenType.Symbol) {
@@ -153,6 +166,7 @@ export class Parser {
 			}
 			else if (tk.type !== TokenType.EOF) {
 				this.token = tk;
+				this.addProgToken();
 				return true;
 			}
 		}
@@ -171,6 +185,7 @@ export class Parser {
 		this.symbol = undefined;
 
 		if (this.token.type !== TokenType.Symbol || (this.token.type === TokenType.Symbol && this.acceptAnySymbol)) {
+			this.addProgToken();
 			return;
 		}
 
@@ -184,10 +199,10 @@ export class Parser {
 
 				let symbolNode: nodes.Symbol | nodes.Label;
 				if (definition.type === nodes.NodeType.SymbolDef) {
-					symbolNode = new nodes.Symbol(this.token.offset, this.token.len);
+					symbolNode = new nodes.Symbol(this.token.offset, this.token.len, -1, -1);
 				}
 				else {
-					symbolNode = new nodes.Label(this.token.offset, this.token.len);
+					symbolNode = new nodes.Label(this.token.offset, this.token.len, -1, -1);
 				}
 
 				symbolNode.attrib = definition.attrib;
@@ -214,6 +229,9 @@ export class Parser {
 		return {
 			prev: this.prevToken,
 			curr: this.token,
+			prevParsedToken: this.prevProgToken,
+			parsedToken: this.progToken,
+			prog: this.progString,
 			pos: this.scanner.pos(),
 			defPos: this.defScanner.pos(),
 			def: this.definition,
@@ -225,6 +243,9 @@ export class Parser {
 	public restoreAtMark(mark: IMark): void {
 		this.prevToken = mark.prev;
 		this.token = mark.curr;
+		this.prevProgToken = mark.prevParsedToken;
+		this.progToken = mark.parsedToken;
+		this.progString = mark.prog;
 		this.scanner.goBackTo(mark.pos);
 		this.subScanFunc = mark.func;
 		if (this.definition?.value) {
@@ -308,6 +329,7 @@ export class Parser {
 		const unquoted = this.scanner.scanUnquotedString();
 		if (unquoted) {
 			this.token = unquoted;
+			this.addProgToken();
 			this.consumeToken();
 			return true;
 		}
@@ -364,6 +386,11 @@ export class Parser {
 			// length with more elements belonging together
 			const prevEnd = this.prevToken.offset + this.prevToken.len;
 			node.length = prevEnd > node.offset ? prevEnd - node.offset : 0; // offset is taken from current token, end from previous: Use 0 for empty nodes		
+		}
+
+		if (this.prevProgToken) {
+			const prevEnd = this.prevProgToken.offset + this.prevProgToken.len;
+			node.progLength = prevEnd > node.progOffset ? prevEnd - node.progOffset : 0;
 		}
 		
 		return node;
@@ -428,6 +455,7 @@ export class Parser {
 		this.definitionMap.clear();
 		this.symbolNodeList = [];
 		this.includes = [];
+		this.progString = '';
 		const versionId = textDocument.version;
 		const text = textDocument.getText();
 		this.textProvider = (offset: number, length: number) => {
@@ -453,12 +481,17 @@ export class Parser {
 		this.scanner.setSource(input);
 		this.scan();
 		const node: U = parseFunc.bind(this)();
+		const prog = this.progString;
 		if (node) {
 			if (textProvider) {
 				node.textProvider = textProvider;
 			} else {
 				node.textProvider = (offset: number, length: number) => { return input.substr(offset, length); };
 			}
+
+			node.textProviderProg = (offset: number, length: number) => {
+				return prog.substring(offset, offset+length);
+			};
 		}
 		return node;
 	}
