@@ -45,7 +45,7 @@ export class Parser {
 	private lastErrorToken?: IToken;
 	private definition: nodes.AbstractDefinition;
 	private textProvider?: nodes.ITextProvider;
-	private symbolMap:Map<string, nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>();
+	private definitionMap:Map<string, nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>();
 	private symbolNodeList:nodes.Symbol[] | nodes.Label[] = [];
 	private includes:string[] = [];	
 	private subScanFunc: () => boolean = undefined;
@@ -175,7 +175,7 @@ export class Parser {
 		}
 
 		if (!this.noDefinitions) {
-			const definition = this.symbolMap.get(this.token.text);
+			const definition = this.definitionMap.get(this.token.text);
 			if (definition) {
 				const value = definition.getValue()?.getText();
 				if (!value) {
@@ -390,7 +390,7 @@ export class Parser {
 	}
 
 	//#region handle definitions
-	private _resolveIncludes(path:string) {
+	private resolveIncludes(path:string) {
 
 		let definition = this.fileProvider?.get(path);
 		if (definition) {
@@ -412,10 +412,10 @@ export class Parser {
 		let name = def.getName();
 		if (name) {
 			if (node.type === nodes.NodeType.SymbolDef) {
-				this.symbolMap.set(name, <nodes.SymbolDefinition>node);
+				this.definitionMap.set(name, <nodes.SymbolDefinition>node);
 			}
 			else if (node.type === nodes.NodeType.LabelDef) {
-				this.symbolMap.set(name, <nodes.LabelDefinition>node);
+				this.definitionMap.set(name, <nodes.LabelDefinition>node);
 			}
 		}
 		return true;
@@ -425,7 +425,7 @@ export class Parser {
 
 	// #region Global scope 
 	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
-		this.symbolMap.clear();
+		this.definitionMap.clear();
 		this.symbolNodeList = [];
 		this.includes = [];
 		const versionId = textDocument.version;
@@ -615,7 +615,7 @@ export class Parser {
 		if (this.textProvider) {
 			const pathstr = this.textProvider(path.offset, path.length);
 			if (pathstr.split('.').pop()?.toLocaleLowerCase() === 'def') {
-				this._resolveIncludes(pathstr);
+				this.resolveIncludes(pathstr);
 			}
 			else {
 				this.markError(path, ParseError.DefinitionExpected);
@@ -755,7 +755,7 @@ export class Parser {
 			if (symbol && this.textProvider) {
 				text = this.textProvider(symbol.offset, symbol.length);
 				node.textProvider = this.textProvider;
-				this.symbolMap.set(text, node);
+				this.definitionMap.set(text, node);
 			}
 		}
 	}
@@ -1052,7 +1052,6 @@ export class Parser {
 		return null;
 	}
 
-
 	public _parseNcParam(): nodes.Node {
 
 		// NC Parameter
@@ -1091,7 +1090,6 @@ export class Parser {
 
 		return this.finish(node);
 	}
-
 
 	public _parseControlStatement(parseStatement: () => nodes.Node | null): nodes.Node | null {
 		return this._parseIfStatement(parseStatement) 
@@ -1546,7 +1544,7 @@ export class Parser {
 						this.acceptKeyword(signature.delimiter);
 					}	
 	
-					if (!node.addChild(this.parseFfuncParameter(param))) {		
+					if (!node.addChild(this._parseFfuncParameter(param))) {		
 						if (last) {
 							return this.finish(node, ParseError.TermExpected, [], [TokenType.NewLine]);
 						}
@@ -1556,7 +1554,7 @@ export class Parser {
 				}
 			}
 			else if (element._bracket) {
-				if (!this.parseFfuncParameter(element)) {
+				if (!this._parseFfuncParameter(element)) {
 					if (last) {
 						if (!bracketOpen) {
 							return this.finish(node, element._bracket === '['? ParseError.LeftSquareBracketExpected : ParseError.LeftParenthesisExpected, [], [TokenType.NewLine]);
@@ -1574,7 +1572,7 @@ export class Parser {
 				}
 			}
 			else if (element._escape) {
-				const ret = this.parseFfuncParameter(element);
+				const ret = this._parseFfuncParameter(element);
 				if (!ret) {
 					return null;
 				}
@@ -1591,7 +1589,7 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public parseFfuncParameter(param:any) : nodes.Node | null {
+	public _parseFfuncParameter(param:any) : nodes.Node | null {
 		if (param._bracket) {
 			const node = this.create(nodes.Node);
 			if (!this.acceptKeyword(param._bracket)) {
