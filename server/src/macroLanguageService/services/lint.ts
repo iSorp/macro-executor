@@ -15,6 +15,7 @@ import {
 	Rules,
 	Rule 
 } from './lintRules';
+import { performance } from 'perf_hooks';
 
 const MAX_CONDITIONALS = 4;
 const MAX_WHILE_DEPTH = 3;
@@ -29,7 +30,7 @@ export class LintVisitor implements nodes.IVisitor {
 		return visitor.getEntries();
 	}
 
-	private definitions:Map<string,nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>()
+	private definitions:Map<string,nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>();
 	private sequenceList:FunctionMap<nodes.Program, nodes.Node> = new FunctionMap();
 	private gotoList:FunctionMap<nodes.Program, nodes.GotoStatement> = new FunctionMap();
 	private duplicateList: string[] = [];
@@ -61,19 +62,13 @@ export class LintVisitor implements nodes.IVisitor {
 			for (const node of gotoStatements) {
 				const jumpLabel = node.getLabel();
 				if (jumpLabel) {
-					let number = '';
-					if (Number(jumpLabel.getText())) {
-						number = jumpLabel.getText();
-					}
-					else if (jumpLabel.symbolLink) {
-						number = jumpLabel.symbolLink?.valNode.getText();
-					}
-					else {
+					const number = jumpLabel.getNonSymbolText();
+					if (!number) {
 						continue;
 					}
 
 					if (sequences && sequences.some(a => {
-						return a.symbolLink && a.symbolLink?.valNode.getText() === number || a.getText() === number;						
+						return a.getNonSymbolText() === number;			
 					})) {
 						continue;
 					}
@@ -153,12 +148,11 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-
 	private visitFunction(node: nodes.Program): boolean {
 
 		const ident = node.getIdentifier();
 		if (ident) {
-			const number = ident.getText();
+			const number = ident.getNonSymbolText();
 			if (this.functionList.indexOf(number) === -1) {
 				this.functionList.push(number);
 			}
@@ -171,7 +165,7 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private visitSymbols(node: nodes.Symbol) : boolean {
 
-		if (node.getParent()?.type === nodes.NodeType.SymbolDef) {
+		if (node.getParent()?.type === nodes.NodeType.SymbolRoot || node.getParent()?.type === nodes.NodeType.SymbolDef) {
 			return false;
 		}
 
@@ -263,12 +257,12 @@ export class LintVisitor implements nodes.IVisitor {
 			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 			const list = this.sequenceList.get(func);
 			const duplicate = list?.some(a => {
-				if (a.getText() === number.getText()) {
-					if (a.symbolLink?.symNode.type !== number.symbolLink?.symNode.type) {
+				if (a.getNonSymbolText() === number.getNonSymbolText()) {
+					if (a.symbol?.type !== number.symbol?.type) {
 						this.addEntry(number, Rules.DuplicateLabelSequence);
 					}
 					else {
-						if (number.symbolLink?.symNode instanceof nodes.Label) {
+						if (number.symbol instanceof nodes.Label) {
 							this.addEntry(number, Rules.DuplicateLabel);
 						}
 						else {
@@ -295,11 +289,11 @@ export class LintVisitor implements nodes.IVisitor {
 				child = child.getChild(1);
 			}
 			if (child && child.type === nodes.NodeType.Statement) {
-				if (child.getText().toLocaleLowerCase().includes('g10')) {
+				if (child.getNonSymbolText().toLocaleLowerCase().includes('g10')) {
 					this.inG10 = true;
 				}
 
-				if (child.getText().toLocaleLowerCase().includes('g11')) {
+				if (child.getNonSymbolText().toLocaleLowerCase().includes('g11')) {
 					if (this.inG10) {
 						return false;
 					}
@@ -312,13 +306,10 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private visitAssignment(node: nodes.Assignment): boolean {
 		if (node.getLeft() instanceof nodes.Variable) {
-			const symbol = <nodes.Symbol>(<nodes.Variable>node.getLeft()).getBody()?.getParent();
-			if (symbol instanceof nodes.Symbol) {
-				if (symbol.attrib === nodes.ValueAttribute.Constant) {
-					this.addEntry(symbol, Rules.AssignmentConstant);
-				}
+			const body = (<nodes.Variable>node.getLeft()).getBody();
+			if (body.symbol?.attrib === nodes.ValueAttribute.Constant) {
+				this.addEntry(body, Rules.AssignmentConstant);
 			}
-
 		}
 		return true;
 	}
@@ -332,7 +323,7 @@ export class LintVisitor implements nodes.IVisitor {
 		let conditional = node.getConditional();
 		let count = 1;	
 		if (conditional) {
-			let first = conditional.logic?.getText();
+			const first = conditional.logic?.getNonSymbolText();
 			while (conditional?.getNext()) {
 				if (++count > MAX_CONDITIONALS){
 					this.addEntry(conditional, Rules.TooManyConditionals);
@@ -343,7 +334,7 @@ export class LintVisitor implements nodes.IVisitor {
 				if (!op) {
 					break;
 				}
-				if (op.getText() !== first) {
+				if (op.getNonSymbolText() !== first) {
 					this.addEntry(op, Rules.MixedConditionals);
 				}
 				conditional = conditional.getNext();
@@ -378,18 +369,18 @@ export class LintVisitor implements nodes.IVisitor {
 
 		// Check DO END label/number agreement
 		if (node.dolabel && node.endlabel) {
-			if (node.dolabel?.getText() !== node.endlabel?.getText()) {
+			if (node.dolabel?.getNonSymbolText() !== node.endlabel?.getNonSymbolText()) {
 				this.addEntry(node.dolabel, Rules.DoEndNumberNotEqual);
 				this.addEntry(node.endlabel, Rules.DoEndNumberNotEqual);
 			}
 
-			if (Number(node.dolabel.getText())) {
-				doNumber = Number(node.dolabel.getText());
+			if (Number(node.dolabel.getNonSymbolText())) {
+				doNumber = Number(node.dolabel.getNonSymbolText());
 				if (doNumber && doNumber > MAX_WHILE_DEPTH) {
 					this.addEntry(node.dolabel, Rules.DoEndNumberTooBig);
 				}
 
-				const endNumber = Number(node.endlabel.getText());
+				const endNumber = Number(node.endlabel.getNonSymbolText());
 				if (endNumber && endNumber > MAX_WHILE_DEPTH) {
 					this.addEntry(node.endlabel, Rules.DoEndNumberTooBig);
 				}
@@ -413,7 +404,7 @@ export class LintVisitor implements nodes.IVisitor {
 
 			// Check duplicate DO number
 			if (depth > 0) {
-				if (doNumber === Number(child.dolabel?.getText())) {
+				if (doNumber === Number(child.dolabel?.getNonSymbolText())) {
 					this.addEntry(child.dolabel!, Rules.DuplicateDoEndNumber);
 				}
 			}
@@ -423,7 +414,7 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitBlockDel(node: nodes.BlockDel): boolean {
-		const number = Number(node.getNumber().getText());
+		const number = Number(node.getNumber().getNonSymbolText());
 		if (number < 1 || number > 9) {
 			this.addEntry(node, Rules.BlockDelNumber);
 		}

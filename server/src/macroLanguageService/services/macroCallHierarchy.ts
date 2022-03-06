@@ -25,7 +25,7 @@ export class MacroCallHierarchy {
 			const range = this.getRange(node, document);
 			return [
 				{
-					name: node.getNodeText(),
+					name: node.getText(),
 					uri: document.uri,
 					kind: SymbolKind.Function,
 					range: range,
@@ -49,13 +49,13 @@ export class MacroCallHierarchy {
 
 			(<nodes.Node>file.macrofile).accept(candidate => {	
 
-				if (candidate.getText() === node.getText()) {
+				if (candidate.getNonSymbolText() === node.getNonSymbolText()) {
 
 					const program = candidate.findAParent(nodes.NodeType.Parameter);
 					if (program) {
 						const sibling = program.getLastSibling();
 	
-						if (sibling && (settings?.callFunctions.find(a => a === sibling.getText()))) {
+						if (sibling && (settings?.callFunctions.find(a => a === sibling.getNonSymbolText()))) {
 							const caller = <nodes.Program>candidate.findAParent(nodes.NodeType.Program);
 							const callerRange = this.getRange(caller.identifier, file.document);
 							const range = this.getRange(candidate, file.document);
@@ -63,7 +63,7 @@ export class MacroCallHierarchy {
 		
 							const incoming:CallHierarchyIncomingCall = {
 								from: {
-									name: caller.identifier.getNodeText(),
+									name: caller.identifier.getText(),
 									uri: file.document.uri,
 									kind: SymbolKind.Function,
 									detail: file.document.uri === document.uri? null : filename,

@@ -29,13 +29,13 @@ class FunctionMap {
 }
 
 type EditEntries = {
-	[key:string]:TextEdit[];
+    [key:string]:TextEdit[];
 }
 
 export class MacroNavigation {
 
 	constructor(private fileProvider: MacroFileProvider){}
-	
+    
 	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.Node): Location | null {
 
 		const includes = this.getIncludeUris(macroFile);
@@ -47,7 +47,7 @@ export class MacroNavigation {
 		if (!node) {
 			return null;
 		}
-	
+    
 		for (const uri of includes) {
 			let type = this.fileProvider?.get(uri);
 			if (!type) {
@@ -59,7 +59,7 @@ export class MacroNavigation {
 			if (!symbol) {
 				continue;
 			}
-		
+        
 			return {
 				uri: type.document.uri,
 				range: this.getRange(symbol.node, type.document)
@@ -67,17 +67,17 @@ export class MacroNavigation {
 		}
 		return null;
 	}
-	
+    
 	public findReferences(document: TextDocument, position: Position, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined): Location[] {
 
 		const offset = document.offsetAt(position);
 		let node = nodes.getNodeAtOffset(macroFile, offset);
 		node = node.findAParent(nodes.NodeType.Symbol, nodes.NodeType.Label) ?? node.findAParent(nodes.NodeType.Variable, nodes.NodeType.Code) ?? node;
-	
+    
 		if (!node) {
 			return [];
 		}
-		
+        
 		const includeUri = this.findIncludeUri(document, node, macroFile);
 		if (!includeUri) {
 			return [];
@@ -94,7 +94,7 @@ export class MacroNavigation {
 				break;
 			case nodes.NodeType.Numeric:
 				if (node.getParent()?.type === nodes.NodeType.Goto || node.getParent()?.type === nodes.NodeType.SequenceNumber) {
-					files.push(origin);	
+					files.push(origin); 
 					break;
 				}
 				return [];
@@ -114,7 +114,7 @@ export class MacroNavigation {
 			default:
 				return [];
 		}
-		return this.findReferencesInternal(files, node, symbolContext, implType);	
+		return this.findReferencesInternal(files, node, symbolContext, implType);   
 	}
 
 	public findImplementations(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location[] {
@@ -168,10 +168,10 @@ export class MacroNavigation {
 
 			const symbol = <nodes.Symbol>node;
 			if (node.type === nodes.NodeType.Symbol && symbol.valueType !== nodes.NodeType.Statement) {
-				
+                
 				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) 
-					|| (symbol?.valueType === nodes.NodeType.Address
-						&& (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode))) {
+                    || (symbol?.valueType === nodes.NodeType.Address
+                        && (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode))) {
 
 					switch (symbol.valueType) {
 						case nodes.NodeType.Address:
@@ -215,7 +215,7 @@ export class MacroNavigation {
 					result.push(entry);
 
 					return true;
-				}		
+				}       
 			}
 			else if (node.type === nodes.NodeType.Label) {
 				const label = <nodes.Label>node;
@@ -229,7 +229,7 @@ export class MacroNavigation {
 			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
 				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
 					entry.name = node.getText();
-	
+    
 					if (node.getChild(0).type === nodes.NodeType.Code){
 						entry.kind = SymbolKind.Event;
 					}
@@ -238,7 +238,7 @@ export class MacroNavigation {
 					}
 				}
 			}
-			else if (!node.symbolLink) {
+			else if (!node.symbol) {
 
 				if (node.type === nodes.NodeType.SymbolDef) {
 					entry.name = (<nodes.SymbolDefinition>node).getName();
@@ -251,13 +251,13 @@ export class MacroNavigation {
 				else if (node.type === nodes.NodeType.Program) {
 					const prog = (<nodes.Program>node);
 					entry.kind = SymbolKind.Function;
-					if (prog.identifier?.symbolLink) {
-						entry.name = prog.identifier.symbolLink.symNode.getText() + ' (O' + prog.getName() + ')';			
+					if (prog.identifier?.symbol) {
+						entry.name = prog.identifier.getText() + ' (' + prog.identifier.getNonSymbolText() + ')';           
 					}
 					else {
 						entry.name = `O${prog.getName()}`;
 					}
-				} 	
+				}   
 				else if (node.type === nodes.NodeType.BlockSkip) {
 					entry.name = node.getText();
 					entry.kind = SymbolKind.Field;
@@ -379,7 +379,7 @@ export class MacroNavigation {
 
 		return codeLenses;
 	}
-	
+    
 	public doRename(document: TextDocument, position: Position, newName: string, macroFile: nodes.MacroFile): WorkspaceEdit {
 		const locations = this.findReferences(document, position, macroFile);
 		const edits:EditEntries = {};
@@ -403,15 +403,15 @@ export class MacroNavigation {
 		const uriStringNode = uriLiteralNode.getChild(0);
 		return this.uriStringNodeToDocumentLink(document, uriStringNode);
 	}
-	
+    
 	private uriStringNodeToDocumentLink(document: TextDocument, uriStringNode: nodes.Node | null): DocumentLink | null {
 		if (!uriStringNode) {
 			return null;
 		}
-	
+    
 		let rawUri = uriStringNode.getText();
 		const range = this.getRange(uriStringNode, document);
-	
+    
 		if (range.start.line === range.end.line && range.start.character === range.end.character) {
 			return null;
 		}
@@ -421,11 +421,11 @@ export class MacroNavigation {
 			target
 		};
 	}
-	
+    
 	private getRange(node: nodes.Node, document: TextDocument): Range {
 		return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 	}
-	
+    
 	private findReferencesInternal(files:MacroFileType[], node:nodes.Node, symbolContext:Symbols, implType:nodes.ReferenceType | undefined = undefined):Location[] {
 		let locations:Location[] = [];
 
@@ -433,13 +433,13 @@ export class MacroNavigation {
 			const macroFile = <nodes.MacroFile>type.macrofile;
 
 			// finding condition: name and reference type
-			const symbol = symbolContext.findSymbolFromNode(node); 	
+			const symbol = symbolContext.findSymbolFromNode(node);  
 			if (!symbol) {
 				continue;
 			}
 
 			const highlights: DocumentHighlight[] = [];
-			macroFile.accept(candidate => {	
+			macroFile.accept(candidate => { 
 				if (symbolContext.matchesSymbol(candidate, symbol)) {
 					let s = <nodes.Symbol>candidate;
 					if (s && s.referenceTypes && implType) {
@@ -457,7 +457,7 @@ export class MacroNavigation {
 						});
 					}
 					return false;
-				}	
+				}   
 				return true;
 			});
 
@@ -475,7 +475,7 @@ export class MacroNavigation {
 	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
 		const includes = this.getIncludeUris(macroFile);
 		includes.push(document.uri);
-	
+    
 		for (const uri of includes) {
 			let type = this.fileProvider?.get(uri);
 			if (!type) {

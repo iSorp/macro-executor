@@ -102,15 +102,15 @@ export class MacroHover {
 						break;
 					}
 				}
-
-				
-				if (!node.symbolLink) {
+		
+				if (!node.symbol) {
 					if (node.type === nodes.NodeType.Code) {
 						let text:string[] = [];
-						const custom = this.getCustomKeywordDescription(node.getText(), nodes.NodeType.Code);
-						const desc = NcCodeDescription[node.getText()];
+						const nodeText = node.getNonSymbolText();
+						const custom = this.getCustomKeywordDescription(nodeText, nodes.NodeType.Code);
+						const desc = NcCodeDescription[nodeText];
 						const type = (<nodes.NcCode>node).codeType + '-code';
-						text.push(['```macro',`(${type}) ` + `${node.getText()}`,'```'].join('\n'));
+						text.push(['```macro',`(${type}) ` + `${nodeText}`,'```'].join('\n'));
 
 						if (custom || desc){
 							text.push('','***','');	
