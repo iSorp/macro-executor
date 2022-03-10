@@ -1730,6 +1730,8 @@ export class Parser {
 
 		this.consumeToken();
 
+		node.addChild(this._parseNumber(integer, signed, ...referenceTypes));
+
 		return this.finish(node);
 	}
 	//#endregion
