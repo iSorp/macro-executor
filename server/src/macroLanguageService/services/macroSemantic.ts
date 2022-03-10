@@ -44,14 +44,12 @@ export class MacroSemantic {
 					const symbol = <nodes.Symbol>candidate;
 					switch (symbol.valueType) {
 						case nodes.NodeType.Numeric:
-							if (symbol.getParent()?.type !== nodes.NodeType.Program) {
-								if (symbol.attrib === nodes.ValueAttribute.Constant) {
-									this.build(symbol, candidate.type, TokenTypes.constant);
-								}
-								else {
-									this.build(symbol, candidate.type, TokenTypes.number);
-								}
-							} 
+							if (symbol.attrib === nodes.ValueAttribute.Constant) {
+								this.build(symbol, candidate.type, TokenTypes.constant);
+							}
+							else if (symbol.attrib !== nodes.ValueAttribute.Program) {
+								this.build(symbol, candidate.type, TokenTypes.number);
+							}
 							break;
 						case nodes.NodeType.Code:
 							this.build(symbol, symbol.type, TokenTypes.code);

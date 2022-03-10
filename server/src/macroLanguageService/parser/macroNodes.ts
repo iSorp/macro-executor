@@ -518,8 +518,8 @@ export class Reference extends Node {
 
 	public referenceTypes: ReferenceType;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public addReferenceType(...referenceTypes: ReferenceType[]) {
@@ -540,8 +540,8 @@ export class DefReference extends Reference {
 
 	public attrib: ValueAttribute = ValueAttribute.None;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number, private definition: AbstractDefinition) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number, private definition: AbstractDefinition) {
+		super(offset, length, progOffset, progLength);
 		if (definition) {
 			this.attrib = definition.attrib;
 		}
@@ -589,8 +589,8 @@ export class Include extends Node {
 
 export class NcStatement extends Node {
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -607,8 +607,8 @@ export class NcCode extends Reference {
 
 	public codeType?: CodeType;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 		this.referenceTypes = ReferenceType.Code | ReferenceType.Symbol;
 	}
 
@@ -619,8 +619,8 @@ export class NcCode extends Reference {
 
 export class Parameter extends Reference {
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 		this.referenceTypes = ReferenceType.Symbol;
 	}
 
@@ -633,8 +633,8 @@ export class SequenceNumber extends Reference {
 
 	public number?: Node;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 		this.referenceTypes = ReferenceType.Symbol;
 	}
 
@@ -653,16 +653,16 @@ export class SequenceNumber extends Reference {
 
 export class BodyDeclaration extends Node {
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 }
 
 export class Program extends BodyDeclaration {
 	public identifier?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -686,8 +686,8 @@ export class Symbol extends DefReference {
 
 	public identifier: Node;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number, definition?: AbstractDefinition) {
-		super(offset, length, progOffset, ProgLength, definition);
+	constructor(offset: number, length: number, progOffset: number, progLength: number, definition?: AbstractDefinition) {
+		super(offset, length, progOffset, progLength, definition);
 		this.setIdentifier(new Node(offset, length));
 		this.referenceTypes = ReferenceType.Symbol;
 	}
@@ -709,8 +709,8 @@ export class Label extends DefReference {
 
 	public identifier: Node;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number, definition?: AbstractDefinition) {
-		super(offset, length, progOffset, ProgLength, definition);
+	constructor(offset: number, length: number, progOffset: number, progLength: number, definition?: AbstractDefinition) {
+		super(offset, length, progOffset, progLength, definition);
 		this.setIdentifier(new Node(offset, length));
 		this.referenceTypes = ReferenceType.Label;
 	}
@@ -730,8 +730,8 @@ export class Label extends DefReference {
 
 export class Numeric extends Reference {
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -767,8 +767,8 @@ export class Variable extends Reference {
 
 export class Address extends Reference {
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 		this.referenceTypes = ReferenceType.Address | ReferenceType.Symbol;
 	}
 
@@ -781,8 +781,8 @@ export class Ffunc extends Node {
 
 	public identifier?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -800,8 +800,8 @@ export class Ffunc extends Node {
 
 export class Fcmd extends Ffunc {
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -813,8 +813,8 @@ export class BlockDel extends Node {
 
 	public number?: Numeric;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -834,8 +834,8 @@ export class GotoStatement extends BodyDeclaration {
 
 	public label?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -855,8 +855,8 @@ export class IfEndifStatement extends BodyDeclaration {
 
 	public elseClause?: BodyDeclaration;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -870,8 +870,8 @@ export class IfEndifStatement extends BodyDeclaration {
 
 export class ThenTermStatement extends IfEndifStatement {
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -880,8 +880,8 @@ export class ThenTermStatement extends IfEndifStatement {
 }
 
 export class ElseStatement extends BodyDeclaration {
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -890,8 +890,8 @@ export class ElseStatement extends BodyDeclaration {
 }
 
 export class ElseTermStatement extends ElseStatement {
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -902,8 +902,8 @@ export class ElseTermStatement extends ElseStatement {
 export class ConditionalStatement extends BodyDeclaration {
 	public contitional?: ConditionalExpression;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public setConditional(node: ConditionalExpression | null): node is ConditionalExpression {
@@ -916,8 +916,8 @@ export class ConditionalStatement extends BodyDeclaration {
 }
 
 export class IfStatement extends ConditionalStatement {
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -929,8 +929,8 @@ export class WhileStatement extends ConditionalStatement {
 	public dolabel?: Node;
 	public endlabel?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -954,8 +954,8 @@ export class ConditionalExpression extends Node {
 	public condition?: Node;
 	public logic?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -1009,8 +1009,8 @@ export class BinaryExpression extends Node {
 	public right?: Node;
 	public operator?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -1047,8 +1047,8 @@ export class Term extends Node {
 	public operator?: Node;
 	public expression?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
@@ -1077,8 +1077,8 @@ export class Assignment extends Node {
 	public left?: Node;
 	public right?: Node;
 
-	constructor(offset: number, length: number) {
-		super(offset, length);
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
 	}
 
 	public get type(): NodeType {
