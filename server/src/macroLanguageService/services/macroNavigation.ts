@@ -380,6 +380,26 @@ export class MacroNavigation {
 		return codeLenses;
 	}
     
+	public doPrepareRename(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Range | null {
+		let node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
+		node = node.findAParent(nodes.NodeType.Symbol, nodes.NodeType.Label) 
+			?? node.findAParent(nodes.NodeType.Variable, nodes.NodeType.Code, nodes.NodeType.SequenceNumber) 
+			?? node;
+
+		switch (node.type) {
+			case nodes.NodeType.Variable:
+			case nodes.NodeType.Code:
+			case nodes.NodeType.Numeric:
+			case nodes.NodeType.Label:
+			case nodes.NodeType.Symbol:
+				return this.getRange(node, document);
+			case nodes.NodeType.SequenceNumber:
+				return this.getRange((<nodes.SequenceNumber>node.getParent()).getNumber(), document);
+			default:
+				return null;
+		}
+	}
+
 	public doRename(document: TextDocument, position: Position, newName: string, macroFile: nodes.MacroFile): WorkspaceEdit {
 		const locations = this.findReferences(document, position, macroFile);
 		const edits:EditEntries = {};

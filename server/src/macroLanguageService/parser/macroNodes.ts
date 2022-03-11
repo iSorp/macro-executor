@@ -607,9 +607,9 @@ export class NcCode extends Reference {
 
 	public codeType?: CodeType;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
-		this.referenceTypes = ReferenceType.Code | ReferenceType.Symbol;
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
+		this.referenceTypes = ReferenceType.Code;
 	}
 
 	public get type(): NodeType {
@@ -633,9 +633,9 @@ export class SequenceNumber extends Reference {
 
 	public number?: Node;
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
-		this.referenceTypes = ReferenceType.Symbol;
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
+		this.referenceTypes = ReferenceType.Sequence;
 	}
 
 	public get type(): NodeType {
@@ -767,9 +767,9 @@ export class Variable extends Reference {
 
 export class Address extends Reference {
 
-	constructor(offset: number, length: number, progOffset: number, ProgLength: number) {
-		super(offset, length, progOffset, ProgLength);
-		this.referenceTypes = ReferenceType.Address | ReferenceType.Symbol;
+	constructor(offset: number, length: number, progOffset: number, progLength: number) {
+		super(offset, length, progOffset, progLength);
+		this.referenceTypes = ReferenceType.Address;
 	}
 
 	public get type(): NodeType {

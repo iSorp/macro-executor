@@ -37,6 +37,7 @@ export interface LanguageService {
 	findDocumentLinks(document: TextDocument, macrofile: Macrofile): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, macrofile: Macrofile): SymbolInformation[];
 	findCodeLenses(document: TextDocument, macrofile: Macrofile): CodeLens[];
+	doPrepareRename(document: TextDocument, position: Position, macroFile: Macrofile): Range | null;
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
@@ -66,6 +67,7 @@ function createFacade(parser: Parser,
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
 		findCodeLenses: navigation.findCodeLenses.bind(navigation),
+		doPrepareRename: navigation.doPrepareRename.bind(navigation),
 		doRename: navigation.doRename.bind(navigation),
 		doRefactorSequences: command.doRefactorSequences.bind(command),
 		doCreateSequences: command.doCreateSequences.bind(command),
