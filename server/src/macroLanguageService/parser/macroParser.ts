@@ -795,6 +795,10 @@ export class Parser {
 		const node = <nodes.Program>this.create(nodes.Program);
 		this.consumeToken(); // O
 
+		if (this.symbol) {
+			this.symbol.attrib = nodes.ValueAttribute.Program;
+		}
+		
 		if (!node.setIdentifier(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Program)))) {
 			this.markError(node, ParseError.FunctionIdentExpected, [], [TokenType.NewLine]);
 		}
@@ -1725,6 +1729,8 @@ export class Parser {
 		node.addReferenceType(...referenceTypes);
 
 		this.consumeToken();
+
+		node.addChild(this._parseNumber(integer, signed, ...referenceTypes));
 
 		return this.finish(node);
 	}
