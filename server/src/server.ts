@@ -92,7 +92,9 @@ connection.onInitialize((params: InitializeParams) => {
 				triggerCharacters: ['(', '[', ','],
 				retriggerCharacters : [',']
 			},
-			renameProvider: true,
+			renameProvider: {
+				prepareProvider: true
+			},
 			referencesProvider: true,
 			implementationProvider:true,
 			documentLinkProvider: {
@@ -220,6 +222,11 @@ connection.onDefinition(params => {
 connection.onReferences(params => {
 	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.findReferences(repo.document, params.position, repo.macrofile));
+});
+
+connection.onPrepareRename(params => {
+	return execute(params.textDocument.uri, (service, repo, settings) => 
+		service.doPrepareRename(repo.document, params.position, repo.macrofile));
 });
 
 connection.onRenameRequest(params => {

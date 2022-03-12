@@ -29,7 +29,7 @@ export class MacroCommand {
 				func.accept(candidate => {
 					if (candidate.type === nodes.NodeType.Goto) {
 						const gnode = (<nodes.GotoStatement>candidate).getLabel();
-						if (gnode && !gnode.symbolLink) {
+						if (gnode && !gnode.symbol) {
 							const gotoNumber = Number(gnode.getText());
 							if (Number.isInteger(gotoNumber)) {
 								gotoLabelList.push(gnode);
@@ -45,7 +45,7 @@ export class MacroCommand {
 						if (candidate.type === nodes.NodeType.SequenceNumber) {
 							const nnode = (<nodes.SequenceNumber>candidate).getNumber();
 							
-							if (nnode && !nnode.symbolLink) {
+							if (nnode && !nnode.symbol) {
 								const labels = gotoLabelList.filter(a => a.getText() === nnode?.getText());
 								const start = document.positionAt(nnode.offset);
 								const end = document.positionAt(nnode.end);

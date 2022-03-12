@@ -6,7 +6,6 @@
 'use strict';
 import { TokenType, IToken, Scanner } from './macroScanner';
 import * as nodes from './macroNodes';
-import { ISymbolLink } from './macroNodes';
 import { ParseError, MacroIssueType } from './macroErrors';
 import {
 	TextDocument, MacroFileProvider, FunctionSignature, 
@@ -14,38 +13,39 @@ import {
 } from '../macroLanguageTypes';
 
 interface IMark {
+	prevParsedToken?: IParsedToken;
+	parsedToken: IParsedToken;
+	prog: string;
 	prev?: IToken;
 	curr: IToken;
 	pos: number;
 	defPos: number;
 	def: nodes.AbstractDefinition;
-	sym: ISymbolLink;
+	sym: nodes.Symbol | nodes.Label;
 	func: () => boolean;
 }
 
-interface ITokenInformation {
-	token: IToken;
-	defoffs: number;
-	symbol: string;
+export interface IParsedToken {
+	text: string;
+	offset: number;
+	len: number;
 }
-
-interface IDefInformation {
-	defoffs: number;
-	value:string;
-}
-
 
 export class Parser {
 	
+	private prevProgToken?: IParsedToken;
+	private progToken: IParsedToken;
+	private progString: string = '';
+
 	private scanner = new Scanner();
 	private defScanner = new Scanner(false);
-	private symbol: ISymbolLink;
 	private token: IToken;
 	private prevToken?: IToken;
 	private lastErrorToken?: IToken;
 	private definition: nodes.AbstractDefinition;
 	private textProvider?: nodes.ITextProvider;
-	private definitionMap:Map<string, nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>();
+	private definitionMap:Map<string, nodes.AbstractDefinition> = new Map<string, nodes.AbstractDefinition>();
+	private symbol: nodes.Symbol | nodes.Label;
 	private symbolNodeList:nodes.Symbol[] | nodes.Label[] = [];
 	private includes:string[] = [];	
 	private subScanFunc: () => boolean = undefined;
@@ -55,6 +55,8 @@ export class Parser {
 	constructor(private fileProvider: MacroFileProvider) {
 		this.token = { type: TokenType.EOF, offset: -1, len: 0, text: '' };
 		this.prevToken = undefined;
+		this.progToken = { offset: -1, len: 0, text: '' };
+		this.prevProgToken = undefined;
 	}
 
 	public peekKeyword(text: string): boolean {
@@ -103,48 +105,40 @@ export class Parser {
 		this.scan();
 	}
 
-	public addSymbolNodes(node: nodes.Node) {
-		node.accept(candidate => {
-			if (candidate.symbolLink && candidate.type !== nodes.NodeType.Symbol && candidate.type !== nodes.NodeType.Label) {
-		
-				if (candidate.symbolLink.symNode === candidate.parent?.symbolLink?.symNode) {
-					return true;
-				}
-
-				const symbol = candidate.symbolLink.symNode;
-				candidate.getParent().addChild(symbol);
-				symbol.length = candidate.length;
-				candidate.setParent(symbol);
-			}
-			return true;
-		});
+	public addProgToken() {
+		this.prevProgToken = this.progToken;
+		this.progToken = {
+			text: this.token.text,
+			offset: this.progString.length,
+			len: this.token.text.length,
+		};
+		this.progString += this.token.text;
 	}
 
-	private scanDefinition(definition: nodes.AbstractDefinition) {
-		const tk = this.defScanner.scan();
-		if (tk) {
-			if (tk.type !== TokenType.EOF) {
-				
-				let node = nodes.getNodeAtOffset(definition.value, definition.value.offset + tk.offset);
-				if (node) {
-					this.symbol = {
-						symNode: this.symbolNodeList[this.symbolNodeList.length-1],
-						defType: definition.type,
-						valNode: node,
-					};
-				}
-
-				// reference to the symbol location 
-				tk.len = this.token.len;
-				tk.offset = this.token.offset;
-				this.token = tk;
-				return true;
-			}
+	public addSymbolNodes() : nodes.Node {
+		const node = this.createNode(nodes.NodeType.SymbolRoot);
+		for (const symbol of this.symbolNodeList) {
+			node.addChild(symbol);
 		}
+
+		return this.finish(node);
+	}
+
+	private scanDefinition() {
+		const tk = this.defScanner.scan();
+		if (tk?.type !== TokenType.EOF) {
+			// The token points to the symbol location
+			tk.len = this.token.len;
+			tk.offset = this.token.offset;
+			this.token = tk;
+			this.addProgToken();
+			return true;
+		}
+		
 		return false;
 	}
 
-	private scanNonSymbol() {
+	private scanNonSymbol() : boolean {
 		const tk = this.scanner.scanNonSymbol();
 		if (tk) {
 			if (tk.type === TokenType.Symbol) {
@@ -153,6 +147,7 @@ export class Parser {
 			}
 			else if (tk.type !== TokenType.EOF) {
 				this.token = tk;
+				this.addProgToken();
 				return true;
 			}
 		}
@@ -171,6 +166,7 @@ export class Parser {
 		this.symbol = undefined;
 
 		if (this.token.type !== TokenType.Symbol || (this.token.type === TokenType.Symbol && this.acceptAnySymbol)) {
+			this.addProgToken();
 			return;
 		}
 
@@ -182,36 +178,40 @@ export class Parser {
 					return;
 				}
 
-				let symbolNode: nodes.Symbol | nodes.Label;
+				let symbol: nodes.Symbol | nodes.Label;
 				if (definition.type === nodes.NodeType.SymbolDef) {
-					symbolNode = new nodes.Symbol(this.token.offset, this.token.len);
+					symbol = new nodes.Symbol(this.token.offset, this.token.len, -1, -1, definition);
 				}
 				else {
-					symbolNode = new nodes.Label(this.token.offset, this.token.len);
+					symbol = new nodes.Label(this.token.offset, this.token.len, -1, -1, definition);
 				}
 
-				symbolNode.attrib = definition.attrib;
-				symbolNode.valueType = definition.value.type;
-				this.symbolNodeList.push(symbolNode);
+				this.symbolNodeList.push(symbol);
+				this.symbol = symbol;
 				this.definition = definition;
 				this.defScanner.setSource(value);
-				this.subScanFunc = this.scanDefinition.bind(this, definition);
-				this.scanDefinition(definition);
+				this.subScanFunc = this.scanDefinition.bind(this);
+				this.scanDefinition();
+
 				return;
 			}
 		}
 		
-		// Scan nosymbol tokens
+		// Scan non symbol tokens
 		const pos = this.scanner.pos();
 		this.scanner.goBackTo(this.token.offset);
 		this.subScanFunc = this.scanNonSymbol.bind(this);
 		if (!this.scanNonSymbol()) {
 			this.scanner.goBackTo(pos);
+			this.addProgToken();
 		}
 	}
 
 	public mark(): IMark {
 		return {
+			prevParsedToken: this.prevProgToken,
+			parsedToken: this.progToken,
+			prog: this.progString,
 			prev: this.prevToken,
 			curr: this.token,
 			pos: this.scanner.pos(),
@@ -223,9 +223,16 @@ export class Parser {
 	}
 
 	public restoreAtMark(mark: IMark): void {
+
+		this.prevProgToken = mark.prevParsedToken;
+		this.progToken = mark.parsedToken;
+		this.progString = mark.prog;
+
 		this.prevToken = mark.prev;
 		this.token = mark.curr;
 		this.scanner.goBackTo(mark.pos);
+		this.definition = mark.def;
+		this.symbol = mark.sym;
 		this.subScanFunc = mark.func;
 		if (this.definition?.value) {
 			this.defScanner.setSource(this.definition.value.getText());
@@ -340,17 +347,21 @@ export class Parser {
 	}
 
 	public createNode(nodeType: nodes.NodeType): nodes.Node {
-		const node = new nodes.Node(this.token.offset, this.token.len, null, nodeType);
-		if (this.symbol && (this.symbol.valNode.type === node.type || this.symbol.valNode.type === nodes.NodeType.Undefined)) {
-			node.symbolLink = this.symbol;
+		const node = new nodes.Node(this.token.offset, this.token.len, this.progToken.offset, this.progToken.len, nodeType);
+		if (this.symbol) {
+			if (node.offset === this.symbol.offset && node.length === this.symbol.length) {
+				node.symbol = this.symbol;
+			}
 		}
 		return node;
 	}
 
-	public create<T extends nodes.Node>(ctor: nodes.NodeConstructor<T>, ...valueType: nodes.NodeType[]): T {
-		const node = new ctor(this.token.offset, this.token.len);
-		if (this.symbol && (this.symbol.valNode.type === node.type || this.symbol.valNode.type === nodes.NodeType.Undefined || valueType.includes(this.symbol.valNode.type))) {
-			node.symbolLink = this.symbol;
+	public create<T extends nodes.Node>(ctor: nodes.NodeConstructor<T>): T {
+		const node = new ctor(this.token.offset, this.token.len, this.progToken.offset, this.progToken.len);
+		if (this.symbol) {
+			if (node.offset === this.symbol.offset && node.length === this.symbol.length) {
+				node.symbol = this.symbol;
+			}
 		}
 		return node;
 	}
@@ -363,7 +374,12 @@ export class Parser {
 		if (this.prevToken) {
 			// length with more elements belonging together
 			const prevEnd = this.prevToken.offset + this.prevToken.len;
-			node.length = prevEnd > node.offset ? prevEnd - node.offset : 0; // offset is taken from current token, end from previous: Use 0 for empty nodes		
+			node.length = prevEnd > node.offset ? prevEnd - node.offset : 0; // offset is taken from current token, end from previous: Use 0 for empty nodes
+		}
+
+		if (this.prevProgToken) {
+			const prevEnd = this.prevProgToken.offset + this.prevProgToken.len;
+			node.progLength = prevEnd > node.progOffset ? prevEnd - node.progOffset : 0;
 		}
 		
 		return node;
@@ -428,6 +444,7 @@ export class Parser {
 		this.definitionMap.clear();
 		this.symbolNodeList = [];
 		this.includes = [];
+		this.progString = '';
 		const versionId = textDocument.version;
 		const text = textDocument.getText();
 		this.textProvider = (offset: number, length: number) => {
@@ -453,12 +470,17 @@ export class Parser {
 		this.scanner.setSource(input);
 		this.scan();
 		const node: U = parseFunc.bind(this)();
+		const prog = this.progString;
 		if (node) {
 			if (textProvider) {
 				node.textProvider = textProvider;
 			} else {
-				node.textProvider = (offset: number, length: number) => { return input.substr(offset, length); };
+				node.textProvider = (offset: number, length: number) => { return input.substring(offset, offset+length); };
 			}
+
+			node.textProviderProg = (offset: number, length: number) => {
+				return prog.substring(offset, offset+length);
+			};
 		}
 		return node;
 	}
@@ -554,8 +576,8 @@ export class Parser {
 		} while (!this.peek(TokenType.EOF));
 
 		node.setData(nodes.Data.Includes, this.includes);
+		node.addChild(this.addSymbolNodes());
 		node = this.finish(node);
-		this.addSymbolNodes(node);
 		return node;
 	}
 
@@ -902,7 +924,7 @@ export class Parser {
 			return null;
 		}
 
-		const node = this.create(nodes.SequenceNumber, nodes.NodeType.Numeric);
+		const node = this.create(nodes.SequenceNumber);
 		this.accept(TokenType.Sequence);
 
 		if (!node.setNumber(this._parseNumber(true, false, nodes.ReferenceType.JumpLabel, nodes.ReferenceType.Sequence))) {
@@ -965,24 +987,24 @@ export class Parser {
 			return null;
 		}
 
-		const node = this.create(nodes.NcStatement, nodes.NodeType.Address, nodes.NodeType.Parameter, nodes.NodeType.Code);
+		const node = this.create(nodes.NcStatement);
 		let first = this.symbol !== undefined;
 		while (true) {
 			let child = this._parseString(true) || this._parseNcStatementInternal();
 			if (child) {
 				node.addChild(child);
-				if (first && node.symbolLink) {
+				if (first && node.symbol) {
 					first = false;
 					if (child instanceof nodes.NcCode) {
 						if (child.codeType === nodes.CodeType.G) {
-							node.symbolLink.symNode.attrib = nodes.ValueAttribute.GCode;
+							node.symbol.attrib = nodes.ValueAttribute.GCode;
 						}
 						else if (child.codeType === nodes.CodeType.M) {
-							node.symbolLink.symNode.attrib = nodes.ValueAttribute.MCode;
+							node.symbol.attrib = nodes.ValueAttribute.MCode;
 						}
 					}
 					else {
-						node.symbolLink.symNode.attrib = nodes.ValueAttribute.Parameter;
+						node.symbol.attrib = nodes.ValueAttribute.Parameter;
 					}
 				}
 			}
@@ -1016,7 +1038,7 @@ export class Parser {
 
 		// G,M Code
 		const mark = this.mark();
-		const node = this.create(nodes.NcCode, nodes.NodeType.Address);
+		const node = this.create(nodes.NcCode);
 		if (this.token.text.toLocaleLowerCase().charAt(0) === 'g') {
 			node.codeType = nodes.CodeType.G;
 		}
@@ -1059,7 +1081,7 @@ export class Parser {
 			return null;
 		}
 
-		const node = this.create(nodes.Parameter, nodes.NodeType.Address);
+		const node = this.create(nodes.Parameter);
 
 		// axis number command
 		this.accept(TokenType.Ampersand); 
