@@ -17,7 +17,7 @@ import {
 	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
 	Location, TextDocument, CompletionList, CodeLens, 
 	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens,
-	CallHierarchyItem, CallHierarchyIncomingCall
+	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall
 } from './macroLanguageTypes';
 import { MacroSemantic } from './services/macroSemantic';
 
@@ -44,7 +44,7 @@ export interface LanguageService {
 	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, documentSettings: LanguageSettings, range?:Range) : SemanticTokens;
 	doPrepareCallHierarchy(document: TextDocument, position: Position, macrofile: Macrofile): CallHierarchyItem[] | null;
 	doIncomingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyIncomingCall[] | null;
-
+	doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyOutgoingCall[] | null;
 }
 
 function createFacade(parser: Parser,
@@ -73,7 +73,8 @@ function createFacade(parser: Parser,
 		doCreateSequences: command.doCreateSequences.bind(command),
 		doSemanticHighlighting: semantic.doSemanticHighlighting.bind(semantic),
 		doPrepareCallHierarchy: hierarchy.doPrepareCallHierarchy.bind(hierarchy),
-		doIncomingCalls: hierarchy.doIncomingCalls.bind(hierarchy)
+		doIncomingCalls: hierarchy.doIncomingCalls.bind(hierarchy),
+		doOutgoingCalls: hierarchy.doOutgoingCalls.bind(hierarchy)
 	};
 }
 
