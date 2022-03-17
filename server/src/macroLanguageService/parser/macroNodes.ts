@@ -336,6 +336,16 @@ export class Node {
 		return null;
 	}
 
+	public getNextSibling(): Node | null {
+		if (this.parent.hasChildren()) {
+			const index = this.getChildIndex();
+			if (index !== null) {
+				return this.parent.getChild(index + 1);
+			}
+		}
+		return null;
+	}
+
 	public getParent(): Node | null {
 		return this.parent;
 	}
