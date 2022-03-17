@@ -45,30 +45,58 @@ export class MacroCallHierarchy {
 
 	public doIncomingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.Node, settings: LanguageSettings): CallHierarchyIncomingCall[] | null {
 
-		let items:CallHierarchyIncomingCall[] = [];
+		const items: Map<string, CallHierarchyIncomingCall> = new Map<string, CallHierarchyIncomingCall>();
 
-		const offset = document.offsetAt(item.range.start);
-		const node = nodes.getNodeAtOffset(macroFile, offset);
-		const files = this.fileProvider.getAll({glob:SRC_FILES});
+		const macrofile = this.fileProvider.get(item.uri)?.macrofile;
+		if (!macrofile) {
+			return null;
+		}
 
-		for (const file of files) {
+		const locations = this.navigation.findReferences(document, item.range.start, <nodes.MacroFile>macrofile);
+		for (const location of locations) {
+			const macroFileType = this.fileProvider.get(location.uri);
 
-			(<nodes.Node>file.macrofile).accept(candidate => {	
+			if (!macroFileType) {
+				continue;
+			}
 
-				if (candidate.getNonSymbolText() === node.getNonSymbolText()) {
+			const callerFromIdent = this.getNodeFromLocation(macroFileType.document, <nodes.MacroFile>macroFileType.macrofile, location);
+			const parameter = callerFromIdent.findAParent(nodes.NodeType.Parameter);
+			if (parameter) {
+				const callFunction = parameter.getLastSibling();
+				if (callFunction && (settings?.callFunctions.find(a => a === callFunction.getNonSymbolText()))) {
 
-					const program = candidate.findAParent(nodes.NodeType.Parameter);
-					if (program) {
-						const sibling = program.getLastSibling();
+					const callerFromProgram = <nodes.Program>callerFromIdent.findAParent(nodes.NodeType.Program);
+					const callerFromRange = this.getRange(callerFromIdent, macroFileType.document);
+					const key = callerFromProgram.identifier.getNonSymbolText()+macroFileType.document.uri;
+
+					if (!items.has(key)) {
 	
-						if (sibling && (settings?.callFunctions.find(a => a === sibling.getNonSymbolText()))) {
-							const caller = <nodes.Program>candidate.findAParent(nodes.NodeType.Program);
-							const callerRange = this.getRange(caller.identifier, file.document);
-							const range = this.getRange(candidate, file.document);
-							const filename = path.basename(URI.parse(file.document.uri).fsPath);
+						const callerToRange = this.getRange(callerFromProgram.identifier, macroFileType.document);
+						const filename = path.basename(URI.parse(macroFileType.document.uri).fsPath);
 		
-							const incoming:CallHierarchyIncomingCall = {
-								from: {
+						items.set(key, {
+							from: {
+								name: callerFromProgram.identifier.getText(),
+								uri: macroFileType.document.uri,
+								kind: SymbolKind.Function,
+								detail: macroFileType.document.uri === document.uri? null : filename,
+								range: callerToRange,
+								selectionRange: callerToRange
+							},
+							fromRanges: [callerFromRange]
+						});
+					}
+					else {
+						items.get(key).fromRanges.push(callerFromRange);
+					}
+				}
+			}
+		}
+
+		return [...items.values()];
+	}
+
 	public doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.Node, settings: LanguageSettings): CallHierarchyOutgoingCall[] | null {
 
 		const items: Map<string, CallHierarchyOutgoingCall> = new Map<string, CallHierarchyOutgoingCall>();
@@ -115,11 +143,11 @@ export class MacroCallHierarchy {
 										to: {
 											name: callerToProgram.identifier.getText(),
 											uri: macroFileType.document.uri,
-									kind: SymbolKind.Function,
+											kind: SymbolKind.Function,
 											detail: macroFileType.document.uri === document.uri? null : filename,
 											range: callerToRange,
 											selectionRange: callerToRange // Range beim entferten symbol
-								},
+										},
 										fromRanges: [callerFromRange]
 									});
 								}
@@ -127,13 +155,13 @@ export class MacroCallHierarchy {
 									items.get(key).fromRanges.push(callerFromRange);
 								}
 		
-							return false;
+								return false;
+							}
 						}
 					}
-				}
-				return true;
-			});
-		}
+					return true;
+				});
+			}
 
 			break; 
 		}
