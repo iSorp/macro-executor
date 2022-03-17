@@ -8,13 +8,19 @@ import { URI, Utils } from 'vscode-uri';
 import * as path from 'path';
 import {
 	MacroFileProvider, TextDocument, Position, Range, 
-	CallHierarchyItem, CallHierarchyIncomingCall, SymbolKind,
-	LanguageSettings, SRC_FILES
+	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall,
+	SymbolKind, LanguageSettings, SRC_FILES, Location, MacroFileType
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
+import { MacroNavigation } from './macroNavigation';
 
 export class MacroCallHierarchy {
-	constructor(private fileProvider: MacroFileProvider) {}
+
+	private navigation: MacroNavigation;
+
+	constructor(private fileProvider: MacroFileProvider) {
+		this.navigation = new MacroNavigation(this.fileProvider);
+	}
 
 	public doPrepareCallHierarchy(document: TextDocument, position: Position, macroFile: nodes.Node): CallHierarchyItem[] | null {
 
@@ -63,17 +69,64 @@ export class MacroCallHierarchy {
 		
 							const incoming:CallHierarchyIncomingCall = {
 								from: {
-									name: caller.identifier.getText(),
-									uri: file.document.uri,
+	public doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.Node, settings: LanguageSettings): CallHierarchyOutgoingCall[] | null {
+
+		const items: Map<string, CallHierarchyOutgoingCall> = new Map<string, CallHierarchyOutgoingCall>();
+
+		const locations = this.navigation.findImplementations(document, item.range.start, macroFile);
+		for (const location of locations) {
+			const macroFileType = this.fileProvider.get(location.uri);
+
+			if (!macroFileType) {
+				continue;
+			}
+	
+			const sourceProgramIdent = this.getNodeFromLocation(macroFileType.document, <nodes.MacroFile>macroFileType.macrofile, location);
+			if (sourceProgramIdent) {
+				const sourceProgram = sourceProgramIdent.getParent();
+
+				sourceProgram.accept(candidate => {
+
+					if (settings?.callFunctions.find(a => a === candidate.getNonSymbolText())) {
+
+						const parameter = candidate.getNextSibling();
+						const callerFromIdent = parameter.getChild(0);
+						const callerFromRange = this.getRange(callerFromIdent, macroFileType.document);
+						const locations = this.navigation.findImplementations(macroFileType.document, macroFileType.document.positionAt(callerFromIdent.offset), macroFile);
+
+						for (const location of locations) {
+							const macroFileType = this.fileProvider.get(location.uri);
+				
+							if (!macroFileType) {
+								continue;
+							}
+					
+							const callerToIdent = this.getNodeFromLocation(macroFileType.document, <nodes.MacroFile>macroFileType.macrofile, location);
+							if (callerToIdent) {
+								const callerToProgram = <nodes.Program>callerToIdent.getParent();
+								const key = callerToProgram.identifier.getNonSymbolText()+macroFileType.document.uri;
+
+								if (!items.has(key)) {
+
+									const callerToRange = this.getRange(callerToProgram.identifier, macroFileType.document);
+									const filename = path.basename(URI.parse(macroFileType.document.uri).fsPath);
+
+									items.set(key, {
+										to: {
+											name: callerToProgram.identifier.getText(),
+											uri: macroFileType.document.uri,
 									kind: SymbolKind.Function,
-									detail: file.document.uri === document.uri? null : filename,
-									range: callerRange,
-									selectionRange: range
+											detail: macroFileType.document.uri === document.uri? null : filename,
+											range: callerToRange,
+											selectionRange: callerToRange // Range beim entferten symbol
 								},
-								fromRanges: [range]
-							};
+										fromRanges: [callerFromRange]
+									});
+								}
+								else {
+									items.get(key).fromRanges.push(callerFromRange);
+								}
 		
-							items.push(incoming);
 							return false;
 						}
 					}
@@ -82,7 +135,15 @@ export class MacroCallHierarchy {
 			});
 		}
 
-		return items;
+			break; 
+		}
+
+		return [...items.values()];
+	}
+
+	private getNodeFromLocation(document: TextDocument, macroFile: nodes.MacroFile, location: Location) : nodes.Node {
+		const offset = document.offsetAt(location.range.start);
+		return nodes.getNodeAtOffset(macroFile, offset, nodes.NodeType.SymbolRoot);
 	}
 
 	private getRange(node: nodes.Node, document: TextDocument): Range {
