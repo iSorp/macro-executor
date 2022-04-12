@@ -5,10 +5,11 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
-import  { Location } from 'vscode-languageserver-types';
+import { Location  } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export { TextDocument } from 'vscode-languageserver-textdocument';
+export { DocumentFormattingOptions, FormattingOptions, TextEdit } from 'vscode-languageserver';
 export { SemanticTokensBuilder } from 'vscode-languageserver/lib/common/semanticTokens';
 export { NodeType } from './parser/macroNodes';
 export * from './languageFacts/builtinData';

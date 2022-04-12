@@ -11,16 +11,17 @@ import { MacroValidation } from './services/macroValidation';
 import { MacroCompletion } from './services/macroCompletions';
 import { MacroCommand } from './services/macroCommands';
 import { MacroCallHierarchy } from './services/macroCallHierarchy';
+import { MacroSemantic } from './services/macroSemantic';
+import { MacroDocumentFormatting } from './services/macroDocumentFormatting';
 
 import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
 	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
 	Location, TextDocument, CompletionList, CodeLens, 
 	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens,
-	CallHierarchyItem, CallHierarchyIncomingCall
+	CallHierarchyItem, CallHierarchyIncomingCall, FormattingOptions,
+	TextEdit
 } from './macroLanguageTypes';
-import { MacroSemantic } from './services/macroSemantic';
-
 
 export type Macrofile = {};
 export * from './macroLanguageTypes';
@@ -44,7 +45,7 @@ export interface LanguageService {
 	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, documentSettings: LanguageSettings, range?:Range) : SemanticTokens;
 	doPrepareCallHierarchy(document: TextDocument, position: Position, macrofile: Macrofile): CallHierarchyItem[] | null;
 	doIncomingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyIncomingCall[] | null;
-
+	doDocumentFormatting(document: TextDocument, options: FormattingOptions, macrofile: Macrofile): TextEdit[] | null;
 }
 
 function createFacade(parser: Parser,
@@ -54,7 +55,8 @@ function createFacade(parser: Parser,
 	validation: MacroValidation,
 	command: MacroCommand,
 	semantic:MacroSemantic,
-	hierarchy:MacroCallHierarchy): LanguageService {
+	hierarchy:MacroCallHierarchy,
+	formatting:MacroDocumentFormatting): LanguageService {
 	return {
 		doValidation: validation.doValidation.bind(validation),
 		parseMacroFile: parser.parseMacroFile.bind(parser),
@@ -73,7 +75,8 @@ function createFacade(parser: Parser,
 		doCreateSequences: command.doCreateSequences.bind(command),
 		doSemanticHighlighting: semantic.doSemanticHighlighting.bind(semantic),
 		doPrepareCallHierarchy: hierarchy.doPrepareCallHierarchy.bind(hierarchy),
-		doIncomingCalls: hierarchy.doIncomingCalls.bind(hierarchy)
+		doIncomingCalls: hierarchy.doIncomingCalls.bind(hierarchy),
+		doDocumentFormatting: formatting.doDocumentFormatting.bind(formatting)
 	};
 }
 
@@ -87,6 +90,7 @@ export function getMacroLanguageService(options: LanguageServiceOptions): Langua
 		new MacroValidation(options && options.fileProvider),
 		new MacroCommand(options && options.fileProvider),
 		new MacroSemantic(),
-		new MacroCallHierarchy(options && options.fileProvider)
+		new MacroCallHierarchy(options && options.fileProvider),
+		new MacroDocumentFormatting()
 	);
 }

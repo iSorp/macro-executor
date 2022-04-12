@@ -82,6 +82,7 @@ connection.onInitialize((params: InitializeParams) => {
 			documentSymbolProvider: true,
 			workspaceSymbolProvider: true,
 			hoverProvider: true,
+			documentFormattingProvider: true,
 			completionProvider: {
 				triggerCharacters: ['#'],
 			},
@@ -252,6 +253,11 @@ connection.onDocumentLinks(params => {
 connection.onHover(params => {
 	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.doHover(repo.document, params.position, repo.macrofile, settings));
+});
+
+connection.onDocumentFormatting(params => {
+	return execute(params.textDocument.uri, (service, repo, settings) => 
+		service.doDocumentFormatting(repo.document, params.options, repo.macrofile));
 });
 
 connection.onCompletion(params => {
