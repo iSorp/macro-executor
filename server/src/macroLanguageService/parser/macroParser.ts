@@ -8,8 +8,8 @@ import { TokenType, IToken, Scanner } from './macroScanner';
 import * as nodes from './macroNodes';
 import { ParseError, MacroIssueType } from './macroErrors';
 import {
-	TextDocument, MacroFileProvider, FunctionSignature, 
-	functionSignatures 
+	TextDocument, MacroFileProvider, FunctionSignature,
+	functionSignatures
 } from '../macroLanguageTypes';
 
 interface IMark {
@@ -32,7 +32,7 @@ export interface IParsedToken {
 }
 
 export class Parser {
-	
+
 	private prevProgToken?: IParsedToken;
 	private progToken: IParsedToken;
 	private progString: string = '';
@@ -47,7 +47,7 @@ export class Parser {
 	private definitionMap:Map<string, nodes.AbstractDefinition> = new Map<string, nodes.AbstractDefinition>();
 	private symbol: nodes.Symbol | nodes.Label;
 	private symbolNodeList:nodes.Symbol[] | nodes.Label[] = [];
-	private includes:string[] = [];	
+	private includes:string[] = [];
 	private subScanFunc: () => boolean = undefined;
 	private noDefinitions = false;
 	private acceptAnySymbol = false;
@@ -134,7 +134,7 @@ export class Parser {
 			this.addProgToken();
 			return true;
 		}
-		
+
 		return false;
 	}
 
@@ -196,7 +196,7 @@ export class Parser {
 				return;
 			}
 		}
-		
+
 		// Scan non symbol tokens
 		const pos = this.scanner.pos();
 		this.scanner.goBackTo(this.token.offset);
@@ -255,7 +255,7 @@ export class Parser {
 		const node = this.try(func);
 		if (node) {
 			if (this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
-				return node;  
+				return node;
 			}
 		}
 		this.restoreAtMark(pos);
@@ -276,7 +276,7 @@ export class Parser {
 		this.restoreAtMark(mark);
 		return true;
 	}
-		
+
 	public accept(type: TokenType) {
 		if (type === this.token.type) {
 			this.consumeToken();
@@ -381,7 +381,7 @@ export class Parser {
 			const prevEnd = this.prevProgToken.offset + this.prevProgToken.len;
 			node.progLength = prevEnd > node.progOffset ? prevEnd - node.progOffset : 0;
 		}
-		
+
 		return node;
 	}
 
@@ -421,7 +421,7 @@ export class Parser {
 			});
 		}
 	}
-	
+
 	private _visitDefinitions(node: nodes.Node) : boolean{
 		// scan local definitions
 		let def = (<nodes.AbstractDefinition>node);
@@ -439,7 +439,7 @@ export class Parser {
 	//#endregion
 
 
-	// #region Global scope 
+	// #region Global scope
 	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
 		this.definitionMap.clear();
 		this.symbolNodeList = [];
@@ -463,10 +463,10 @@ export class Parser {
 		}
 		else  {
 			return this.internalParse(text, this._parseMacroFile, this.textProvider);
-		}	
+		}
 	}
 
-	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {	
+	public internalParse<T extends nodes.Node, U extends T>(input: string, parseFunc: () => U, textProvider?: nodes.ITextProvider): U {
 		this.scanner.setSource(input);
 		this.scan();
 		const node: U = parseFunc.bind(this)();
@@ -486,28 +486,28 @@ export class Parser {
 	}
 
 	public _parseDefFile(): nodes.MacroFile {
-	
+
 		const node = this.createNode(nodes.NodeType.DefFile);
 		let hasMatch = false;
-		do {		
+		do {
 			do {
 				hasMatch = false;
 
 				const child = this._parseControlCommands('$nolist', '$list') || this._parseSymbolDefinition() || this._parseLabelDefinition();
 				if (child) {
-					
+
 					child.addChild(this._parseString());
-				
+
 					// check new line after statement
 					if (this._needsLineBreakAfter(child) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 						this.markError(child, ParseError.NewLineExpected);
 					}
-			
+
 					node.addChild(child);
 					hasMatch = true;
 				}
 			} while (hasMatch);
-	
+
 			if (this.peek(TokenType.EOF)) {
 				break;
 			}
@@ -518,7 +518,7 @@ export class Parser {
 				hasMatch = true;
 			}
 			this.consumeToken();
-	
+
 		} while (!this.peek(TokenType.EOF));
 		return this.finish(node);
 	}
@@ -526,13 +526,13 @@ export class Parser {
 	public _parseLnkFile(): nodes.MacroFile {
 		const node = this.createNode(nodes.NodeType.DefFile);
 		let hasMatch = false;
-		do {			
+		do {
 			if (this.peek(TokenType.EOF)) {
 				break;
 			}
 
 			this.consumeToken();
-	
+
 		} while (!this.peek(TokenType.EOF));
 		return this.finish(node);
 	}
@@ -541,11 +541,11 @@ export class Parser {
 
 		let node = this.create(nodes.MacroFile);
 		let hasMatch = false;
-		do {		
+		do {
 			do {
-				let child = null;	
+				let child = null;
 				hasMatch = false;
-	
+
 				if (this.peekAny(TokenType.Dollar, TokenType.AT, TokenType.GTS)) {
 					child = this._parseMacroFileScope();
 				}
@@ -558,8 +558,8 @@ export class Parser {
 					hasMatch = true;
 				}
 			} while (hasMatch);
-	
-	
+
+
 			if (this.peek(TokenType.EOF) || this.peekDelim('%')) {
 				break;
 			}
@@ -572,7 +572,7 @@ export class Parser {
 			else {
 				this.consumeToken();
 			}
-		
+
 		} while (!this.peek(TokenType.EOF));
 
 		node.setData(nodes.Data.Includes, this.includes);
@@ -582,7 +582,7 @@ export class Parser {
 	}
 
 	public _parseMacroFileScope(): nodes.Node | null {
-	
+
 		let node:nodes.Node | null = null;
 		if (this.peek(TokenType.Dollar)) {
 			node = this._parseIncludes() || this._parseControlCommands('$eject');
@@ -604,7 +604,7 @@ export class Parser {
 		// check new line after statement
 		if (this._needsLineBreakAfter(node) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.NewLineExpected);
-		}	
+		}
 
 		return node;
 	}
@@ -624,7 +624,7 @@ export class Parser {
 		if (this.token.text !== '$INCLUDE'){
 			return this.finish(node, ParseError.UnknownKeyword, [TokenType.NewLine]);
 		}
-	
+
 		this.consumeToken(); // $include
 		const path = this.createNode(nodes.NodeType.StringLiteral);
 
@@ -643,7 +643,7 @@ export class Parser {
 				this.markError(path, ParseError.DefinitionExpected);
 			}
 		}
-		return this.finish(node); 
+		return this.finish(node);
 	}
 	//#endregion
 
@@ -653,7 +653,7 @@ export class Parser {
 		if (!this.peek(TokenType.AT)) {
 			return null;
 		}
-		const node = <nodes.SymbolDefinition>this.create(nodes.SymbolDefinition);	
+		const node = <nodes.SymbolDefinition>this.create(nodes.SymbolDefinition);
 		this.noDefinitions = true;
 		this.acceptAnySymbol = true;
 		this.accept(TokenType.AT);
@@ -673,8 +673,8 @@ export class Parser {
 
 		let statement = this.tryEol(this._parseNumber.bind(this, false, true))
 			|| this.tryEol(this._parseString.bind(this))
-			|| this.tryEol(this._parseAddress.bind(this))		
-			|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address	
+			|| this.tryEol(this._parseAddress.bind(this))
+			|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address
 			|| this.tryEol(this._parseNcStatement.bind(this))
 			|| this.tryEol(this._parseSequenceNumber.bind(this))
 			|| this.tryEol(this._parseMacroStatement.bind(this, false))
@@ -710,7 +710,7 @@ export class Parser {
 		this.noDefinitions = false;
 		node.setValue(statement);
 		this.finish(node);
-		this.processWhiteSpaces();	
+		this.processWhiteSpaces();
 		return node;
 	}
 
@@ -719,7 +719,7 @@ export class Parser {
 		if (!this.peek(TokenType.GTS)) {
 			return null;
 		}
-		const node = this.create(nodes.LabelDefinition);		
+		const node = this.create(nodes.LabelDefinition);
 
 		this.noDefinitions = true;
 		this.acceptAnySymbol = true;
@@ -738,7 +738,7 @@ export class Parser {
 		this.scanner.ignoreWhitespace = false;
 
 		let statement = this.tryEol(this._parseNumber.bind(this, true))
-			|| this.tryEol(this._parseString.bind(this)); 
+			|| this.tryEol(this._parseString.bind(this));
 
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
@@ -766,7 +766,7 @@ export class Parser {
 		this.noDefinitions = false;
 		node.setValue(statement);
 		this.finish(node);
-		this.processWhiteSpaces();	
+		this.processWhiteSpaces();
 		return node;
 	}
 
@@ -798,7 +798,7 @@ export class Parser {
 		if (this.symbol) {
 			this.symbol.attrib = nodes.ValueAttribute.Program;
 		}
-		
+
 		if (!node.setIdentifier(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Program)))) {
 			this.markError(node, ParseError.FunctionIdentExpected, [], [TokenType.NewLine]);
 		}
@@ -813,7 +813,7 @@ export class Parser {
 			|| this._parseMacroStatement()
 			|| this._parseNcStatement()
 			|| this._parseString()
-			|| this._parseFcommand()) 
+			|| this._parseFcommand())
 			|| this._parseNNAddress();
 	}
 
@@ -823,7 +823,7 @@ export class Parser {
 		if (this.peek(TokenType.Prog) || this.peek(TokenType.EOF) || this.peekDelim('%')) {
 			return null;
 		}
-		
+
 		// blocksip, sequence number and Label may leading a statement
 		let statement = this._parseBlockFunction();
 		let sequence = this._parseSequenceNumber();
@@ -835,7 +835,7 @@ export class Parser {
 			}
 			return statement;
 		}
-		
+
 		statement = this._parseProgramBodyStatement();
 		if (statement) {
 			return statement;
@@ -865,31 +865,34 @@ export class Parser {
 
 	//#region Function helper
 	public _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildes=true): T {
-		
+
 		if (this._needsLineBreakBefore(node) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.NewLineExpected, [], [TokenType.NewLine]);
 		}
-
 		this.processNewLines();
-		
+
+		const body = this.createNode(nodes.NodeType.Body);
+
 		let statement = parseStatement?.call(this);
-		while (node.addChild(statement)) {
+		while (body.addChild(statement)) {
 			if (this._needsLineBreakAfter(statement) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 				this.markError(statement, ParseError.NewLineExpected, [], [TokenType.NewLine]);
-			}		
+			}
 			if (!hasChildes) {
+				node.addChild(this.finish(body));
 				this.finish(node);
 				this.processNewLines();
 				return node;
-			}	
+			}
 			this.processNewLines();
 			statement = parseStatement?.call(this);
 		}
+		node.addChild(this.finish(body));
 		return this.finish(node);
 	}
-	
+
  	//#endregion
-	
+
 	//#region Statements
 	/**
 	 * e.g N100G01
@@ -920,7 +923,7 @@ export class Parser {
 
 		return this.finish(node);
 	}
-	
+
 
 	public _parseSequenceNumber() : nodes.Node | null {
 
@@ -943,7 +946,7 @@ export class Parser {
 			return null;
 		}
 
-		const nodeBs = this.createNode(nodes.NodeType.BlockSkip);		
+		const nodeBs = this.createNode(nodes.NodeType.BlockSkip);
 		const nodeBd = this.create(nodes.BlockDel);
  		this.consumeToken();
 
@@ -956,7 +959,7 @@ export class Parser {
 	}
 
 	public _parseControlCommands(...keywords:string[]) : nodes.Node {
-		
+
 		if (!this.peekAnyKeyword(...keywords)) {
 			return;
 		}
@@ -974,19 +977,19 @@ export class Parser {
 
 	/**
 	 * The NC Parser works as follows:
-	 * 
+	 *
 	 * 1. first symbol needs to be a NC code or NC param
 	 * 2. Parse a declarated symbol
-	 * 3. Parse a NC code 
-	 * 4. Parse a NC param 
+	 * 3. Parse a NC code
+	 * 4. Parse a NC param
 
-	 * e.g: 
+	 * e.g:
 	 * - G01 G[#symbol] X1 Y-#[symbol]
 	 * - CALL SUB_PROGRAM
-	 * 
+	 *
 	 */
 	public _parseNcStatement() : nodes.Node | null {
-		
+
 		if (!this.peekAny(TokenType.Parameter, TokenType.Ampersand)) {
 			return null;
 		}
@@ -1014,8 +1017,8 @@ export class Parser {
 			}
 			else {break;}
 		}
-		// An NC-statement node needs at least one child 
-		if (node.hasChildren()) {	
+		// An NC-statement node needs at least one child
+		if (node.hasChildren()) {
 			return this.finish(node);
 		}
 		else {
@@ -1024,18 +1027,18 @@ export class Parser {
 	}
 
 	public _parseNcStatementInternal() : nodes.Node | null {
-		
+
 		if (this.peek(TokenType.NewLine) || this.peek(TokenType.EOF)) {
 			return null;
 		}
 
-		return this._parseUnknownSymbol(this._parseNcCode() 
-			|| this._parseNcParam() 
+		return this._parseUnknownSymbol(this._parseNcCode()
+			|| this._parseNcParam()
 			|| this._parseNumber());
 	}
 
 	public _parseNcCode(): nodes.Node {
-		
+
 		if (!this.peek(TokenType.Parameter)) {
 			return null;
 		}
@@ -1073,7 +1076,7 @@ export class Parser {
 		else if (node.addChild(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber()))) {
 			return this.finish(node);
 		}
-		this.restoreAtMark(mark); 
+		this.restoreAtMark(mark);
 
 		return null;
 	}
@@ -1088,12 +1091,12 @@ export class Parser {
 		const node = this.create(nodes.Parameter);
 
 		// axis number command
-		this.accept(TokenType.Ampersand); 
-		
+		this.accept(TokenType.Ampersand);
+
 		this.consumeToken();
 
-		this.acceptDelim('+') || this.acceptDelim('-'); 
-	
+		this.acceptDelim('+') || this.acceptDelim('-');
+
 		if (this.peek(TokenType.Number)) {
 			node.addChild(this._parseNumber());
 			return this.finish(node);
@@ -1118,8 +1121,8 @@ export class Parser {
 	}
 
 	public _parseControlStatement(parseStatement: () => nodes.Node | null): nodes.Node | null {
-		return this._parseIfStatement(parseStatement) 
-		|| this._parseWhileStatement(parseStatement) 
+		return this._parseIfStatement(parseStatement)
+		|| this._parseWhileStatement(parseStatement)
 		|| this._parseGotoStatement();
 	}
 
@@ -1129,7 +1132,7 @@ export class Parser {
 			return null;
 		}
 
-		const node = this.create(nodes.Assignment);		
+		const node = this.create(nodes.Assignment);
 		const left = this._parseVariable();
 
 
@@ -1151,7 +1154,7 @@ export class Parser {
 
 			node.addChild(this._parseString());
 
-			return this.finish(node); 
+			return this.finish(node);
 		}
 	}
 
@@ -1180,10 +1183,13 @@ export class Parser {
 			return this.finish(node, ParseError.ThenGotoExpected, [TokenType.NewLine]);
 		}
 
-		if (!this._parseBody(node, this._parseIfConditionalStatement.bind(this, parseStatement), false)) {
-			return this.finish(node, ParseError.BodyExpected);
+		const child = this._parseIfConditionalStatement(parseStatement);
+		if (this._needsLineBreakAfter(child) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+			this.markError(child, ParseError.NewLineExpected, [], [TokenType.NewLine]);
 		}
-		
+
+		node.addChild(child);
+
 		return this.finish(node);
 	}
 
@@ -1204,12 +1210,12 @@ export class Parser {
 					const elseNode = this.create(nodes.ElseTermStatement);
 					this._parseBody(elseNode, this._parseMacroStatement.bind(this), false);
 					thenNode.setElseClause(elseNode);
-				} 
+				}
 				else {
 					const elseNode = this.create(nodes.ElseStatement);
 					this._parseBody(elseNode, this._parseConditionalControlBody.bind(this, parseStatement, ['endif']));
 					thenNode.setElseClause(elseNode);
-				
+
 					if (!this.acceptKeyword('endif')) {
 						this.markError(thenNode, ParseError.EndifExpected);
 					}
@@ -1220,14 +1226,14 @@ export class Parser {
 					if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 						this.markError(thenNode, ParseError.NewLineExpected);
 					}
-				} 
+				}
 			}
 			return this.finish(thenNode);
-		} 
+		}
 		else {
 			const endIfNode = this.create(nodes.IfEndifStatement);
 			this._parseBody(endIfNode, this._parseConditionalControlBody.bind(this, parseStatement, ['else','endif']));
-			
+
 			if (this.acceptKeyword('else')) {
 			// ELSE term
 				if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
@@ -1237,15 +1243,15 @@ export class Parser {
 					// check new line after statement
 					if (this._needsLineBreakAfter(elseNode) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 						this.markError(elseNode, ParseError.NewLineExpected);
-					}	
-				} 
+					}
+				}
 				else {
 					// ELSE
 					// ENDIF
 					const elseNode = this.create(nodes.ElseStatement);
 					this._parseBody(elseNode, this._parseConditionalControlBody.bind(this, parseStatement, ['endif']));
 					endIfNode.setElseClause(elseNode);
-				
+
 					if (!this.acceptKeyword('endif')) {
 						this.markError(endIfNode, ParseError.EndifExpected);
 					}
@@ -1255,7 +1261,7 @@ export class Parser {
 				if (!this.acceptKeyword('endif')) {
 					this.markError(endIfNode, ParseError.EndifExpected);
 				}
-			}	
+			}
 			return this.finish(endIfNode);
 		}
 	}
@@ -1276,7 +1282,7 @@ export class Parser {
 			}
 		}
 		else {
-			if (!node.setLabel(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber(true, false, nodes.ReferenceType.Sequence)))) 
+			if (!node.setLabel(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber(true, false, nodes.ReferenceType.Sequence))))
 			{
 				this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 			}
@@ -1310,15 +1316,15 @@ export class Parser {
 		if (!this.acceptKeyword('end')) {
 			return this.finish(node, ParseError.EndExpected, [], [TokenType.NewLine]);
 		}
-		
-		if (!node.setEndLabel(this._parseUnknownSymbol(this._parseNumber(true)))) { 
+
+		if (!node.setEndLabel(this._parseUnknownSymbol(this._parseNumber(true)))) {
 			this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 		}
 
 		if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.NewLineExpected);
 		}
-	
+
 		return this.finish(node);
 	}
 
@@ -1368,7 +1374,7 @@ export class Parser {
 			if (!node.setNext(this._parseConditionalExpressionInternal())) {
 				this.markError(node, ParseError.TermExpected);
 			}
-		}		
+		}
 
 		return this.finish(node);
 	}
@@ -1376,8 +1382,8 @@ export class Parser {
 	public _parseBinaryExpr(preparsedLeft?: nodes.BinaryExpression, preparsedOper?: nodes.Node): nodes.BinaryExpression | null {
 
 		let node = this.create(nodes.BinaryExpression);
-	
-		node.setOperator(this._parseUnaryOperator()); 
+
+		node.setOperator(this._parseUnaryOperator());
 		if (this.hasKeywords('#','[')) {
 			this.accept(TokenType.Hash);
 		}
@@ -1395,13 +1401,13 @@ export class Parser {
 			if (this.hasKeywords('#','[')) {
 				this.accept(TokenType.Hash);
 			}
-			if (!this.peek(TokenType.BracketL)){			
+			if (!this.peek(TokenType.BracketL)){
 				if (!node.setRight(this._parseTerm())) {
 					this.markError(node, ParseError.TermExpected, [TokenType.NewLine], [TokenType.KeyWord, TokenType.BracketR]);
 				}
-			} 
+			}
 		}
-		
+
 		if (this.accept(TokenType.BracketL)) {
 			if (!node.addChild(this._parseBinaryExpr())){
 				this.markError(node, ParseError.TermExpected, [], [TokenType.KeyWord, TokenType.BracketR, TokenType.NewLine] );
@@ -1427,9 +1433,9 @@ export class Parser {
 		const node = this.create(nodes.Term);
 		node.setOperator(this._parseUnaryOperator());
 		if (node.setExpression(this._parseUnknownSymbol(
-			this._parseVariable() 
-			|| this._parseFfunc() 
-			|| this._parseAddress() 
+			this._parseVariable()
+			|| this._parseFfunc()
+			|| this._parseAddress()
 			|| this._parseNumber()))) {
 			return <nodes.Term>this.finish(node);
 		}
@@ -1447,23 +1453,23 @@ export class Parser {
 
 		const node = <nodes.Variable>this.create(nodes.Variable);
 		this.consumeToken();
-		
+
 		if (this.peek(TokenType.BracketL)) {
 			node.setBody(this._parseBinaryExpr());
 			return this.finish(node);
-		} 
+		}
 
 		if (!node.setBody(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Variable)))) {
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
-		
-		if (this.accept(TokenType.LTS)) {	
+
+		if (this.accept(TokenType.LTS)) {
 			node.setBody(this._parseBinaryExpr());
-		
+
 			if (!this.accept(TokenType.GTS)){
 				return this.finish(node, ParseError.RightAngleBracketExpected);
 			}
-		} 
+		}
 
 		return this.finish(node);
 
@@ -1486,12 +1492,12 @@ export class Parser {
 				if (node.addChild(this._parseVariable())){
 					return this.finish(node);
 				}
-			} 
+			}
 			else if (this.peek(TokenType.BracketL)) {
 				if (node.addChild(this._parseBinaryExpr())){
 					return this.finish(node);
 				}
-			} 
+			}
 			return this.finish(node);
 		}
 		else if (this.peek(TokenType.Hash)) {
@@ -1504,8 +1510,8 @@ export class Parser {
 				return this.finish(node);
 			}
 		}
-		this.restoreAtMark(mark); 
-	
+		this.restoreAtMark(mark);
+
 		return null;
 	}
 
@@ -1568,9 +1574,9 @@ export class Parser {
 					const param = element._param[index];
 					if (index > 0 && signature.delimiter) {
 						this.acceptKeyword(signature.delimiter);
-					}	
-	
-					if (!node.addChild(this._parseFfuncParameter(param))) {		
+					}
+
+					if (!node.addChild(this._parseFfuncParameter(param))) {
 						if (last) {
 							return this.finish(node, ParseError.TermExpected, [], [TokenType.NewLine]);
 						}
@@ -1607,7 +1613,7 @@ export class Parser {
 			else {
 				const parameter = this.createNode(nodes.NodeType.FuncParam);
 				while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement() || this._parseBinaryExpr())) {
-					
+
 				}
 				node.addChild(parameter);
 			}
@@ -1644,14 +1650,14 @@ export class Parser {
 			else {
 				child = this._parseBinaryExpr();
 			}
-			
+
 			if (!node.addChild(child)) {
 				return null;
 			}
 			return this.finish(node);
 		}
 	}
-	
+
 	public _parseText(): nodes.Node | null {
 
 		if (!this.peek(TokenType.Symbol)){
@@ -1685,12 +1691,12 @@ export class Parser {
 		if (!this.peek(TokenType.String) && !this.peek(TokenType.BadString)) {
 			return null;
 		}
-		
+
 		const node = this.createNode(nodes.NodeType.String);
 		if (this.accept(TokenType.BadString)){
 			return this.finish(node, ParseError.Badstring);
 		}
-		
+
 		this.consumeToken();
 
 		if (this.accept(TokenType.BadString)){
@@ -1721,8 +1727,8 @@ export class Parser {
 				return null;
 			}
 		}
-	
-		if (integer && this.peekRegExp(TokenType.Number, /\d*\.\d*/)) {	
+
+		if (integer && this.peekRegExp(TokenType.Number, /\d*\.\d*/)) {
 			this.markError(node, ParseError.IntegerExpected);
 		}
 
@@ -1811,8 +1817,8 @@ export class Parser {
 			case nodes.NodeType.Assignment:
 			case nodes.NodeType.Statement:
 			case nodes.NodeType.String:
-			case nodes.NodeType.ControlStatement:	
-			case nodes.NodeType.Then:		
+			case nodes.NodeType.ControlStatement:
+			case nodes.NodeType.Then:
 			case nodes.NodeType.While:
 			case nodes.NodeType.LabelDef:
 			case nodes.NodeType.SymbolDef:
@@ -1822,13 +1828,13 @@ export class Parser {
 	}
 
 	public _parseUnexpected() : nodes.Node | null {
-	
+
 		let node:nodes.Node;
 		switch (this.token.type) {
 			case TokenType.EOF:
 			case TokenType.NewLine:
 			case TokenType.Whitespace:
-			case TokenType.String:	
+			case TokenType.String:
 				break;
 			default:
 				node = this.createNode(nodes.NodeType.Undefined);
