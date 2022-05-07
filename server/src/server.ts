@@ -337,8 +337,8 @@ connection.languages.callHierarchy.onIncomingCalls((params) => {
 });
 
 connection.languages.callHierarchy.onOutgoingCalls((params) => {
-	/*return execute(params.textDocument.uri, (service, repo, settings) =>
-		service.doOutgoingCallsrepo.document, params.item, repo.macrofile));*/
+	return execute(params.item.uri, (service, repo, settings) =>
+		service.doOutgoingCalls(repo.document, params.item, repo.macrofile, settings));
 	return [];
 });
 

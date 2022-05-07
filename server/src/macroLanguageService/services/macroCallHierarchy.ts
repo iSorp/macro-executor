@@ -8,13 +8,19 @@ import { URI, Utils } from 'vscode-uri';
 import * as path from 'path';
 import {
 	MacroFileProvider, TextDocument, Position, Range, 
-	CallHierarchyItem, CallHierarchyIncomingCall, SymbolKind,
-	LanguageSettings, SRC_FILES
+	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall,
+	SymbolKind, LanguageSettings, SRC_FILES, Location, MacroFileType
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
+import { MacroNavigation } from './macroNavigation';
 
 export class MacroCallHierarchy {
-	constructor(private fileProvider: MacroFileProvider) {}
+
+	private navigation: MacroNavigation;
+
+	constructor(private fileProvider: MacroFileProvider) {
+		this.navigation = new MacroNavigation(this.fileProvider);
+	}
 
 	public doPrepareCallHierarchy(document: TextDocument, position: Position, macroFile: nodes.Node): CallHierarchyItem[] | null {
 
@@ -39,50 +45,133 @@ export class MacroCallHierarchy {
 
 	public doIncomingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.Node, settings: LanguageSettings): CallHierarchyIncomingCall[] | null {
 
-		let items:CallHierarchyIncomingCall[] = [];
+		const items: Map<string, CallHierarchyIncomingCall> = new Map<string, CallHierarchyIncomingCall>();
 
-		const offset = document.offsetAt(item.range.start);
-		const node = nodes.getNodeAtOffset(macroFile, offset);
-		const files = this.fileProvider.getAll({glob:SRC_FILES});
-
-		for (const file of files) {
-
-			(<nodes.Node>file.macrofile).accept(candidate => {	
-
-				if (candidate.getNonSymbolText() === node.getNonSymbolText()) {
-
-					const program = candidate.findAParent(nodes.NodeType.Parameter);
-					if (program) {
-						const sibling = program.getLastSibling();
-	
-						if (sibling && (settings?.callFunctions.find(a => a === sibling.getNonSymbolText()))) {
-							const caller = <nodes.Program>candidate.findAParent(nodes.NodeType.Program);
-							const callerRange = this.getRange(caller.identifier, file.document);
-							const range = this.getRange(candidate, file.document);
-							const filename = path.basename(URI.parse(file.document.uri).fsPath);
-		
-							const incoming:CallHierarchyIncomingCall = {
-								from: {
-									name: caller.identifier.getText(),
-									uri: file.document.uri,
-									kind: SymbolKind.Function,
-									detail: file.document.uri === document.uri? null : filename,
-									range: callerRange,
-									selectionRange: range
-								},
-								fromRanges: [range]
-							};
-		
-							items.push(incoming);
-							return false;
-						}
-					}
-				}
-				return true;
-			});
+		const macrofile = this.fileProvider.get(item.uri)?.macrofile;
+		if (!macrofile) {
+			return null;
 		}
 
-		return items;
+		const locations = this.navigation.findReferences(document, item.range.start, <nodes.MacroFile>macrofile);
+		for (const location of locations) {
+			const macroFileType = this.fileProvider.get(location.uri);
+
+			if (!macroFileType) {
+				continue;
+			}
+
+			const callerFromIdent = this.getNodeFromLocation(macroFileType.document, <nodes.MacroFile>macroFileType.macrofile, location);
+			const parameter = callerFromIdent.findAParent(nodes.NodeType.Parameter);
+			if (parameter) {
+				const callFunction = parameter.getLastSibling();
+				if (callFunction && (settings?.callFunctions.find(a => a === callFunction.getNonSymbolText()))) {
+
+					const callerFromProgram = <nodes.Program>callerFromIdent.findAParent(nodes.NodeType.Program);
+					const callerFromRange = this.getRange(callerFromIdent, macroFileType.document);
+					const key = callerFromProgram.identifier.getNonSymbolText()+macroFileType.document.uri;
+
+					if (!items.has(key)) {
+	
+						const callerToRange = this.getRange(callerFromProgram.identifier, macroFileType.document);
+						const filename = path.basename(URI.parse(macroFileType.document.uri).fsPath);
+		
+						items.set(key, {
+							from: {
+								name: callerFromProgram.identifier.getText(),
+								uri: macroFileType.document.uri,
+								kind: SymbolKind.Function,
+								detail: macroFileType.document.uri === document.uri? null : filename,
+								range: callerToRange,
+								selectionRange: callerToRange
+							},
+							fromRanges: [callerFromRange]
+						});
+					}
+					else {
+						items.get(key).fromRanges.push(callerFromRange);
+					}
+				}
+			}
+		}
+
+		return [...items.values()];
+	}
+
+	public doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.Node, settings: LanguageSettings): CallHierarchyOutgoingCall[] | null {
+
+		const items: Map<string, CallHierarchyOutgoingCall> = new Map<string, CallHierarchyOutgoingCall>();
+
+		const locations = this.navigation.findImplementations(document, item.range.start, macroFile);
+		for (const location of locations) {
+			const macroFileType = this.fileProvider.get(location.uri);
+
+			if (!macroFileType) {
+				continue;
+			}
+	
+			const sourceProgramIdent = this.getNodeFromLocation(macroFileType.document, <nodes.MacroFile>macroFileType.macrofile, location);
+			if (sourceProgramIdent) {
+				const sourceProgram = sourceProgramIdent.getParent();
+
+				sourceProgram.accept(candidate => {
+
+					if (settings?.callFunctions.find(a => a === candidate.getNonSymbolText())) {
+
+						const parameter = candidate.getNextSibling();
+						const callerFromIdent = parameter.getChild(0);
+						const callerFromRange = this.getRange(callerFromIdent, macroFileType.document);
+						const locations = this.navigation.findImplementations(macroFileType.document, macroFileType.document.positionAt(callerFromIdent.offset), macroFile);
+
+						for (const location of locations) {
+							const macroFileType = this.fileProvider.get(location.uri);
+				
+							if (!macroFileType) {
+								continue;
+							}
+					
+							const callerToIdent = this.getNodeFromLocation(macroFileType.document, <nodes.MacroFile>macroFileType.macrofile, location);
+							if (callerToIdent) {
+								const callerToProgram = <nodes.Program>callerToIdent.getParent();
+								const key = callerToProgram.identifier.getNonSymbolText()+macroFileType.document.uri;
+
+								if (!items.has(key)) {
+
+									const callerToRange = this.getRange(callerToProgram.identifier, macroFileType.document);
+									const filename = path.basename(URI.parse(macroFileType.document.uri).fsPath);
+
+									items.set(key, {
+										to: {
+											name: callerToProgram.identifier.getText(),
+											uri: macroFileType.document.uri,
+											kind: SymbolKind.Function,
+											detail: macroFileType.document.uri === document.uri? null : filename,
+											range: callerToRange,
+											selectionRange: callerToRange // Range beim entferten symbol
+										},
+										fromRanges: [callerFromRange]
+									});
+								}
+								else {
+									items.get(key).fromRanges.push(callerFromRange);
+								}
+		
+								return false;
+							}
+						}
+					}
+					return true;
+				});
+			}
+
+			break; 
+		}
+
+		return [...items.values()];
+	}
+
+	private getNodeFromLocation(document: TextDocument, macroFile: nodes.MacroFile, location: Location) : nodes.Node {
+		const offset = document.offsetAt(location.range.start);
+		return nodes.getNodeAtOffset(macroFile, offset, nodes.NodeType.SymbolRoot);
 	}
 
 	private getRange(node: nodes.Node, document: TextDocument): Range {

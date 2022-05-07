@@ -28,7 +28,7 @@ export enum ValueAttribute {
 	Program
 }
 
-export function getNodeAtOffset(node: Node, offset: number): Node | null {
+export function getNodeAtOffset(node: Node, offset: number, ignoreNode: NodeType = null): Node | null {
 
 	let candidate: Node | null = null;
 	if (!node || offset < node.offset || offset > node.end) {
@@ -37,6 +37,10 @@ export function getNodeAtOffset(node: Node, offset: number): Node | null {
 
 	// Find the shortest node at the position
 	node.accept((node) => {
+		if (ignoreNode && node.type === ignoreNode) {
+			return false;
+		}
+
 		if (node.offset === -1 && node.length === -1) {
 			return true;
 		}
@@ -331,6 +335,16 @@ export class Node {
 			const index = this.getChildIndex();
 			if (index !== null) {
 				return this.parent.getChild(index - 1);
+			}
+		}
+		return null;
+	}
+
+	public getNextSibling(): Node | null {
+		if (this.parent.hasChildren()) {
+			const index = this.getChildIndex();
+			if (index !== null) {
+				return this.parent.getChild(index + 1);
 			}
 		}
 		return null;
