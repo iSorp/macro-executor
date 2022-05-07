@@ -15,7 +15,6 @@ import {
 	Rules,
 	Rule 
 } from './lintRules';
-import { performance } from 'perf_hooks';
 
 const MAX_CONDITIONALS = 4;
 const MAX_WHILE_DEPTH = 3;
@@ -31,7 +30,7 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private definitions:Map<string,nodes.AbstractDefinition> = new Map<string,nodes.AbstractDefinition>();
-	private sequenceList:FunctionMap<nodes.Program, nodes.Node> = new FunctionMap();
+	private sequenceList:FunctionMap<nodes.Program, nodes.SequenceNumber> = new FunctionMap();
 	private gotoList:FunctionMap<nodes.Program, nodes.GotoStatement> = new FunctionMap();
 	private duplicateList: string[] = [];
 	private imports: string[] = [];
@@ -62,13 +61,13 @@ export class LintVisitor implements nodes.IVisitor {
 			for (const node of gotoStatements) {
 				const jumpLabel = node.getLabel();
 				if (jumpLabel) {
-					const number = jumpLabel.getNonSymbolText();
+					const number = Number(jumpLabel.getNonSymbolText());
 					if (!number) {
 						continue;
 					}
 
 					if (sequences && sequences.some(a => {
-						return a.getNonSymbolText() === number;			
+						return a.value === number;
 					})) {
 						continue;
 					}
@@ -257,7 +256,7 @@ export class LintVisitor implements nodes.IVisitor {
 			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 			const list = this.sequenceList.get(func);
 			const duplicate = list?.some(a => {
-				if (a.getNonSymbolText() === number.getNonSymbolText()) {
+				if (a.value === node.value) {
 					if (a.symbol?.type !== number.symbol?.type) {
 						this.addEntry(number, Rules.DuplicateLabelSequence);
 					}
@@ -274,7 +273,7 @@ export class LintVisitor implements nodes.IVisitor {
 				return false;
 			});
 			if (!duplicate) {
-				this.sequenceList.add(func, number);
+				this.sequenceList.add(func, node);
 			}
 		}
 		return true;

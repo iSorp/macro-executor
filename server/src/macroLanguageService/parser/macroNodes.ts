@@ -663,6 +663,10 @@ export class SequenceNumber extends Reference {
 	public getNumber(): Node | undefined {
 		return this.number;
 	}
+
+	public get value() : number | undefined {
+		return Number(this.number.getNonSymbolText());
+	}
 }
 
 export class BodyDeclaration extends Node {
