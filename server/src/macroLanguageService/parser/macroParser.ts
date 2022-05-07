@@ -22,6 +22,7 @@ interface IMark {
 	defPos: number;
 	def: nodes.AbstractDefinition;
 	sym: nodes.Symbol | nodes.Label;
+	symListLength: number;
 	func: () => boolean;
 }
 
@@ -218,6 +219,7 @@ export class Parser {
 			defPos: this.defScanner.pos(),
 			def: this.definition,
 			sym: this.symbol,
+			symListLength: this.symbolNodeList.length,
 			func: this.subScanFunc
 		};
 	}
@@ -233,6 +235,7 @@ export class Parser {
 		this.scanner.goBackTo(mark.pos);
 		this.definition = mark.def;
 		this.symbol = mark.sym;
+		this.symbolNodeList.splice(mark.symListLength);
 		this.subScanFunc = mark.func;
 		if (this.definition?.value) {
 			this.defScanner.setSource(this.definition.value.getText());

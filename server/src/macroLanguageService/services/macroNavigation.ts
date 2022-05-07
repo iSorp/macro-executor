@@ -364,7 +364,7 @@ export class MacroNavigation {
 			case nodes.NodeType.Symbol:
 				return this.getRange(node, document);
 			case nodes.NodeType.SequenceNumber:
-				return this.getRange((<nodes.SequenceNumber>node.getParent()).getNumber(), document);
+				return this.getRange((<nodes.SequenceNumber>node).getNumber(), document);
 			default:
 				return null;
 		}
