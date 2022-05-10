@@ -282,8 +282,7 @@ export class LintVisitor implements nodes.IVisitor {
 	private inG10 = false;
 	private visitNNAddress(node: nodes.Node): boolean  {
 		this.inG10 = false;
-		const parent = node.findAParent(nodes.NodeType.Program);
-		for (let child of parent.getChildren()) {
+		for (let child of node.getParent().getChildren()) {
 			if (child.type === nodes.NodeType.SequenceNumber){
 				child = child.getChild(1);
 			}

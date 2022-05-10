@@ -1484,7 +1484,11 @@ export class Parser {
 
 		this.consumeToken();
 
-		if (this.accept(TokenType.Number)) {
+		if (this.peek(TokenType.Number)) {
+			
+			while(this.accept(TokenType.Number)){}
+			this.acceptKeyword('.');
+			
 			if (this.peek(TokenType.Hash)) {
 				if (node.addChild(this._parseVariable())){
 					return this.finish(node);
@@ -1495,6 +1499,9 @@ export class Parser {
 					return this.finish(node);
 				}
 			} 
+			else {
+				while(this.accept(TokenType.Number)){}
+			}
 			return this.finish(node);
 		}
 		else if (this.peek(TokenType.Hash)) {
@@ -1545,7 +1552,7 @@ export class Parser {
 		for (let i = 0; i < signatures.length; i++) {
 			let signature = signatures[i];
 			this.scanner.inFunction = true;
-			const node = this._parseFfuncSignature<T>(type, signature, i >= signatures.length-1);
+			const node = this._parseFfuncSignature<T>(type, fname, signature, i >= signatures.length-1);
 			this.scanner.inFunction = false;
 			if (node) {
 				node.setData('signature', i);
@@ -1558,7 +1565,7 @@ export class Parser {
 		return null;
 	}
 
-	public _parseFfuncSignature<T extends nodes.Ffunc>(node: T, signature:FunctionSignature, last:boolean): T | null {
+	public _parseFfuncSignature<T extends nodes.Ffunc>(node: T, fname: string, signature:FunctionSignature, last:boolean): T | null {
 		const ident = this.createNode(nodes.NodeType.Identifier);
 		this.consumeToken();	// function
 		node.setIdentifier(this.finish(ident));
@@ -1609,12 +1616,104 @@ export class Parser {
 			}
 			else {
 				const parameter = this.createNode(nodes.NodeType.FuncParam);
-				while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement() || this._parseBinaryExpr())) {
 					
+				if (fname === 'dprnt' || fname === 'bprnt') {
+					while (this._parsePrnt(parameter));
 				}
+				else {
+					while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement() || this._parseBinaryExpr()));
+				}
+
 				node.addChild(parameter);
 			}
 		}
+		return this.finish(node);
+	}
+	
+	public _parsePrnt(node: nodes.Node) : boolean  {
+
+		if (this.peek(TokenType.BracketR)) {
+			return false;
+		}
+
+		if (node.addChild(this._parsePrntNcParam()
+			|| this._parsePrntFormattedVariable()
+			|| this._parsePrntAnyText())) {
+				return true;
+		}
+		else if (this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+			this.markError(node, ParseError.RightSquareBracketExpected);
+		}
+		else {
+			this.markError(node, ParseError.UnexpectedToken);
+		}
+			return false;
+	}
+
+	public _parsePrntAnyText() : nodes.Node {
+		
+		if (!(this.peekRegExp(TokenType.Symbol, /[a-zA-Z]/)
+			|| this.peek(TokenType.Number)
+			|| this.peekAnyKeyword('*', '/', '+', '-'))) {
+			return null;
+		}
+		
+		const node = this.create(nodes.Node);
+		
+		this.consumeToken();
+	
+		return this.finish(node);
+	}
+	
+	public _parsePrntNcParam() : nodes.Node {
+
+		if (!this.peek(TokenType.Parameter)) {
+			return null;
+		}
+		
+		const node = this.create(nodes.Parameter);
+		
+		this.consumeToken();
+		
+		return this.finish(node);
+	}
+	
+	public _parsePrntFormattedVariable() : nodes.Node {
+		
+		if (!this.peek(TokenType.Hash)) {
+			return null;
+		}
+		
+		const node = this.create(nodes.Node);
+		
+		if (!node.addChild(this._parseVariable())) {
+			this.markError(node, ParseError.MacroVariableExpected);
+		}
+		
+		if (!node.addChild(this._parsePrntFormat())) {
+			this.markError(node, ParseError.PrntFormatExpected);
+		}
+		
+		return this.finish(node);
+	}
+	
+	public _parsePrntFormat() : nodes.Node {
+		
+		if (!this.peek(TokenType.BracketL)) {
+			return null;
+		}
+		const node = this.create(nodes.Node);
+		
+		this.consumeToken();
+		
+		if (!node.addChild(this._parseNumber(true))) {
+			this.markError(node, ParseError.NumberExpected);
+		}
+		
+		if (!this.accept(TokenType.BracketR)) {
+			this.markError(node, ParseError.RightSquareBracketExpected);
+		}
+		
 		return this.finish(node);
 	}
 
