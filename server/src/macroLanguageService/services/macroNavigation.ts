@@ -221,6 +221,10 @@ export class MacroNavigation {
 				entry.name = node.getText();
 				entry.kind = SymbolKind.Event;
 			}
+			else if (node.type === nodes.NodeType.Fcmd) {
+				entry.name = (<nodes.Fcmd>node).getIdentifier().getNonSymbolText();
+				entry.kind = SymbolKind.Event;
+			}
 			else {
 
 				if (node.symbol) {

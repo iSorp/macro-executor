@@ -39,6 +39,7 @@ export const ParseError = {
 	FunctionIdentExpected: new MacroIssueType('macro-functionidentifierexpected', localize('expected.funcident', 'Function identifier expected')),
 	AddressExpected: new MacroIssueType('macro-addressexpected', localize('expected.address', 'Address expected')),
 	MacroVariableExpected: new MacroIssueType('macro-macrovariableexpected', localize('expected.macrovariable', 'Variable (#) expected')),
+	PrntFormatExpected: new MacroIssueType('macro-prntformatexpected', localize('expected.prntformat', 'Format [F] expected')),
 	BodyExpected: new MacroIssueType('macro-bodyexpected', localize('expected.body', 'Body expected')),
 	LabelExpected: new MacroIssueType('macro-labelexpected', localize('expected.label', 'Label expected')),
 	TermExpected: new MacroIssueType('macro-termexpected', localize('expected.term', 'Term expected')),

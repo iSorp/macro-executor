@@ -17,6 +17,7 @@
 	"expected.funcident": "函数标识符缺失",
 	"expected.address": "地址缺失",
 	"expected.macrovariable": "#变量缺失",
+	"expected.prntformat" : "Format [F] expected",
 	"expected.body": "函数缺失",
 	"expected.label": "标签缺失",
 	"expected.term": "语句缺失",

@@ -17,6 +17,7 @@
 	"expected.funcident": "Funktionssymbol erwartet",
 	"expected.address": "Adresse erwartet",
 	"expected.macrovariable": "Variable (#) erwartet",
+	"expected.prntformat" : "Format [F] erwartet",
 	"expected.body": "Body erwartet",
 	"expected.label": "Label erwartet",
 	"expected.term": "Term erwartet",
