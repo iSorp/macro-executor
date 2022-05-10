@@ -1481,7 +1481,11 @@ export class Parser {
 
 		this.consumeToken();
 
-		if (this.accept(TokenType.Number)) {
+		if (this.peek(TokenType.Number)) {
+			
+			while(this.accept(TokenType.Number)){}
+			this.acceptKeyword('.');
+			
 			if (this.peek(TokenType.Hash)) {
 				if (node.addChild(this._parseVariable())){
 					return this.finish(node);
@@ -1492,6 +1496,9 @@ export class Parser {
 					return this.finish(node);
 				}
 			} 
+			else {
+				while(this.accept(TokenType.Number)){}
+			}
 			return this.finish(node);
 		}
 		else if (this.peek(TokenType.Hash)) {

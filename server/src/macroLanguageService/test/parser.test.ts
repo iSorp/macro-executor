@@ -106,6 +106,8 @@ suite('Parser', () => {
 		assertNode('R100.[1]', parser, parser._parseAddress.bind(parser));
 		assertNode('R1.#[1+[1]]', parser, parser._parseAddress.bind(parser));
 		assertNode('R#1', parser, parser._parseAddress.bind(parser));
+		assertNode('R 1 . 1', parser, parser._parseAddress.bind(parser));
+		assertError('R#1.1', parser, parser._parseAddress.bind(parser), ParseError.IntegerExpected);
 	});
 
 	test('Variable', function () {
