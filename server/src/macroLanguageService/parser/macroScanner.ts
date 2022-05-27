@@ -247,8 +247,8 @@ export class Scanner {
 	public ignoreComment = true;
 	public ignoreWhitespace = true;
 	public ignoreNewLine = false;
-	public acceptAnySymbol =false;
-	public inFunction = false;	
+	public scanTextAsSymbol =false;
+	public ignoreBadString = false;	
 
 	public setSource(input: string): void {
 		this.stream = new MultiLineStream(input);
@@ -295,28 +295,31 @@ export class Scanner {
 			return this.finishToken(offset, TokenType.Number);
 		}
 
-		const keyword:TokenType = this._keyword();
-		if (keyword) {
-			return this.finishToken(offset, keyword);
-		}
-
-		// O-keyword
-		if (this.stream.advanceIfChar(_O) || this.stream.advanceIfChar(_o)) {
-			return this.finishToken(offset, TokenType.Prog);
-		}
-
-		// N-keyword, NN-keyword
-		if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {
-			if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {		
-				return this.finishToken(offset, TokenType.NNAddress);
+		if (!this.scanTextAsSymbol) {
+			
+			const keyword:TokenType = this._keyword();
+			if (keyword) {
+				return this.finishToken(offset, keyword);
 			}
-			else {
-				return this.finishToken(offset, TokenType.Sequence);
-			}
-		}
 
-		if (this._parameter()) {
-			return this.finishToken(offset, TokenType.Parameter);
+			// O-keyword
+			if (this.stream.advanceIfChar(_O) || this.stream.advanceIfChar(_o)) {
+				return this.finishToken(offset, TokenType.Prog);
+			}
+
+			// N-keyword, NN-keyword
+			if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {
+				if (this.stream.advanceIfChar(_N) || this.stream.advanceIfChar(_n)) {		
+					return this.finishToken(offset, TokenType.NNAddress);
+				}
+				else {
+					return this.finishToken(offset, TokenType.Sequence);
+				}
+			}
+
+			if (this._parameter()) {
+				return this.finishToken(offset, TokenType.Parameter);
+			}
 		}
 
 		// symbol
@@ -396,7 +399,7 @@ export class Scanner {
 			return this.finishToken(offset, singleChToken);
 		}
 
-		if (this.acceptAnySymbol) {
+		if (this.scanTextAsSymbol) {
 			if (this._symbol(content)) {
 				return this.finishToken(offset, TokenType.Symbol);
 			}
@@ -427,7 +430,7 @@ export class Scanner {
 
 			
 		// String, BadString
-		if (!this.inFunction) {
+		if (!this.ignoreBadString) {
 			content = [];
 			let tokenType = this._string(content);
 			if (tokenType !== null) {

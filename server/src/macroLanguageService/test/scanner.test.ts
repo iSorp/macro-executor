@@ -142,7 +142,7 @@ suite('Scanner', () => {
 		assertSingleToken(scanner, '"', 1, 0, '"', TokenType.Delim);
 
 		scanner = new Scanner();
-		scanner.inFunction = true;
+		scanner.ignoreBadString = true;
 		assertSingleToken(scanner, '(', 1, 0, '(', TokenType.Delim);
 	});
 

@@ -32,21 +32,21 @@ export const functionSignatures: { [name: string]: FunctionSignature[] } = {
 		{ 
 			description: 'The DPRNT command outputs characters and each digit in the value of a variable according to the code set in the settings (ISO)',
 			delimiter: '',
-			param: [ { _bracket: '[' }, {}, { _bracket: ']' } ]
+			param: [ { _bracket: '[' }, { _param: [ { param: 'parameters', _type: 'prnt_param'} ] }, { _bracket: ']' } ]
 		}
 	],
 	'bprnt': [	
 		{
 			description: 'The BPRNT command outputs characters and variable values in binary',
 			delimiter: '',
-			param: [ { _bracket: '[' }, {}, { _bracket: ']' } ]
+			param: [ { _bracket: '[' }, { _param: [ { param: 'parameters', _type: 'prnt_param'} ] }, { _bracket: ']' } ]
 		}
 	],
 	'setvn': [	
 		{ 
 			description: 'This function expands number of variables to which name is set by SETVN',
 			delimiter: ',', 
-			param: [ { _param: [ { var: 'variable number', _type: 'number' } ], }, { _bracket: '[' }, { _param: [ { name: 'name', _type: 'string'} ], }, { _bracket: ']' } ]
+			param: [ { _param: [ { var: 'variable number', _type: 'number' } ], }, { _option: 'text' }, { _bracket: '[' }, { _param: [ { name: 'name', _type: 'setvn_param'} ], }, { _bracket: ']' } ]
 		}
 	],
 	'fgen':  [
@@ -378,4 +378,4 @@ export const SymbolText : { [node: string]: string } = {
 	MCode: 'm-code',
 	Address: 'address',
 	Parameter: 'parameter',
-}
+};

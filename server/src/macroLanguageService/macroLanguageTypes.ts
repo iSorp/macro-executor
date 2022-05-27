@@ -118,7 +118,8 @@ export enum TokenModifiers {
 }
 
 export type FunctionSignatureParam = {
-	_bracket? : string;
+	_option?: string;
+	_bracket?: string;
 	_escape?: string;
 	_param?: {[name:string]:any}[];
 }

@@ -50,7 +50,7 @@ export class Parser {
 	private symbolNodeList:nodes.Symbol[] | nodes.Label[] = [];
 	private includes:string[] = [];	
 	private subScanFunc: () => boolean = undefined;
-	private noDefinitions = false;
+	private ignoreDefinition = false;
 	private acceptAnySymbol = false;
 
 	constructor(private fileProvider: MacroFileProvider) {
@@ -171,7 +171,7 @@ export class Parser {
 			return;
 		}
 
-		if (!this.noDefinitions) {
+		if (!this.ignoreDefinition) {
 			const definition = this.definitionMap.get(this.token.text);
 			if (definition) {
 				const value = definition.getValue()?.getText();
@@ -657,10 +657,9 @@ export class Parser {
 			return null;
 		}
 		const node = <nodes.SymbolDefinition>this.create(nodes.SymbolDefinition);	
-		this.noDefinitions = true;
+		this.ignoreDefinition = true;
 		this.acceptAnySymbol = true;
 		this.accept(TokenType.AT);
-
 		this.acceptAnySymbol = false;
 
 		const symbol = this.create(nodes.Symbol);
@@ -710,7 +709,7 @@ export class Parser {
 		}
 
 		this.scanner.ignoreWhitespace = true;
-		this.noDefinitions = false;
+		this.ignoreDefinition = false;
 		node.setValue(statement);
 		this.finish(node);
 		this.processWhiteSpaces();	
@@ -724,10 +723,9 @@ export class Parser {
 		}
 		const node = this.create(nodes.LabelDefinition);		
 
-		this.noDefinitions = true;
+		this.ignoreDefinition = true;
 		this.acceptAnySymbol = true;
 		this.accept(TokenType.GTS);
-
 		this.acceptAnySymbol = false;
 
 		const label = this.create(nodes.Label);
@@ -766,7 +764,7 @@ export class Parser {
 		}
 
 		this.scanner.ignoreWhitespace = true;
-		this.noDefinitions = false;
+		this.ignoreDefinition = false;
 		node.setValue(statement);
 		this.finish(node);
 		this.processWhiteSpaces();	
@@ -1551,9 +1549,16 @@ export class Parser {
 		const mark = this.mark();
 		for (let i = 0; i < signatures.length; i++) {
 			let signature = signatures[i];
-			this.scanner.inFunction = true;
+			
+			this.scanner.ignoreBadString = true;
+			
 			const node = this._parseFfuncSignature<T>(type, fname, signature, i >= signatures.length-1);
-			this.scanner.inFunction = false;
+			
+			this.ignoreDefinition = false;
+			this.acceptAnySymbol = false;
+			this.scanner.scanTextAsSymbol = false;
+			this.scanner.ignoreBadString = false;
+			
 			if (node) {
 				node.setData('signature', i);
 				return node;
@@ -1572,6 +1577,12 @@ export class Parser {
 		let bracketOpen = false;
 		for (let element of signature.param) {
 
+			if (element._option === 'text') {
+				this.scanner.scanTextAsSymbol = true;
+				this.acceptAnySymbol = true;
+				continue;
+			}
+			
 			if (element._param) {
 				let index = 0;
 				while (index < element._param.length) {
@@ -1617,29 +1628,109 @@ export class Parser {
 			else {
 				const parameter = this.createNode(nodes.NodeType.FuncParam);
 					
-				if (fname === 'dprnt' || fname === 'bprnt') {
-					while (this._parsePrnt(parameter));
-				}
-				else {
-					while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement() || this._parseBinaryExpr()));
-				}
-
+				while (this._parseUnknownSymbol(this._parseMacroStatement() || this._parseNcStatement() || this._parseBinaryExpr())){}
+			
 				node.addChild(parameter);
 			}
 		}
 		return this.finish(node);
 	}
-	
-	public _parsePrnt(node: nodes.Node) : boolean  {
 
+	public _parseFfuncParameter(param:any) : nodes.Node | null {
+		
+		if (param._bracket) {
+			const node = this.create(nodes.Node);
+			if (!this.acceptKeyword(param._bracket)) {
+				return null;
+			}
+			return this.finish(node);
+		}
+		else if (param._escape) {
+			const node = this.create(nodes.Node);
+			if (!this.acceptKeyword(param._escape)) {
+				return null;
+			}
+			return this.finish(node);
+		}
+		else {
+			const node = this.createNode(nodes.NodeType.FuncParam);
+			let child:nodes.Node | null = null;
+			if (param._type) {
+				if (param._type === 'number') {
+					child = this._parseNumber();
+				}
+				else if (param._type === 'setvn_param') {
+					child = this._parseSetvn();
+				}
+				else if (param._type === 'prnt_param') {
+					child = this._parsePrnt();
+				}
+			}
+			else {
+				child = this._parseBinaryExpr();
+			}
+			
+			if (!node.addChild(child)) {
+				return null;
+			}
+			return this.finish(node);
+		}
+	}
+	
+	// TODO check whether 0 parameter is allowed
+	public _parseSetvn(node: nodes.Node = null) : nodes.Node  {
+
+		if (node === null) {
+			node = this.create(nodes.Node);
+		}
+		
+		// TODO count childes: max 50 allowed
+		if (!node.addChild(this._parseSetvnParam())) {
+			if (this.peek(TokenType.BracketR)) {
+				return this.finish(node, ParseError.ParameterExpected);
+			}
+
+			this.markError(node, ParseError.UnexpectedToken);
+		}
+		else if (this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+			this.markError(node, ParseError.RightSquareBracketExpected);
+		}
+		
+		if (this.accept(TokenType.Comma)) {
+			this._parseSetvn(node);
+		}
+
+		return this.finish(node);
+	}
+	
+	public _parseSetvnParam(): nodes.Node | null {
+
+		if (!this.peek(TokenType.Symbol)){
+			return null;
+		}
+		const node = this.createNode(nodes.NodeType.String);
+		
+		if (!this.acceptRegexp(/^(?![0-9])[A-Za-z][^\[\]:]*$/)) {
+			return this.finish(node, ParseError.InvalidStatement);
+		}
+		
+		return this.finish(node);
+	}
+	
+	public _parsePrnt(node: nodes.Node = null) : nodes.Node  {
+
+		if (node === null) {
+			node = this.create(nodes.Node);
+		}
+		
 		if (this.peek(TokenType.BracketR)) {
-			return false;
+			return this.finish(node);
 		}
 
 		if (node.addChild(this._parsePrntNcParam()
 			|| this._parsePrntFormattedVariable()
 			|| this._parsePrntAnyText())) {
-				return true;
+			this._parsePrnt(node);
 		}
 		else if (this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.RightSquareBracketExpected);
@@ -1647,7 +1738,7 @@ export class Parser {
 		else {
 			this.markError(node, ParseError.UnexpectedToken);
 		}
-			return false;
+		return this.finish(node);
 	}
 
 	public _parsePrntAnyText() : nodes.Node {
@@ -1671,7 +1762,7 @@ export class Parser {
 			return null;
 		}
 		
-		const node = this.create(nodes.Parameter);
+		const node = this.create(nodes.Node);
 		
 		this.consumeToken();
 		
@@ -1716,54 +1807,7 @@ export class Parser {
 		
 		return this.finish(node);
 	}
-
-	public _parseFfuncParameter(param:any) : nodes.Node | null {
-		if (param._bracket) {
-			const node = this.create(nodes.Node);
-			if (!this.acceptKeyword(param._bracket)) {
-				return null;
-			}
-			return this.finish(node);
-		}
-		else if (param._escape) {
-			const node = this.create(nodes.Node);
-			if (!this.acceptKeyword(param._escape)) {
-				return null;
-			}
-			return this.finish(node);
-		}
-		else {
-			const node = this.createNode(nodes.NodeType.FuncParam);
-			let child:nodes.Node | null = null;
-			if (param._type) {
-				if (param._type === 'number') {
-					child = this._parseNumber();
-				}
-				else if (param._type === 'string') {
-					child = this._parseText();
-				}
-			}
-			else {
-				child = this._parseBinaryExpr();
-			}
-			
-			if (!node.addChild(child)) {
-				return null;
-			}
-			return this.finish(node);
-		}
-	}
 	
-	public _parseText(): nodes.Node | null {
-
-		if (!this.peek(TokenType.Symbol)){
-			return null;
-		}
-		const string = this.createNode(nodes.NodeType.String);
-		this.consumeToken();
-		return this.finish(string);
-	}
-
 	public _parseSymbol(...referenceTypes: nodes.ReferenceType[]): nodes.Node | null {
 
 		if (!this.peek(TokenType.Symbol)) {
