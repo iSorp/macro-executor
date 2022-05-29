@@ -51,4 +51,5 @@ export const ParseError = {
 	UnexpectedToken: new MacroIssueType('macro-unexpectedToken', localize('expected.unexpectedToken', 'Unexpected token')),
 	EqualExpected: new MacroIssueType('macro-equalExpected', localize('expected.equalExpected', ' = expected')),
 	SymbolError: new MacroIssueType('macro-symbolError', localize('symbol.symbolError', 'Inappropriate symbol definition')),
+	InvalidVariableName: new MacroIssueType('macro-invalidVariableName', localize('invalid.variableName', 'Invalid variable name')),
 };

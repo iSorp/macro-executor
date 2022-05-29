@@ -304,9 +304,8 @@ export class Parser {
 		return false;
 	}
 
-	public acceptRegexp(regEx: RegExp): boolean {
+	public peekRegexp(regEx: RegExp): boolean {
 		if (regEx.test(this.token.text)) {
-			this.consumeToken();
 			return true;
 		}
 		return false;
@@ -865,7 +864,7 @@ export class Parser {
 	//#endregion
 
 	//#region Function helper
-	public _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildes=true): T {
+	public _parseBody<T extends nodes.BodyDeclaration>(node: T, parseStatement: () => nodes.Node | null, hasChildren=true): T {
 		
 		if (this._needsLineBreakBefore(node) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.NewLineExpected, [], [TokenType.NewLine]);
@@ -878,7 +877,7 @@ export class Parser {
 			if (this._needsLineBreakAfter(statement) && !this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 				this.markError(statement, ParseError.NewLineExpected, [], [TokenType.NewLine]);
 			}		
-			if (!hasChildes) {
+			if (!hasChildren) {
 				this.finish(node);
 				this.processNewLines();
 				return node;
@@ -1579,7 +1578,6 @@ export class Parser {
 
 			if (element._option === 'text') {
 				this.scanner.scanTextAsSymbol = true;
-				this.acceptAnySymbol = true;
 				continue;
 			}
 			
@@ -1677,43 +1675,34 @@ export class Parser {
 		}
 	}
 	
-	// TODO check whether 0 parameter is allowed
 	public _parseSetvn(node: nodes.Node = null) : nodes.Node  {
 
 		if (node === null) {
 			node = this.create(nodes.Node);
 		}
 		
-		// TODO count childes: max 50 allowed
-		if (!node.addChild(this._parseSetvnParam())) {
-			if (this.peek(TokenType.BracketR)) {
-				return this.finish(node, ParseError.ParameterExpected);
-			}
-
-			this.markError(node, ParseError.UnexpectedToken);
+		if (this.peek(TokenType.BracketR)) {
+			return this.finish(node);
 		}
+		
+		if (this.peekRegexp(/^(?![0-9])[A-Za-z][^\[\]:]*$/)) {
+			const string = this.createNode(nodes.NodeType.String);
+			this.consumeToken();
+			
+			// TODO count children, max 50 allowed
+			node.addChild(string);
+		}		
 		else if (this.peekAny(TokenType.NewLine, TokenType.EOF)) {
 			this.markError(node, ParseError.RightSquareBracketExpected);
+		}
+		else {
+			return this.finish(node, ParseError.InvalidVariableName);
 		}
 		
 		if (this.accept(TokenType.Comma)) {
 			this._parseSetvn(node);
 		}
 
-		return this.finish(node);
-	}
-	
-	public _parseSetvnParam(): nodes.Node | null {
-
-		if (!this.peek(TokenType.Symbol)){
-			return null;
-		}
-		const node = this.createNode(nodes.NodeType.String);
-		
-		if (!this.acceptRegexp(/^(?![0-9])[A-Za-z][^\[\]:]*$/)) {
-			return this.finish(node, ParseError.InvalidStatement);
-		}
-		
 		return this.finish(node);
 	}
 	

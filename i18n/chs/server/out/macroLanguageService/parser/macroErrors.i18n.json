@@ -28,7 +28,8 @@
 	"expected.expression": "语句缺失",
 	"expected.unexpectedToken": "符号缺失",
 	"expected.equalExpected": "=号缺失",
-	"symbol.symbolError": "符号定义或使用错误"
+	"symbol.symbolError": "符号定义或使用错误",
+	"invalid.variableName": "Invalid variable name"
 }
 
 
