@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { count } from 'console';
 import {
 	TextEdit, TextDocument, Position, Range,
 	FormattingOptions
@@ -18,6 +17,7 @@ export class MacroDocumentFormatting {
 	private options: FormattingOptions;
 	private edits: TextEdit[];
 	private document: TextDocument;
+	private indent: string;
 
 	public doDocumentFormatting(document: TextDocument, options: FormattingOptions, macrofile: nodes.MacroFile): TextEdit[] | null {
 
@@ -25,7 +25,39 @@ export class MacroDocumentFormatting {
 		this.options = options;
 		this.edits = [];
 
+		if (options.insertSpaces) {
+			this.indent = ' '.repeat(options.tabSize);
+		}
+		else {
+			this.indent = '\t';
+		}
+
 		this.doDocumentFormattingInternal(macrofile, 0);
+
+		if (options.trimFinalNewlines) {
+			const len = document.getText().length;
+			const last = document.getText().charAt(len - 1);
+			if (last === '\n') {
+				const trimmed = TextDocument.create('', 'macro', 1, document.getText().trimEnd());
+
+				let pos: Position;
+				if (options.insertFinalNewline) {
+					pos = Position.create(trimmed.lineCount, 0);
+				}
+				else {
+					pos = trimmed.positionAt(trimmed.getText().length);
+				}
+
+				this.edits.push(TextEdit.del(Range.create(pos, Position.create(document.lineCount, 0) )));
+			}
+		}
+		else if (options.insertFinalNewline) {
+			const len = document.getText().length;
+			const last = document.getText().charAt(len - 1);
+			if (last !== '\n') {
+				this.edits.push(TextEdit.insert(Position.create(document.lineCount, 0), '\n'));
+			}
+		}
 
 		return this.edits;
 	}
@@ -35,7 +67,7 @@ export class MacroDocumentFormatting {
 		if (node.hasChildren()) {
 			for (const child of node.getChildren()) {
 
-				const space = Array(level).fill('    ').join('');
+				const space = this.indent.repeat(level);
 
 				if (child.type === nodes.NodeType.Body) {
 					this.doDocumentFormattingInternal(child, level + 1);
@@ -86,13 +118,19 @@ export class MacroDocumentFormatting {
 	}
 
 	private indentLine(space: string, line: number) {
-		const currentText = this.document.getText(Range.create(line, 0, line + 1, 0));
-		const range = Range.create(line, 0, line, currentText.length-1);
+		const currentText = this.document.getText(Range.create(line, 0, line + 1, 0))?.replace(/[\n\r]/g, '');
+		const range = Range.create(line, 0, line, currentText.length);
 
 		this.edits.push(TextEdit.del(range));
 
 		let text: string;
-		text = this.document.getText(range).trim();
+		if (this.options.trimTrailingWhitespace) {
+			text = this.document.getText(range).trim();
+		}
+		else {
+			text = this.document.getText(range).trimStart();
+		}
+
 		this.edits.push(TextEdit.insert(Position.create(line, 0), space + text));
 	}
 }
