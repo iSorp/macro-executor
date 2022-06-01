@@ -514,6 +514,7 @@ export enum NodeType {
 	NNAddress,
 	BlockSkip,
 	BlockDel,
+	Comment,
 }
 
 export class Reference extends Node {

@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 'use strict';
 
+import { notDeepEqual } from 'assert';
 import {
 	TextEdit, TextDocument, Position, Range,
 	FormattingOptions
@@ -69,12 +70,27 @@ export class MacroDocumentFormatting {
 
 				const space = this.indent.repeat(level);
 
-				if (child.type === nodes.NodeType.Body) {
+				if (child.type === nodes.NodeType.SymbolDef
+                    || child.type === nodes.NodeType.LabelDef
+                    || child.type === nodes.NodeType.Include
+                    || child.type === nodes.NodeType.ControlStatement) {
+					this.indentFirstLine(child, '');
+				}
+				else if (child.type === nodes.NodeType.Comment && child.parent.type === nodes.NodeType.MacroFile) {
+					this.indentFirstLine(child, '');
+				}
+				else if (child.type === nodes.NodeType.Body) {
 					this.doDocumentFormattingInternal(child, level + 1);
 				}
 				else if (child.type === nodes.NodeType.MacroFile
-					|| child.type === nodes.NodeType.Program
-					|| child.type === nodes.NodeType.If) {
+                    || child.type === nodes.NodeType.DefFile) {
+					this.doDocumentFormattingInternal(child, level);
+				}
+				else if (child.type === nodes.NodeType.Program) {
+					this.indentFirstLine(child, space);
+					this.doDocumentFormattingInternal(child, level);
+				}
+				else if (child.type === nodes.NodeType.If) {
 					this.doDocumentFormattingInternal(child, level);
 				}
 				else if (child.type === nodes.NodeType.While || child.type === nodes.NodeType.Then) {
@@ -87,8 +103,8 @@ export class MacroDocumentFormatting {
 					this.doDocumentFormattingInternal(child, level);
 				}
 				else if (child.parent.type === nodes.NodeType.If
-					&& (child.type === nodes.NodeType.ThenTerm || child.type === nodes.NodeType.Goto)) {
-					this.indentFirstLine(child, space);
+                    && (child.type === nodes.NodeType.ThenTerm || child.type === nodes.NodeType.Goto)) {
+					this.indentBody(child, space);
 				}
 				else if (child.parent.type === nodes.NodeType.Body) {
 					this.indentBody(child, space);
@@ -121,8 +137,6 @@ export class MacroDocumentFormatting {
 		const currentText = this.document.getText(Range.create(line, 0, line + 1, 0))?.replace(/[\n\r]/g, '');
 		const range = Range.create(line, 0, line, currentText.length);
 
-		this.edits.push(TextEdit.del(range));
-
 		let text: string;
 		if (this.options.trimTrailingWhitespace) {
 			text = this.document.getText(range).trim();
@@ -131,6 +145,8 @@ export class MacroDocumentFormatting {
 			text = this.document.getText(range).trimStart();
 		}
 
-		this.edits.push(TextEdit.insert(Position.create(line, 0), space + text));
+		if (this.edits.length < 1 || range.start.line !== this.edits[this.edits.length-1].range.start.line) {
+			this.edits.push(TextEdit.replace(range, space + text));
+		}
 	}
 }
