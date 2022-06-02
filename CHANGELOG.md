@@ -1,6 +1,7 @@
 ## 0.3.4  (-)
 - Function call hierarchy
 - Prepare rename provider for better rename experience
+- Formatting provider
 
 ## 0.3.3  (April 16, 2021)
 - NN address parsing

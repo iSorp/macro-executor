@@ -12,6 +12,7 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 
 
 ## News
+- Document formatting
 - Function call hierarchy for incoming and outgoing calls
 - Custom call functions setting  
 
@@ -29,6 +30,7 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 * Lint features
 * Sequence number refactoring
 * Function call hierarchy
+* Formatting provider
 
 ## Supported display languages
 * English `en`
