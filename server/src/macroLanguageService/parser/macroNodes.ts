@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
+import { type } from 'os';
 import { integer } from 'vscode-languageserver';
 
 export enum ReferenceType {
@@ -493,6 +494,7 @@ export enum NodeType {
 	SymbolRoot,
 	Include,
 	StringLiteral,
+	Body,
 	Program,
 	SymbolDef,
 	LabelDef,
@@ -526,6 +528,7 @@ export enum NodeType {
 	NNAddress,
 	BlockSkip,
 	BlockDel,
+	Comment,
 }
 
 export class Reference extends Node {
@@ -586,7 +589,7 @@ export class MacroFile extends Node {
 }
 
 export enum Data {
-	Path 		= 'path',		// Path for include node	
+	Path 		= 'path',		// Path for include node
 	Includes 	= 'includes',	// Data contains an array of all included uris
 }
 

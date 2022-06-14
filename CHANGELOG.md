@@ -1,5 +1,6 @@
 ## 0.3.4  (-)
 - Function call hierarchy
+- Formatting provider
 - Prepare rename provider for better rename experience
 - Outline shows the linked symbol code
 - Bug fixes
