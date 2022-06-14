@@ -1,6 +1,11 @@
 ## 0.3.4  (-)
 - Function call hierarchy
 - Prepare rename provider for better rename experience
+- Outline shows the linked symbol code
+- Bug fixes
+	- https://github.com/iSorp/macro-executor/issues/23
+	- https://github.com/iSorp/macro-executor/issues/22
+	- https://github.com/iSorp/macro-executor/issues/21
 
 ## 0.3.3  (April 16, 2021)
 - NN address parsing

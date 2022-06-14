@@ -13,7 +13,6 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 
 ## News
 - Function call hierarchy for incoming and outgoing calls
-- Custom call functions setting  
 
 ***
        
