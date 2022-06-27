@@ -37,6 +37,7 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private rules: nodes.IMarker[] = [];
 	private functionList = new Array<string>();
+	private inDataInput:nodes.Node = null;
 
 	private constructor(private fileProvider: MacroFileProvider, private settings: LintConfiguration) { }
 
@@ -52,6 +53,10 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private completeValidations() {
+		
+		if (this.inDataInput) {
+			this.addEntry(this.inDataInput, Rules.DataInputNotClosed);
+		}
 
 		// Check GOTO number occurrence
 		for (const tuple of this.gotoList.elements) {
@@ -109,6 +114,8 @@ export class LintVisitor implements nodes.IVisitor {
 				return this.visitWhileStatement(<nodes.WhileStatement>node);
 			case nodes.NodeType.BlockDel:
 				return this.visitBlockDel(<nodes.BlockDel>node);
+			case nodes.NodeType.Statement:
+				return this.visitStatement(<nodes.NcStatement>node);
 		}
 		return true;
 	}
@@ -148,7 +155,7 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 
 	private visitFunction(node: nodes.Program): boolean {
-
+		
 		const ident = node.getIdentifier();
 		if (ident) {
 			const number = ident.getNonSymbolText();
@@ -226,19 +233,18 @@ export class LintVisitor implements nodes.IVisitor {
 		}
 		return true;
 	}
-
-	/*private visitStatement(node: nodes.NcStatement): boolean {
-		for (const statement of node.getChildren()) {
-			if (!statement.findAParent(nodes.NodeType.SymbolDef)) {
-				if (statement.type === nodes.NodeType.Parameter || statement.type === nodes.NodeType.Code) {
-					if (!statement.hasChildren()) {
-						this.addEntry(statement, Rules.IncompleteParameter);
-					}
-				}
+	
+	private visitStatement(node: nodes.NcStatement): boolean {
+		for (const child of node.getChildren()) {
+			if (child.getNonSymbolText().toLocaleLowerCase() === 'g10') {
+				this.inDataInput = node;
+			}
+			else if (child.getNonSymbolText().toLocaleLowerCase() === 'g11') {
+				this.inDataInput = null;
 			}
 		}
 		return true;
-	}*/
+	}
 
 	private visitParameter(node: nodes.Parameter): boolean {
 		if (!node.findAParent(nodes.NodeType.SymbolDef)) {
@@ -251,6 +257,10 @@ export class LintVisitor implements nodes.IVisitor {
 
 	private visitSequenceNumber(node: nodes.SequenceNumber): boolean {
 
+		if (this.inDataInput) {
+			return true;
+		}
+		
 		const number = node.getNumber();
 		if (number) {
 			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
@@ -279,26 +289,12 @@ export class LintVisitor implements nodes.IVisitor {
 		return true;
 	}
 
-	private inG10 = false;
 	private visitNNAddress(node: nodes.Node): boolean  {
-		this.inG10 = false;
-		for (let child of node.getParent().getChildren()) {
-			if (child.type === nodes.NodeType.SequenceNumber){
-				child = child.getChild(1);
-			}
-			if (child && child.type === nodes.NodeType.Statement) {
-				if (child.getNonSymbolText().toLocaleLowerCase().includes('g10')) {
-					this.inG10 = true;
-				}
-
-				if (child.getNonSymbolText().toLocaleLowerCase().includes('g11')) {
-					if (this.inG10) {
-						return false;
-					}
-				}
-			}
+		
+		if (!this.inDataInput) {
+			this.addEntry(node, Rules.UnsuitableNNAddress);
 		}
-		this.addEntry(node, Rules.UnsuitableNNAddress);
+		
 		return true;
 	}
 
