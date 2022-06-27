@@ -167,11 +167,12 @@ export class Parser {
 		this.subScanFunc = undefined;
 		this.symbol = undefined;
 
-		if (this.token.type !== TokenType.Symbol || (this.token.type === TokenType.Symbol && this.acceptAnySymbol)) {
+		if ((this.token.type !== TokenType.Symbol && this.token.type !== TokenType.SystemVar) 
+		|| ((this.token.type === TokenType.Symbol || this.token.type === TokenType.SystemVar) && this.acceptAnySymbol)) {
 			this.addProgToken();
 			return;
 		}
-
+		
 		if (!this.ignoreDefinition) {
 			const definition = this.definitionMap.get(this.token.text);
 			if (definition) {
@@ -659,26 +660,50 @@ export class Parser {
 		this.accept(TokenType.AT);
 		this.acceptAnySymbol = false;
 
-		const symbol = this.create(nodes.Symbol);
+		let isSystemVariable: boolean;
+		let symbol: nodes.Symbol;
+		
 		const isUpperCase = this.token.text === this.token.text.toUpperCase();
-
-		if (!this.accept(TokenType.Symbol)) {
-			return this.finish(node, ParseError.IdentifierExpected);
+		
+		symbol = this.create(nodes.Symbol);
+		
+		// System variable, @[#_PRTSN[1]]    #3902 
+		if (this.accept(TokenType.SystemVar)) {
+			isSystemVariable = true;		
+			node.setIdentifier(this.finish(symbol));
 		}
-		node.setIdentifier(symbol);
-
+		
+		if (!isSystemVariable) {
+			symbol = this.create(nodes.Symbol);
+			
+			if (!this.accept(TokenType.Symbol)) {
+				return this.finish(node, ParseError.IdentifierExpected);
+			}
+			
+			node.setIdentifier(this.finish(symbol));
+		}
+		
 		this.processWhiteSpaces();
 		this.scanner.ignoreWhitespace = false;
 
-		let statement = this.tryEol(this._parseNumber.bind(this, false, true))
-			|| this.tryEol(this._parseString.bind(this))
-			|| this.tryEol(this._parseAddress.bind(this))
-			|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address
-			|| this.tryEol(this._parseNcStatement.bind(this))
-			|| this.tryEol(this._parseSequenceNumber.bind(this))
-			|| this.tryEol(this._parseMacroStatement.bind(this, false))
-			|| this.tryEol(this._parseGotoStatement.bind(this));
-
+		let statement: nodes.Node;
+		if (isSystemVariable) {
+			statement = this.tryEol(this._parseMacroStatement.bind(this, false));
+			if (!statement) {
+				this.markError(node, ParseError.MacroVariableExpected);
+			}
+		}
+		else {
+			statement = this.tryEol(this._parseNumber.bind(this, false, true))
+				|| this.tryEol(this._parseString.bind(this))
+				|| this.tryEol(this._parseAddress.bind(this))
+				|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address
+				|| this.tryEol(this._parseNcStatement.bind(this))
+				|| this.tryEol(this._parseSequenceNumber.bind(this))
+				|| this.tryEol(this._parseMacroStatement.bind(this, false))
+				|| this.tryEol(this._parseGotoStatement.bind(this));	
+		}
+		
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
 				statement = this.create(nodes.Node);
@@ -1436,7 +1461,7 @@ export class Parser {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * Variable: symbol, #symbol, #1000, #[, #<
 	 */
@@ -1467,7 +1492,7 @@ export class Parser {
 		}
 
 		return this.finish(node);
-
+		
 	}
 
 	public _parseAddress() : nodes.Address | nodes.Node | null {

@@ -17,7 +17,8 @@
 @i 200
 @k 200
 @j 200
-
+@[#_SYSVAR]			#3000 /*
+@[#_SYSVAR[123]]	#3123 /*
 
 O FUNCTIONS
   popen

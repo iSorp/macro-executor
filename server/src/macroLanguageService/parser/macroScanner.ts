@@ -22,6 +22,7 @@ export enum TokenType {
 	BracketR,
 	Whitespace,
 	Symbol,
+	SystemVar,
 	Parameter,
 	Number,
 	Prog,
@@ -249,7 +250,7 @@ export class Scanner {
 	public ignoreNewLine = false;
 	public scanTextAsSymbol =false;
 	public ignoreBadString = false;	
-
+	
 	public setSource(input: string): void {
 		this.stream = new MultiLineStream(input);
 	}
@@ -326,10 +327,17 @@ export class Scanner {
 		if (this._symbol([])) {
 			return this.finishToken(offset, TokenType.Symbol);
 		}
+		
+		// single character tokens
+		let singleChToken = <TokenType>staticTokenTable[this.stream.peekChar()];
+		if (typeof singleChToken !== 'undefined') {
+			this.stream.advance(1);
+			return this.finishToken(offset, singleChToken);
+		}
 
 		return null;
 	}
-
+	
 	public scan(symbolic:boolean = this.symbolic): IToken {
 		// processes all whitespaces and comments
 		const triviaToken = this._trivia();
@@ -391,7 +399,16 @@ export class Scanner {
 		if (this.stream.advanceIfChars([_AMD, _AMD])) {
 			return this.finishToken(offset, TokenType.LogigAnd);
 		}
-
+		
+		// system var [#_
+		if (this. stream.advanceIfChars([_BRL, _HSH, _USC])) {
+			const pos = this.stream.pos();
+			if (this._systemVarSymbol()) {
+				return this.finishToken(offset, TokenType.SystemVar);
+			}
+			this.stream.goBackTo(pos-3);
+		}
+		
 		// single character tokens
 		let singleChToken = <TokenType>staticTokenTable[this.stream.peekChar()];
 		if (typeof singleChToken !== 'undefined') {
@@ -427,8 +444,7 @@ export class Scanner {
 				return token;
 			}
 		}
-
-			
+		
 		// String, BadString
 		if (!this.ignoreBadString) {
 			content = [];
@@ -615,6 +631,44 @@ export class Scanner {
 		return matched;
 	}
 
+	private _isSystemVar(): boolean { 
+		const pos = this.stream.pos();
+		if (this.stream.advanceIfChars([_HSH, _USC])) {
+			this.stream.goBackTo(pos);
+			return true;
+		}
+		
+		this.stream.goBackTo(pos);
+		return true;
+	}
+	
+	private _systemVarSymbol() : boolean {
+		
+		if (this._symbol(null)) {
+			if (this.stream.advanceIfChar(_BRL)) {
+				if (!this._numberChar()) {
+					return false;
+				}
+					
+				while (this._numberChar()) {
+					// loop
+				}
+					
+				if (!this.stream.advanceIfChar(_BRR)) {
+					return false;
+				}
+			}
+				
+			if (!this.stream.advanceIfChar(_BRR)) {
+				return false;
+			}
+				
+			return true;
+		}
+		
+		return false;
+	}
+	
 	private _symbol(result: string[]): boolean {
 		const pos = this.stream.pos();
 		if (this._symbolFirstChar(result) ) {
@@ -643,7 +697,7 @@ export class Scanner {
 			ch >= _0 && ch <= _9 || // 0/9
 			ch >= 0x80 && ch <= 0xFFFF) { // nonascii
 			this.stream.advance(1);
-			result.push(String.fromCharCode(ch));
+			result?.push(String.fromCharCode(ch));
 			return true;
 		}
 		return false;

@@ -189,4 +189,10 @@ suite('Scanner', () => {
 		let scanner = new Scanner();
 		assertSingleTokenNonSymolStatement(scanner, 'NN', 2, 0, 'NN', TokenType.NNAddress);
 	});
+	
+	test('Token SystemVar', function () {
+		let scanner = new Scanner();
+		assertSingleToken(scanner, '[#_TEST]', 8, 0, '[#_TEST]', TokenType.SystemVar);
+		assertSingleToken(scanner, '[#_TEST[123]]', 13, 0, '[#_TEST[123]]', TokenType.SystemVar);
+	});
 });
