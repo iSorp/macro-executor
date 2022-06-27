@@ -1203,6 +1203,11 @@ export class Parser {
 			const thenNode = this.create(nodes.ThenTermStatement);
 			this._parseBody(thenNode, this._parseMacroStatement.bind(this), false);
 
+			// we need to parse comments here because it wount parsed in the program body
+			if (thenNode.addChild(this._parseComment())) {
+				this.processNewLines();
+			}
+			
 			if (this.acceptKeyword('else')) {
 				// ELSE term
 				if (this.peek(TokenType.Symbol) || this.peek(TokenType.Hash)) {
@@ -1222,7 +1227,7 @@ export class Parser {
 			}
 			else {
 				if (this.acceptKeyword('endif')) { // optional
-					if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+					if (!this.peekAny(TokenType.NewLine, TokenType.Comment, TokenType.EOF)) {
 						this.markError(thenNode, ParseError.NewLineExpected);
 					}
 				}
@@ -1316,7 +1321,7 @@ export class Parser {
 			this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 		}
 
-		if (!this.peekAny(TokenType.NewLine, TokenType.EOF)) {
+		if (!this.peekAny(TokenType.NewLine, TokenType.Comment, TokenType.EOF)) {
 			this.markError(node, ParseError.NewLineExpected);
 		}
 
