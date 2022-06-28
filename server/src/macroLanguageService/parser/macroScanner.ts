@@ -249,7 +249,8 @@ export class Scanner {
 	public ignoreWhitespace = true;
 	public ignoreNewLine = false;
 	public scanTextAsSymbol =false;
-	public ignoreBadString = false;	
+	public ignoreBadString = false;
+	public ignoreSystemVar = false;
 	
 	public setSource(input: string): void {
 		this.stream = new MultiLineStream(input);
@@ -327,13 +328,6 @@ export class Scanner {
 		if (this._symbol([])) {
 			return this.finishToken(offset, TokenType.Symbol);
 		}
-		
-		// single character tokens
-		let singleChToken = <TokenType>staticTokenTable[this.stream.peekChar()];
-		if (typeof singleChToken !== 'undefined') {
-			this.stream.advance(1);
-			return this.finishToken(offset, singleChToken);
-		}
 
 		return null;
 	}
@@ -401,7 +395,7 @@ export class Scanner {
 		}
 		
 		// system var [#_
-		if (this. stream.advanceIfChars([_BRL, _HSH, _USC])) {
+		if (!this.ignoreSystemVar && this. stream.advanceIfChars([_BRL, _HSH, _USC])) {
 			const pos = this.stream.pos();
 			if (this._systemVarSymbol()) {
 				return this.finishToken(offset, TokenType.SystemVar);
@@ -643,29 +637,20 @@ export class Scanner {
 	}
 	
 	private _systemVarSymbol() : boolean {
-		
 		if (this._symbol(null)) {
-			if (this.stream.advanceIfChar(_BRL)) {
-				if (!this._numberChar()) {
-					return false;
-				}
-					
+			if (this.stream.advanceIfChar(_BRL)) {		
 				while (this._numberChar()) {
 					// loop
-				}
-					
+				}		
 				if (!this.stream.advanceIfChar(_BRR)) {
 					return false;
 				}
-			}
-				
+			}		
 			if (!this.stream.advanceIfChar(_BRR)) {
 				return false;
-			}
-				
+			}			
 			return true;
 		}
-		
 		return false;
 	}
 	

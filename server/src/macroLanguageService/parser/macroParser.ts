@@ -198,6 +198,17 @@ export class Parser {
 
 				return;
 			}
+			else if (this.token.type === TokenType.SystemVar) {
+				
+				// if no definition exists rescan systemvar token as non systemvar
+				// this happens when a block of code contains a systemvar-like pattern
+				this.scanner.goBackTo(this.token.offset);
+				this.scanner.ignoreSystemVar = true;
+				this.token = this.scanner.scan();
+				this.scanner.ignoreSystemVar = false;
+				this.addProgToken();
+				return;
+			}
 		}
 
 		// Scan non symbol tokens
@@ -660,49 +671,25 @@ export class Parser {
 		this.accept(TokenType.AT);
 		this.acceptAnySymbol = false;
 
-		let isSystemVariable: boolean;
-		let symbol: nodes.Symbol;
+		const isUpperCase = this.token.text === this.token.text.toUpperCase();		
+		const symbol = this.create(nodes.Symbol);
 		
-		const isUpperCase = this.token.text === this.token.text.toUpperCase();
-		
-		symbol = this.create(nodes.Symbol);
-		
-		// System variable, @[#_PRTSN[1]]    #3902 
-		if (this.accept(TokenType.SystemVar)) {
-			isSystemVariable = true;		
-			node.setIdentifier(this.finish(symbol));
+		if (!this.accept(TokenType.Symbol) && !this.accept(TokenType.SystemVar) ) {
+			return this.finish(node, ParseError.IdentifierExpected);
 		}
 		
-		if (!isSystemVariable) {
-			symbol = this.create(nodes.Symbol);
-			
-			if (!this.accept(TokenType.Symbol)) {
-				return this.finish(node, ParseError.IdentifierExpected);
-			}
-			
-			node.setIdentifier(this.finish(symbol));
-		}
-		
+		node.setIdentifier(this.finish(symbol));
 		this.processWhiteSpaces();
 		this.scanner.ignoreWhitespace = false;
 
-		let statement: nodes.Node;
-		if (isSystemVariable) {
-			statement = this.tryEol(this._parseMacroStatement.bind(this, false));
-			if (!statement) {
-				this.markError(node, ParseError.MacroVariableExpected);
-			}
-		}
-		else {
-			statement = this.tryEol(this._parseNumber.bind(this, false, true))
-				|| this.tryEol(this._parseString.bind(this))
-				|| this.tryEol(this._parseAddress.bind(this))
-				|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address
-				|| this.tryEol(this._parseNcStatement.bind(this))
-				|| this.tryEol(this._parseSequenceNumber.bind(this))
-				|| this.tryEol(this._parseMacroStatement.bind(this, false))
-				|| this.tryEol(this._parseGotoStatement.bind(this));	
-		}
+		let statement = this.tryEol(this._parseNumber.bind(this, false, true))
+			|| this.tryEol(this._parseString.bind(this))
+			|| this.tryEol(this._parseAddress.bind(this))
+			|| this.tryEol(this._parseNcParam.bind(this))	// Code, Param or Address
+			|| this.tryEol(this._parseNcStatement.bind(this))
+			|| this.tryEol(this._parseSequenceNumber.bind(this))
+			|| this.tryEol(this._parseMacroStatement.bind(this, false))
+			|| this.tryEol(this._parseGotoStatement.bind(this));	
 		
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
