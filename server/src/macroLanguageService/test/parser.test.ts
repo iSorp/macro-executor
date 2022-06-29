@@ -348,4 +348,14 @@ suite('Parser', () => {
 		let parser = new Parser(null);
 		assertNode('1AND2EQ#1AND#1||1ANDSIN[1]', parser, parser._parseConditionalExpression.bind(parser, false));
 	});
+	
+	test('Token SystemVar', function () {
+		let parser = new Parser(null);
+		
+		assertNode('@[#_SYSTEMVAR] #1000', parser, parser._parseMacroFile.bind(parser));
+		assertNode('@[#_SYSTEMVAR[1]] #1001', parser, parser._parseMacroFile.bind(parser));	
+
+		assertError('@[#_SYSTEMVAR] 1000', parser, parser._parseMacroFile.bind(parser), ParseError.MacroVariableExpected);
+		assertError('@[#_SYSTEMVAR #1', parser, parser._parseMacroFile.bind(parser), ParseError.IdentifierExpected);
+	});
 });

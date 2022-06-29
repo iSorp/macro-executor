@@ -3,6 +3,7 @@
 - Formatting provider
 - Prepare rename provider for better rename experience
 - Outline shows the linked symbol code
+- Add support for system variables
 - Bug fixes
 	- https://github.com/iSorp/macro-executor/issues/23
 	- https://github.com/iSorp/macro-executor/issues/22

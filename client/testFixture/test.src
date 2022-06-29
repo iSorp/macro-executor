@@ -17,6 +17,8 @@
 @i 200  /*
 @k 200  /*
 @j 200  /*
+@[#_SYSVAR]			#3000 /*
+@[#_SYSVAR[123]]	#3123 /*
 
   /*
 O FUNCTIONS  /*
@@ -55,10 +57,6 @@ O FUNCTIONS  /*
   #1 = prm[1]/[1]  /*
   #1 = prm[1]  /*
   #1 = PRM[1, var]  /*
-  
-  
-  
-  
 RETURN  /*
 
   /*

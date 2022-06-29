@@ -167,11 +167,12 @@ export class Parser {
 		this.subScanFunc = undefined;
 		this.symbol = undefined;
 
-		if (this.token.type !== TokenType.Symbol || (this.token.type === TokenType.Symbol && this.acceptAnySymbol)) {
+		if ((this.token.type !== TokenType.Symbol && this.token.type !== TokenType.SystemVar) 
+		|| ((this.token.type === TokenType.Symbol || this.token.type === TokenType.SystemVar) && this.acceptAnySymbol)) {
 			this.addProgToken();
 			return;
 		}
-
+		
 		if (!this.ignoreDefinition) {
 			const definition = this.definitionMap.get(this.token.text);
 			if (definition) {
@@ -195,6 +196,17 @@ export class Parser {
 				this.subScanFunc = this.scanDefinition.bind(this);
 				this.scanDefinition();
 
+				return;
+			}
+			else if (this.token.type === TokenType.SystemVar) {
+				
+				// if no definition exists rescan systemvar token as non systemvar
+				// this happens when a block of code contains a systemvar-like pattern
+				this.scanner.goBackTo(this.token.offset);
+				this.scanner.ignoreSystemVar = true;
+				this.token = this.scanner.scan();
+				this.scanner.ignoreSystemVar = false;
+				this.addProgToken();
 				return;
 			}
 		}
@@ -659,14 +671,14 @@ export class Parser {
 		this.accept(TokenType.AT);
 		this.acceptAnySymbol = false;
 
+		const isUpperCase = this.token.text === this.token.text.toUpperCase();		
 		const symbol = this.create(nodes.Symbol);
-		const isUpperCase = this.token.text === this.token.text.toUpperCase();
-
-		if (!this.accept(TokenType.Symbol)) {
+		
+		if (!this.accept(TokenType.Symbol) && !this.accept(TokenType.SystemVar) ) {
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
-		node.setIdentifier(symbol);
-
+		
+		node.setIdentifier(this.finish(symbol));
 		this.processWhiteSpaces();
 		this.scanner.ignoreWhitespace = false;
 
@@ -677,8 +689,8 @@ export class Parser {
 			|| this.tryEol(this._parseNcStatement.bind(this))
 			|| this.tryEol(this._parseSequenceNumber.bind(this))
 			|| this.tryEol(this._parseMacroStatement.bind(this, false))
-			|| this.tryEol(this._parseGotoStatement.bind(this));
-
+			|| this.tryEol(this._parseGotoStatement.bind(this));	
+		
 		if (!statement) {
 			if (!this.peekAny(TokenType.Whitespace, TokenType.NewLine, TokenType.EOF)) {
 				statement = this.create(nodes.Node);
@@ -1441,7 +1453,7 @@ export class Parser {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * Variable: symbol, #symbol, #1000, #[, #<
 	 */
@@ -1472,7 +1484,7 @@ export class Parser {
 		}
 
 		return this.finish(node);
-
+		
 	}
 
 	public _parseAddress() : nodes.Address | nodes.Node | null {
