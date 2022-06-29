@@ -42,6 +42,7 @@ export const Rules = {
 	AssignmentConstant: new Rule('assignmentConstant', localize('rule.assignmentConstant', 'Assignment to constant'), Ignore),
 	BlockDelNumber: new Rule('blockDelNumber', localize('rule.blockDelNumber', 'BLOCKDEL number not match 1-9'), Error),
 	UnsuitableNNAddress: new Rule('unsuitableNNAddress', localize('rule.unsuitableNNAddress', 'Address NN is outside of a G10/G11 block'), Warning),
+	DataInputNotClosed: new Rule('dataInputNotClosed', localize('rule.dataInputNotClosed', 'Data input not close with G11'), Error),
 };
 
 export class LintConfiguration {

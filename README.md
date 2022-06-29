@@ -225,7 +225,8 @@ Three levels are supported: `error`, `warning` and `ignore`.
               "includeNotFound":          "error",
               "assignmentConstant":       "Ignore",
               "blockDelNumber":           "error",
-              "unsuitableNNAddress":      "warning"
+              "unsuitableNNAddress":      "warning",
+			  "dataInputNotClosed" :      "error"
        }
 ```
 

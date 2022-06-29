@@ -19,7 +19,8 @@
 	"rule.includeNotFound": "Datei nicht gefunden",
 	"rule.assignmentConstant": "Die Zuweisung erfolgt auf eine Konstante",
 	"rule.blockDelNumber" : "BLOCKDEL Nummer liegt ausserhalb des zulässigen Bereichs 1-9",
-	"rule.unsuitableNNAddress" : "Die Adresse NN befindet sich außerhalb eines G10 / G11-Blocks"
+	"rule.unsuitableNNAddress" : "Die Adresse NN befindet sich außerhalb eines G10 / G11-Blocks",
+	"rule.dataInputIsNotClosed" : "Die Dateneingabe nicht mittels G11 beendet"
 }
 
 
