@@ -1,4 +1,4 @@
-## 0.3.4  (-)
+## 0.4.0  (-)
 - Function call hierarchy
 - Formatting provider
 - Prepare rename provider for better rename experience
