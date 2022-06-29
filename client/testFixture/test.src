@@ -23,8 +23,8 @@ O FUNCTIONS  /*
   popen  /*
   pclos  /*
   dprnt[abcd]   /*
-  dprnt[X#100[3] Y#101[3] M#102[0]]  /*
-  bprnt[X#100[3] Y#101[3] M#102[0]]  /*
+  dprnt[X#100[3]**Y#101[3]***M#102[0]] /*
+  bprnt[X#100[3]**Y#101[3]***M#102[0]] /*
   setvn 100[abc]  /*
   fgen(1,1,1)  /*
   fdel(1,1)  /*
