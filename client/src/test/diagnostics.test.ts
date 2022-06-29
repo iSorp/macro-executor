@@ -9,13 +9,8 @@ import { getDocUri, activate } from './helper';
 
 suite('FanucMacroExecutor Extension Tests', () => {
 
-	test('Declaration checking', async () => {
-		await testDiagnostics(getDocUri('declaration.src'), [
-		]);
-	});
-
-	test('Function checking', async () => {
-		await testDiagnostics(getDocUri('function.src'), [
+	test('Test checking', async () => {
+		await testDiagnostics(getDocUri('test.src'), [
 		]);
 	});
 });

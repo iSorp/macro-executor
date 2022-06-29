@@ -51,6 +51,7 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const documentSettings: Map<string, Promise<TextDocumentSettings>> = new Map<string, Promise<TextDocumentSettings>>();
 const languageServices: Map<string, LanguageService> = new Map<string, LanguageService>();
+const defaultLanguageService = getMacroLanguageService(null);
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -62,10 +63,6 @@ interface TextDocumentSettings extends LanguageSettings {
 
 connection.onInitialize((params: InitializeParams) => {
 	
-	params.workspaceFolders.forEach(workspace => {
-		languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri, documents)}));
-	});
-
 	let capabilities = params.capabilities;
 
 	hasConfigurationCapability = !!(
@@ -126,6 +123,7 @@ connection.onInitialize((params: InitializeParams) => {
 			}
 		};
 	}
+	
 	return result;
 });
 
@@ -135,6 +133,7 @@ connection.onInitialized(async () => {
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
 	if (hasWorkspaceFolderCapability) {
+			
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			for (const added of _event.added) {
 				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri, documents)}));
@@ -147,8 +146,14 @@ connection.onInitialized(async () => {
 			}
 		});
 	}
-	const workspaces = await connection.workspace.getWorkspaceFolders();
+	
+	const workspaces = await connection.workspace.getWorkspaceFolders();	
 	if (workspaces && workspaces.length > 0) {
+		
+		workspaces.forEach(workspace => {
+			languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri, documents)}));
+		});
+		
 		await getSettings(workspaces[0].uri);
 		validate();
 	}
@@ -365,7 +370,14 @@ connection.listen();
 
 async function execute<T>(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => T) : Promise<T> {
 	return getSettings(uri).then(settings => {
-		const service = languageServices.get(settings.workspaceFolder.uri);
+		let service: LanguageService;
+		if (settings.workspaceFolder) {
+			service = languageServices.get(settings.workspaceFolder.uri);
+		}
+		else {
+			service = defaultLanguageService;	
+		}
+		
 		const repo = getParsedDocument(documents, uri, service.parseMacroFile);
 		if (!repo || !service) {
 			return null;

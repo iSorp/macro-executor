@@ -28,7 +28,7 @@
 	},
 	"icon": "resources/icon.png",
 	"engines": {
-		"vscode": "^1.67.2"
+		"vscode": "^1.63.0"
 	},
 	"activationEvents": [
 		"onLanguage:macro"
