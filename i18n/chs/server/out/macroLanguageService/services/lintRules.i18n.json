@@ -20,5 +20,5 @@
 	"rule.assignmentConstant": "常数已赋值",
 	"rule.blockDelNumber" : "功能块编号错误",
 	"rule.unsuitableNNAddress" : "地址NN在G10/G11块之外",
-	"rule.dataInputIsNotClosed" : "Data input not close with G11"
+	"rule.dataInputNotClosed" : "G10模式下缺少G11"
 }

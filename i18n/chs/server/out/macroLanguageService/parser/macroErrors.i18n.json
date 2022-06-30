@@ -17,7 +17,7 @@
 	"expected.funcident": "函数标识符缺失",
 	"expected.address": "地址缺失",
 	"expected.macrovariable": "#变量缺失",
-	"expected.prntformat" : "Format [F] expected",
+	"expected.prntformat" : "格式[F]缺失或错误",
 	"expected.body": "函数缺失",
 	"expected.label": "标签缺失",
 	"expected.term": "语句缺失",
@@ -29,7 +29,7 @@
 	"expected.unexpectedToken": "符号缺失",
 	"expected.equalExpected": "=号缺失",
 	"symbol.symbolError": "符号定义或使用错误",
-	"invalid.variableName": "Invalid variable name"
+	"invalid.variableName": "无效的变量名"
 }
 
 
