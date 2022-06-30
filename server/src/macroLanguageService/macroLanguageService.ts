@@ -10,15 +10,18 @@ import { MacroNavigation as MacroNavigation } from './services/macroNavigation';
 import { MacroValidation } from './services/macroValidation';
 import { MacroCompletion } from './services/macroCompletions';
 import { MacroCommand } from './services/macroCommands';
+import { MacroCallHierarchy } from './services/macroCallHierarchy';
+import { MacroSemantic } from './services/macroSemantic';
+import { MacroDocumentFormatting } from './services/macroDocumentFormatting';
 
 import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
 	DocumentLink, SymbolInformation, Diagnostic, Position, Hover, 
 	Location, TextDocument, CompletionList, CodeLens, 
-	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens
+	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens,
+	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall,
+	FormattingOptions, TextEdit
 } from './macroLanguageTypes';
-import { MacroSemantic } from './services/macroSemantic';
-
 
 export type Macrofile = {};
 export * from './macroLanguageTypes';
@@ -35,13 +38,26 @@ export interface LanguageService {
 	findDocumentLinks(document: TextDocument, macrofile: Macrofile): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, macrofile: Macrofile): SymbolInformation[];
 	findCodeLenses(document: TextDocument, macrofile: Macrofile): CodeLens[];
+	doPrepareRename(document: TextDocument, position: Position, macroFile: Macrofile): Range | null;
 	doRename(document: TextDocument, position: Position, newName: string, macroFile: Macrofile): WorkspaceEdit;
 	doRefactorSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doCreateSequences(document: TextDocument, position: Position, macrofile: Macrofile, documentSettings: LanguageSettings) : TextDocumentEdit | null;
 	doSemanticHighlighting(document: TextDocument, macrofile: Macrofile, documentSettings: LanguageSettings, range?:Range) : SemanticTokens;
+	doPrepareCallHierarchy(document: TextDocument, position: Position, macrofile: Macrofile): CallHierarchyItem[] | null;
+	doIncomingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyIncomingCall[] | null;
+	doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyOutgoingCall[] | null;
+	doDocumentFormatting(document: TextDocument, options: FormattingOptions, macrofile: Macrofile): TextEdit[] | null;
 }
 
-function createFacade(parser: Parser, hover: MacroHover, completion: MacroCompletion, navigation: MacroNavigation, validation: MacroValidation, command: MacroCommand, semantic:MacroSemantic): LanguageService {
+function createFacade(parser: Parser,
+	hover: MacroHover,
+	completion: MacroCompletion,
+	navigation: MacroNavigation,
+	validation: MacroValidation,
+	command: MacroCommand,
+	semantic:MacroSemantic,
+	hierarchy:MacroCallHierarchy,
+	formatting:MacroDocumentFormatting): LanguageService {
 	return {
 		doValidation: validation.doValidation.bind(validation),
 		parseMacroFile: parser.parseMacroFile.bind(parser),
@@ -54,10 +70,15 @@ function createFacade(parser: Parser, hover: MacroHover, completion: MacroComple
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
 		findCodeLenses: navigation.findCodeLenses.bind(navigation),
+		doPrepareRename: navigation.doPrepareRename.bind(navigation),
 		doRename: navigation.doRename.bind(navigation),
 		doRefactorSequences: command.doRefactorSequences.bind(command),
 		doCreateSequences: command.doCreateSequences.bind(command),
-		doSemanticHighlighting: semantic.doSemanticHighlighting.bind(semantic)
+		doSemanticHighlighting: semantic.doSemanticHighlighting.bind(semantic),
+		doPrepareCallHierarchy: hierarchy.doPrepareCallHierarchy.bind(hierarchy),
+		doIncomingCalls: hierarchy.doIncomingCalls.bind(hierarchy),
+		doOutgoingCalls: hierarchy.doOutgoingCalls.bind(hierarchy),
+		doDocumentFormatting: formatting.doDocumentFormatting.bind(formatting)
 	};
 }
 
@@ -70,6 +91,8 @@ export function getMacroLanguageService(options: LanguageServiceOptions): Langua
 		new MacroNavigation(options && options.fileProvider),
 		new MacroValidation(options && options.fileProvider),
 		new MacroCommand(options && options.fileProvider),
-		new MacroSemantic()
+		new MacroSemantic(),
+		new MacroCallHierarchy(options && options.fileProvider),
+		new MacroDocumentFormatting()
 	);
 }

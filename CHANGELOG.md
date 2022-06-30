@@ -1,3 +1,16 @@
+## 0.4.0  (-)
+- Function call hierarchy
+- Formatting provider
+- Prepare rename provider for better rename experience
+- Outline shows the linked symbol code
+- Add support for system variables
+- Bug fixes
+	- https://github.com/iSorp/macro-executor/issues/23
+	- https://github.com/iSorp/macro-executor/issues/22
+	- https://github.com/iSorp/macro-executor/issues/21
+	- Ignore duplicate sequence number on data input G10/G11
+	- Fix error when using single files instead of workspaces
+
 ## 0.3.3  (April 16, 2021)
 - NN address parsing
 

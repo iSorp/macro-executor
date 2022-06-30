@@ -142,7 +142,7 @@ suite('Scanner', () => {
 		assertSingleToken(scanner, '"', 1, 0, '"', TokenType.Delim);
 
 		scanner = new Scanner();
-		scanner.inFunction = true;
+		scanner.ignoreBadString = true;
 		assertSingleToken(scanner, '(', 1, 0, '(', TokenType.Delim);
 	});
 
@@ -188,5 +188,11 @@ suite('Scanner', () => {
 	test('Token NN', function () {
 		let scanner = new Scanner();
 		assertSingleTokenNonSymolStatement(scanner, 'NN', 2, 0, 'NN', TokenType.NNAddress);
+	});
+	
+	test('Token SystemVar', function () {
+		let scanner = new Scanner();
+		assertSingleToken(scanner, '[#_TEST]', 8, 0, '[#_TEST]', TokenType.SystemVar);
+		assertSingleToken(scanner, '[#_TEST[123]]', 13, 0, '[#_TEST[123]]', TokenType.SystemVar);
 	});
 });

@@ -106,6 +106,8 @@ suite('Parser', () => {
 		assertNode('R100.[1]', parser, parser._parseAddress.bind(parser));
 		assertNode('R1.#[1+[1]]', parser, parser._parseAddress.bind(parser));
 		assertNode('R#1', parser, parser._parseAddress.bind(parser));
+		assertNode('R 1 . 1', parser, parser._parseAddress.bind(parser));
+		assertError('R#1.1', parser, parser._parseAddress.bind(parser), ParseError.IntegerExpected);
 	});
 
 	test('Variable', function () {
@@ -336,11 +338,25 @@ suite('Parser', () => {
 		assertNode('fpset(1,1,1)', parser, parser._parseFcommand.bind(parser));
 		assertNode('fread(1,1,1)', parser, parser._parseFcommand.bind(parser));
 		assertNode('fwrit(1,1,1)', parser, parser._parseFcommand.bind(parser));
+
+		assertNode('DPRNT[POSN*R#7[44]***ACTUAL*#838[44]***DEV#843[34]/+-1234]', parser, parser._parseFcommand.bind(parser));
+		assertError('DPRNT[POSN*R#7]', parser, parser._parseFcommand.bind(parser), ParseError.PrntFormatExpected);
+		assertError('DPRNT[POSN*R#7[44]@]', parser, parser._parseFcommand.bind(parser), ParseError.UnexpectedToken);
 	});
 
 	test('Non Symbol Statement', function () {
 		let parser = new Parser(null);
 		assertNode('1AND2EQ#1AND#1||1ANDSIN[1]', parser, parser._parseConditionalExpression.bind(parser, false));
 	});
-
+	
+	test('Token SystemVar', function () {
+		let parser = new Parser(null);
+		
+		assertNode('@[#_SYSTEMVAR] #1000', parser, parser._parseMacroFile.bind(parser));
+		assertNode('@[#_SYSTEMVAR[]] #1001', parser, parser._parseMacroFile.bind(parser));	
+		assertNode('@[#_SYSTEMVAR[1]] #1001', parser, parser._parseMacroFile.bind(parser));	
+		
+		assertError('@[#_SYSTEMVAR[#1]] #1001', parser, parser._parseMacroFile.bind(parser), ParseError.IdentifierExpected);	
+		assertError('@[#_SYSTEMVAR #1', parser, parser._parseMacroFile.bind(parser), ParseError.IdentifierExpected);
+	});
 });

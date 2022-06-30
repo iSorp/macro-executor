@@ -51,6 +51,7 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const documentSettings: Map<string, Promise<TextDocumentSettings>> = new Map<string, Promise<TextDocumentSettings>>();
 const languageServices: Map<string, LanguageService> = new Map<string, LanguageService>();
+const defaultLanguageService = getMacroLanguageService(null);
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -62,10 +63,6 @@ interface TextDocumentSettings extends LanguageSettings {
 
 connection.onInitialize((params: InitializeParams) => {
 	
-	params.workspaceFolders.forEach(workspace => {
-		languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri, documents)}));
-	});
-
 	let capabilities = params.capabilities;
 
 	hasConfigurationCapability = !!(
@@ -82,6 +79,7 @@ connection.onInitialize((params: InitializeParams) => {
 			documentSymbolProvider: true,
 			workspaceSymbolProvider: true,
 			hoverProvider: true,
+			documentFormattingProvider: true,
 			completionProvider: {
 				triggerCharacters: ['#'],
 			},
@@ -92,7 +90,9 @@ connection.onInitialize((params: InitializeParams) => {
 				triggerCharacters: ['(', '[', ','],
 				retriggerCharacters : [',']
 			},
-			renameProvider: true,
+			renameProvider: {
+				prepareProvider: true
+			},
 			referencesProvider: true,
 			implementationProvider:true,
 			documentLinkProvider: {
@@ -112,7 +112,8 @@ connection.onInitialize((params: InitializeParams) => {
 				full: {
 					delta: false
 				}
-			}
+			},
+			callHierarchyProvider: true,
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -122,6 +123,7 @@ connection.onInitialize((params: InitializeParams) => {
 			}
 		};
 	}
+	
 	return result;
 });
 
@@ -131,6 +133,7 @@ connection.onInitialized(async () => {
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
 	if (hasWorkspaceFolderCapability) {
+			
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			for (const added of _event.added) {
 				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri, documents)}));
@@ -143,8 +146,14 @@ connection.onInitialized(async () => {
 			}
 		});
 	}
-	const workspaces = await connection.workspace.getWorkspaceFolders();
+	
+	const workspaces = await connection.workspace.getWorkspaceFolders();	
 	if (workspaces && workspaces.length > 0) {
+		
+		workspaces.forEach(workspace => {
+			languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri, documents)}));
+		});
+		
 		await getSettings(workspaces[0].uri);
 		validate();
 	}
@@ -221,6 +230,11 @@ connection.onReferences(params => {
 		service.findReferences(repo.document, params.position, repo.macrofile));
 });
 
+connection.onPrepareRename(params => {
+	return execute(params.textDocument.uri, (service, repo, settings) => 
+		service.doPrepareRename(repo.document, params.position, repo.macrofile));
+});
+
 connection.onRenameRequest(params => {
 	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.doRename(repo.document, params.position, params.newName, repo.macrofile));
@@ -244,6 +258,11 @@ connection.onDocumentLinks(params => {
 connection.onHover(params => {
 	return execute(params.textDocument.uri, (service, repo, settings) => 
 		service.doHover(repo.document, params.position, repo.macrofile, settings));
+});
+
+connection.onDocumentFormatting(params => {
+	return execute(params.textDocument.uri, (service, repo, settings) => 
+		service.doDocumentFormatting(repo.document, params.options, repo.macrofile));
 });
 
 connection.onCompletion(params => {
@@ -318,6 +337,23 @@ connection.languages.semanticTokens.onRange(event => {
 		service.doSemanticHighlighting(repo.document, repo.macrofile, settings, event.range));
 });
 
+connection.languages.callHierarchy.onPrepare((params) => {
+	return execute(params.textDocument.uri, (service, repo, settings) =>
+		service.doPrepareCallHierarchy(repo.document, params.position, repo.macrofile));
+});
+
+connection.languages.callHierarchy.onIncomingCalls((params) => {
+	return execute(params.item.uri, (service, repo, settings) =>
+		service.doIncomingCalls(repo.document, params.item, repo.macrofile, settings));
+});
+
+connection.languages.callHierarchy.onOutgoingCalls((params) => {
+	return execute(params.item.uri, (service, repo, settings) =>
+		service.doOutgoingCalls(repo.document, params.item, repo.macrofile, settings));
+	return [];
+});
+
+
 documents.onDidChangeContent(event => {
 	return execute(event.document.uri, (service, repo, settings) => {
 		validateTextDocument(getParsedDocument(documents, event.document.uri, service.parseMacroFile));
@@ -334,7 +370,14 @@ connection.listen();
 
 async function execute<T>(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => T) : Promise<T> {
 	return getSettings(uri).then(settings => {
-		const service = languageServices.get(settings.workspaceFolder.uri);
+		let service: LanguageService;
+		if (settings.workspaceFolder) {
+			service = languageServices.get(settings.workspaceFolder.uri);
+		}
+		else {
+			service = defaultLanguageService;	
+		}
+		
 		const repo = getParsedDocument(documents, uri, service.parseMacroFile);
 		if (!repo || !service) {
 			return null;

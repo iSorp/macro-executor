@@ -40,58 +40,58 @@ export class MacroSemantic {
 					} 
 				}
 				
-				if (candidate.type === nodes.NodeType.Symbol) {
-					const symbol = <nodes.Symbol>candidate;
-					switch (symbol.valueType) {
-						case nodes.NodeType.Numeric:
-							if (symbol.getParent()?.type !== nodes.NodeType.Program) {
+				if (candidate.symbol) {
+					const symbol = candidate.symbol;
+					if (symbol.type === nodes.NodeType.Symbol) {
+						switch (symbol.valueType) {
+							case nodes.NodeType.Numeric:
 								if (symbol.attrib === nodes.ValueAttribute.Constant) {
 									this.build(symbol, candidate.type, TokenTypes.constant);
 								}
-								else {
+								else if (symbol.attrib !== nodes.ValueAttribute.Program) {
 									this.build(symbol, candidate.type, TokenTypes.number);
 								}
-							} 
-							break;
-						case nodes.NodeType.Code:
-							this.build(symbol, symbol.type, TokenTypes.code);
-							break;							
-						case nodes.NodeType.Parameter:
-							this.build(symbol, symbol.type, TokenTypes.parameter);
-							break;
-						case nodes.NodeType.Statement:
-							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
+								break;
+							case nodes.NodeType.Code:
 								this.build(symbol, symbol.type, TokenTypes.code);
-							}
-							else {
+								break;							
+							case nodes.NodeType.Parameter:
 								this.build(symbol, symbol.type, TokenTypes.parameter);
-							}
-							break;
-						case nodes.NodeType.Address:
-							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-								this.build(symbol, symbol.type, TokenTypes.code);
-							}
-							else if (symbol.attrib === nodes.ValueAttribute.Parameter) {
-								this.build(symbol, symbol.type, TokenTypes.parameter);
-							}
-							else {
-								this.build(symbol, symbol.type, TokenTypes.address);
-							}
-							break;
-						case nodes.NodeType.SequenceNumber:
-							this.build(symbol, symbol.type, TokenTypes.label);
-							break;					
-						case nodes.NodeType.Variable:
-							this.build(symbol, symbol.type, TokenTypes.macrovar);
-							break;	
-						default:
-							this.build(symbol, symbol.type);
+								break;
+							case nodes.NodeType.Statement:
+								if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
+									this.build(symbol, symbol.type, TokenTypes.code);
+								}
+								else {
+									this.build(symbol, symbol.type, TokenTypes.parameter);
+								}
+								break;
+							case nodes.NodeType.Address:
+								if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
+									this.build(symbol, symbol.type, TokenTypes.code);
+								}
+								else if (symbol.attrib === nodes.ValueAttribute.Parameter) {
+									this.build(symbol, symbol.type, TokenTypes.parameter);
+								}
+								else {
+									this.build(symbol, symbol.type, TokenTypes.address);
+								}
+								break;
+							case nodes.NodeType.SequenceNumber:
+								this.build(symbol, symbol.type, TokenTypes.label);
+								break;					
+							case nodes.NodeType.Variable:
+								this.build(symbol, symbol.type, TokenTypes.macrovar);
+								break;	
+							default:
+								this.build(symbol, symbol.type);
+						}
+					}
+					else if (symbol.type === nodes.NodeType.Label) {
+						this.build(candidate, candidate.type, TokenTypes.label);
 					}
 				}
-				else if (candidate.type === nodes.NodeType.Label) {
-					this.build(candidate, candidate.type, TokenTypes.label);
-				}
-				else if (!candidate.symbolLink) {
+				else if (!candidate.symbol) {
 					if (candidate.type === nodes.NodeType.Variable) {
 						this.build((<nodes.Variable>candidate)?.body, candidate.type);
 					}

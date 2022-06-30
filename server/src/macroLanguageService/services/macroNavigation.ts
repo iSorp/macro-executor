@@ -6,9 +6,9 @@
 
 import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
-	Position, Range, SymbolInformation, SymbolKind, TextEdit, 
+	Position, Range, SymbolInformation, SymbolKind, TextEdit,
 	MacroCodeLensCommand, TextDocument, MacroFileProvider, 
-	WorkspaceEdit, MacroCodeLensType, MacroFileType
+	WorkspaceEdit, MacroCodeLensType, MacroFileType, SRC_FILES, ALL_FILES
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols } from '../parser/macroSymbolScope';
@@ -29,16 +29,13 @@ class FunctionMap {
 }
 
 type EditEntries = {
-	[key:string]:TextEdit[];
+    [key:string]:TextEdit[];
 }
-
-const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
-const SRC_FILES:string = '/**/*.[sS][rR][cC]';
 
 export class MacroNavigation {
 
 	constructor(private fileProvider: MacroFileProvider){}
-	
+    
 	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.Node): Location | null {
 
 		const includes = this.getIncludeUris(macroFile);
@@ -50,7 +47,7 @@ export class MacroNavigation {
 		if (!node) {
 			return null;
 		}
-	
+    
 		for (const uri of includes) {
 			let type = this.fileProvider?.get(uri);
 			if (!type) {
@@ -62,7 +59,7 @@ export class MacroNavigation {
 			if (!symbol) {
 				continue;
 			}
-		
+        
 			return {
 				uri: type.document.uri,
 				range: this.getRange(symbol.node, type.document)
@@ -70,17 +67,17 @@ export class MacroNavigation {
 		}
 		return null;
 	}
-	
+    
 	public findReferences(document: TextDocument, position: Position, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined): Location[] {
 
 		const offset = document.offsetAt(position);
 		let node = nodes.getNodeAtOffset(macroFile, offset);
 		node = node.findAParent(nodes.NodeType.Symbol, nodes.NodeType.Label) ?? node.findAParent(nodes.NodeType.Variable, nodes.NodeType.Code) ?? node;
-	
+    
 		if (!node) {
 			return [];
 		}
-		
+        
 		const includeUri = this.findIncludeUri(document, node, macroFile);
 		if (!includeUri) {
 			return [];
@@ -97,7 +94,7 @@ export class MacroNavigation {
 				break;
 			case nodes.NodeType.Numeric:
 				if (node.getParent()?.type === nodes.NodeType.Goto || node.getParent()?.type === nodes.NodeType.SequenceNumber) {
-					files.push(origin);	
+					files.push(origin); 
 					break;
 				}
 				return [];
@@ -117,7 +114,7 @@ export class MacroNavigation {
 			default:
 				return [];
 		}
-		return this.findReferencesInternal(files, node, symbolContext, implType);	
+		return this.findReferencesInternal(files, node, symbolContext, implType);   
 	}
 
 	public findImplementations(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location[] {
@@ -166,78 +163,53 @@ export class MacroNavigation {
 			const entry: SymbolInformation = {
 				name: null!,
 				kind: SymbolKind.Class,
-				location: null!
+				location: null!, 
 			};
 
-			const symbol = <nodes.Symbol>node;
-			if (node.type === nodes.NodeType.Symbol && symbol.valueType !== nodes.NodeType.Statement) {
-				
-				if (node.findAParent(nodes.NodeType.Statement, nodes.NodeType.Code, nodes.NodeType.Parameter) 
-					|| (symbol?.valueType == nodes.NodeType.Address
-						&& (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode))) {
-
-					switch (symbol.valueType) {
-						case nodes.NodeType.Address:
-							if (symbol.attrib === nodes.ValueAttribute.Parameter) {
-								entry.kind = SymbolKind.Property;
-							}
-							if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-								entry.kind = SymbolKind.Event;
-							}
-							else {
-								entry.kind = SymbolKind.Interface;
-							}
-							break;
-						case nodes.NodeType.Parameter:
-							entry.kind = SymbolKind.Property;
-							break;
-						case nodes.NodeType.Variable:
-							entry.kind = SymbolKind.Variable;
-							break;
-						case nodes.NodeType.Numeric:
-							if (symbol.attrib === nodes.ValueAttribute.Constant) {
-								entry.kind = SymbolKind.Constant;
-							}
-							else {
-								entry.kind = SymbolKind.Number;
-							}
-							break;
-						case nodes.NodeType.SequenceNumber:
-							entry.kind = SymbolKind.Field;
-							break;
-						case nodes.NodeType.Code:
-							entry.kind = SymbolKind.Event;
-							break;
-						default:
-							entry.kind = SymbolKind.Variable;
-							break;
-					}
-
-					entry.name = symbol.getText();
-					entry.location = Location.create(document.uri, Range.create(document.positionAt(node.offset), document.positionAt(node.offset + entry.name.length)));
-					result.push(entry);
-
-					return true;
-				}		
-			}
-			else if (node.type === nodes.NodeType.Label) {
-				const label = <nodes.Label>node;
-				if (node.parent?.type === nodes.NodeType.Program || node.parent?.type === nodes.NodeType.Goto) {
-					if (label.valueType === nodes.NodeType.Numeric) {
-						entry.name = label.getText();
-						entry.kind = SymbolKind.Constant;
-					} 
+			if (node.type === nodes.NodeType.SymbolDef) {
+				entry.name = (<nodes.SymbolDefinition>node).getName();
+				entry.kind = SymbolKind.Variable;
+			} 
+			else if (node.type === nodes.NodeType.LabelDef) {
+				entry.name = (<nodes.LabelDefinition>node).getName();
+				entry.kind = SymbolKind.Constant;
+			} 
+			else if (node.type === nodes.NodeType.BlockSkip) {
+				entry.name = node.getText();
+				entry.kind = SymbolKind.Field;
+			} 
+			else if (node.type === nodes.NodeType.Program) {
+				const prog = (<nodes.Program>node);
+				entry.kind = SymbolKind.Function;
+				if (prog.identifier?.symbol) {
+					entry.name = prog.identifier.getText() + ' (' + prog.identifier.getNonSymbolText() + ')';           
+				}
+				else {
+					entry.name = `O${prog.getName()}`;
 				}
 			} 
-			else if (node.type === nodes.NodeType.Statement && node.getChildren().length > 1) {
-				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
-					if (node.symbolLink) {
-						entry.name = node.getNodeText();
+			else if (node.type === nodes.NodeType.SequenceNumber) {
+				if (node.symbol instanceof nodes.Label) {
+					const label = <nodes.Label>node.symbol;
+					if (node.parent?.type === nodes.NodeType.Program || node.parent?.type === nodes.NodeType.Goto) {
+						if (label.valueType === nodes.NodeType.Numeric) {
+							entry.name = label.getText();
+							entry.kind = SymbolKind.Constant;
+						} 
 					}
-					else {
+				}
+				else if (node.getChildren().length > 1) {
+					if (node.getParent()?.type !== nodes.NodeType.BlockSkip) {
 						entry.name = node.getText();
+						entry.kind = SymbolKind.Field;
 					}
-					if (node.getChild(0).type === nodes.NodeType.Code){
+				}
+			}
+			else if (node.type === nodes.NodeType.Statement && (node.symbol || node.getChildren().length > 1)) {
+				if (node.getParent()?.type !== nodes.NodeType.SequenceNumber && node.getParent()?.type !== nodes.NodeType.BlockSkip) {
+					entry.name = node.getText();
+			
+					if (node.getChild(0).type === nodes.NodeType.Code) {
 						entry.kind = SymbolKind.Event;
 					}
 					else {
@@ -245,53 +217,49 @@ export class MacroNavigation {
 					}
 				}
 			}
-			else if (!node.symbolLink) {
+			else if (node.type === nodes.NodeType.Goto) {
+				entry.name = node.getText();
+				entry.kind = SymbolKind.Event;
+			}
+			else if (node.type === nodes.NodeType.Fcmd) {
+				entry.name = (<nodes.Fcmd>node).getIdentifier().getNonSymbolText();
+				entry.kind = SymbolKind.Event;
+			}
+			else {
 
-				if (node.type === nodes.NodeType.SymbolDef) {
-					entry.name = (<nodes.SymbolDefinition>node).getName();
-					entry.kind = SymbolKind.Variable;
-				} 
-				else if (node.type === nodes.NodeType.LabelDef) {
-					entry.name = (<nodes.LabelDefinition>node).getName();
-					entry.kind = SymbolKind.Constant;
-				} 
-				else if (node.type === nodes.NodeType.Program) {
-					const prog = (<nodes.Program>node);
-					entry.kind = SymbolKind.Function;
-					if (prog.identifier?.symbolLink) {
-						entry.name = prog.identifier.symbolLink.symNode.getText() + ' (O' + prog.getName() + ')';			
-					}
-					else {
-						entry.name = `O${prog.getName()}`;
-					}
-				} 	
-				else if (node.type === nodes.NodeType.BlockSkip) {
-					entry.name = node.getText();
-					entry.kind = SymbolKind.Field;
-				} 
-				else if (node.type === nodes.NodeType.SequenceNumber && node.getChildren().length > 1) {
-					if (node.getParent()?.type !== nodes.NodeType.BlockSkip) {
-						entry.name = node.getText();
-						entry.kind = SymbolKind.Field;
-					}
+				if (node.symbol) {
+					entry.location = this.createLocationForSymbol(document, node.symbol);
 				}
 
-				else if (node.type === nodes.NodeType.Code) {
-					entry.name = (<nodes.NcCode>node).getText();
+				if (node.type === nodes.NodeType.Code) {
+				
+					entry.name = node.getNonSymbolText();
 					entry.kind = SymbolKind.Event;
 				}
 				else if (node.type === nodes.NodeType.Parameter) {
-					entry.name = (<nodes.Parameter>node).getText();
-					entry.kind = SymbolKind.Property;
-				} 
-				else if (node.type === nodes.NodeType.Goto) {
-					entry.name = node.getText();
-					entry.kind = SymbolKind.Event;
+					
+					if (node.symbol && node.symbol.valueType === nodes.NodeType.Address) {
+						if (node.symbol.attrib === nodes.ValueAttribute.Parameter) {
+							entry.kind = SymbolKind.Property;
+						}
+						else if (node.symbol.attrib === nodes.ValueAttribute.GCode || node.symbol.attrib === nodes.ValueAttribute.MCode) {
+							entry.kind = SymbolKind.Event;
+						}
+						else {
+							entry.kind = SymbolKind.Interface;
+						}
+					}
+					else {
+						entry.kind = SymbolKind.Property;
+					}
+					entry.name = node.getNonSymbolText();
 				}
 			}
 
-			if (entry.name) {
-				entry.location = Location.create(document.uri, this.getRange(node, document));
+			if (entry.name) {   
+				if (!entry.location) {
+					entry.location = this.createLocation(document, node);
+				}
 				result.push(entry);
 			}
 
@@ -323,7 +291,6 @@ export class MacroNavigation {
 				}
 				return true;
 			});
-
 		}
 		// global search
 		else {
@@ -386,7 +353,27 @@ export class MacroNavigation {
 
 		return codeLenses;
 	}
-	
+    
+	public doPrepareRename(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Range | null {
+		let node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
+		node = node.findAParent(nodes.NodeType.Symbol, nodes.NodeType.Label) 
+			?? node.findAParent(nodes.NodeType.Variable, nodes.NodeType.Code, nodes.NodeType.SequenceNumber) 
+			?? node;
+
+		switch (node.type) {
+			case nodes.NodeType.Variable:
+			case nodes.NodeType.Code:
+			case nodes.NodeType.Numeric:
+			case nodes.NodeType.Label:
+			case nodes.NodeType.Symbol:
+				return this.getRange(node, document);
+			case nodes.NodeType.SequenceNumber:
+				return this.getRange((<nodes.SequenceNumber>node).getNumber(), document);
+			default:
+				return null;
+		}
+	}
+
 	public doRename(document: TextDocument, position: Position, newName: string, macroFile: nodes.MacroFile): WorkspaceEdit {
 		const locations = this.findReferences(document, position, macroFile);
 		const edits:EditEntries = {};
@@ -410,15 +397,15 @@ export class MacroNavigation {
 		const uriStringNode = uriLiteralNode.getChild(0);
 		return this.uriStringNodeToDocumentLink(document, uriStringNode);
 	}
-	
+    
 	private uriStringNodeToDocumentLink(document: TextDocument, uriStringNode: nodes.Node | null): DocumentLink | null {
 		if (!uriStringNode) {
 			return null;
 		}
-	
+    
 		let rawUri = uriStringNode.getText();
 		const range = this.getRange(uriStringNode, document);
-	
+    
 		if (range.start.line === range.end.line && range.start.character === range.end.character) {
 			return null;
 		}
@@ -428,11 +415,19 @@ export class MacroNavigation {
 			target
 		};
 	}
-	
+    
+	private createLocationForSymbol(document: TextDocument, node: nodes.Node) : Location {
+		return Location.create(document.uri, Range.create(document.positionAt(node.offset), document.positionAt(node.offset)));
+	}
+
+	private createLocation(document: TextDocument, node: nodes.Node) : Location {
+		return Location.create(document.uri, Range.create(document.positionAt(node.offset), document.positionAt(node.end)));
+	}
+
 	private getRange(node: nodes.Node, document: TextDocument): Range {
 		return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 	}
-	
+    
 	private findReferencesInternal(files:MacroFileType[], node:nodes.Node, symbolContext:Symbols, implType:nodes.ReferenceType | undefined = undefined):Location[] {
 		let locations:Location[] = [];
 
@@ -440,13 +435,13 @@ export class MacroNavigation {
 			const macroFile = <nodes.MacroFile>type.macrofile;
 
 			// finding condition: name and reference type
-			const symbol = symbolContext.findSymbolFromNode(node); 	
+			const symbol = symbolContext.findSymbolFromNode(node);  
 			if (!symbol) {
 				continue;
 			}
 
 			const highlights: DocumentHighlight[] = [];
-			macroFile.accept(candidate => {	
+			macroFile.accept(candidate => { 
 				if (symbolContext.matchesSymbol(candidate, symbol)) {
 					let s = <nodes.Symbol>candidate;
 					if (s && s.referenceTypes && implType) {
@@ -464,7 +459,7 @@ export class MacroNavigation {
 						});
 					}
 					return false;
-				}	
+				}   
 				return true;
 			});
 
@@ -482,7 +477,7 @@ export class MacroNavigation {
 	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
 		const includes = this.getIncludeUris(macroFile);
 		includes.push(document.uri);
-	
+    
 		for (const uri of includes) {
 			let type = this.fileProvider?.get(uri);
 			if (!type) {

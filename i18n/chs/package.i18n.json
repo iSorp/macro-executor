@@ -7,6 +7,7 @@
 	"macro.setControlType": "选择NC系统类型",
 	"macro.action.addsequeces": "添加缺失的顺序号",
 	"macro.action.refactorsequeces": "重排顺序号",
+    "macro.callFunctions.description": "子程序调用",
 	"macro.lint.description": "Lint设置",
     "macro.sequence.base.description": "顺序起始号",
     "macro.sequence.increment.description": "顺序号增量",

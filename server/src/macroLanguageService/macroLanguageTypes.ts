@@ -5,10 +5,11 @@
 'use strict';
 
 import { Macrofile } from './macroLanguageService';
-import  { Location } from 'vscode-languageserver-types';
+import { Location  } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export { TextDocument } from 'vscode-languageserver-textdocument';
+export { DocumentFormattingOptions, FormattingOptions, TextEdit } from 'vscode-languageserver';
 export { SemanticTokensBuilder } from 'vscode-languageserver/lib/common/semanticTokens';
 export { NodeType } from './parser/macroNodes';
 export * from './languageFacts/builtinData';
@@ -22,6 +23,9 @@ export {
 } from 'vscode-languageserver-protocol/lib/common/protocol.semanticTokens';
 
 export * from 'vscode-languageserver-types';
+
+export const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
+export const SRC_FILES:string = '/**/*.[sS][rR][cC]';
 
 export interface LanguageSettings {
 	validate? : {
@@ -37,6 +41,7 @@ export interface LanguageSettings {
 	}
 	lint?: LintSettings;
 	keywords?: CustomKeywords[];
+	callFunctions?: string[];
 }
 export type LintSettings = { 
 	rules : {
@@ -114,7 +119,8 @@ export enum TokenModifiers {
 }
 
 export type FunctionSignatureParam = {
-	_bracket? : string;
+	_option?: string;
+	_bracket?: string;
 	_escape?: string;
 	_param?: {[name:string]:any}[];
 }

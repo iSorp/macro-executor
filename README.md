@@ -2,7 +2,6 @@
 
 <img src="./resources/icon.png" alt="drawing" width="100"/>
 
-![maintained](https://img.shields.io/maintenance/yes/2021.svg)
 [![open issues](https://img.shields.io/github/issues/iSorp/macro-executor.svg?)](https://github.com/iSorp/macro-executor/issues)
 [![license](https://img.shields.io/github/license/iSorp/macro-executor)](https://opensource.org/licenses/MIT)
 [![Build Status](https://dev.azure.com/iSorp/fanuc-macro-executor/_apis/build/status/iSorp.macro-executor?branchName=master)](https://dev.azure.com/iSorp/fanuc-macro-executor/_build/latest?definitionId=2&branchName=master)
@@ -12,8 +11,8 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 
 
 ## News
-- The Fanuc Macro Executor extension parses now any symbol definition, like GOTOs, Assignments, etc. 
-- Spaces between statements are no longer necessary.  
+- Document formatting
+- Function call hierarchy for incoming and outgoing calls
 
 ***
        
@@ -28,6 +27,8 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 * CodeLens
 * Lint features
 * Sequence number refactoring
+* Function call hierarchy
+* Formatting provider
 
 ## Supported display languages
 * English `en`
@@ -223,7 +224,8 @@ Three levels are supported: `error`, `warning` and `ignore`.
               "includeNotFound":          "error",
               "assignmentConstant":       "Ignore",
               "blockDelNumber":           "error",
-              "unsuitableNNAddress":      "warning"
+              "unsuitableNNAddress":      "warning",
+			  "dataInputNotClosed" :      "error"
        }
 ```
 
@@ -240,6 +242,7 @@ Three levels are supported: `error`, `warning` and `ignore`.
 
 This extension contributes the following settings:
 
+* `macro.callFunctions` : Custom call functions (default: M98, G65)
 * `macro.keywords` : [Custom Keywords](#custom-Keywords)
 * `macro.lint`: Lint settings and rule configuration
 * `macro.sequence.base`: Sequences start number for refactoring
