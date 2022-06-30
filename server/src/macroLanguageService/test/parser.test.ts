@@ -353,9 +353,10 @@ suite('Parser', () => {
 		let parser = new Parser(null);
 		
 		assertNode('@[#_SYSTEMVAR] #1000', parser, parser._parseMacroFile.bind(parser));
+		assertNode('@[#_SYSTEMVAR[]] #1001', parser, parser._parseMacroFile.bind(parser));	
 		assertNode('@[#_SYSTEMVAR[1]] #1001', parser, parser._parseMacroFile.bind(parser));	
-
-		assertError('@[#_SYSTEMVAR] 1000', parser, parser._parseMacroFile.bind(parser), ParseError.MacroVariableExpected);
+		
+		assertError('@[#_SYSTEMVAR[#1]] #1001', parser, parser._parseMacroFile.bind(parser), ParseError.IdentifierExpected);	
 		assertError('@[#_SYSTEMVAR #1', parser, parser._parseMacroFile.bind(parser), ParseError.IdentifierExpected);
 	});
 });

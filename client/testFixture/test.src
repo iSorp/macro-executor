@@ -111,8 +111,11 @@ RETURN  /*
 
  /*
 O STATEMENTS
+
   N100 G01 G4.1 G[1] G var X1 Y-[#1+1] F360.  /*
   N110 G01 X-#1 F360.1   /*
   PARAM 1  /*
+  [#_SYSVAR[123]] = 1
+  #1 = [#_SYSVAR] 
  /*
 RETURN  /*
