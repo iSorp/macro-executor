@@ -88,7 +88,7 @@ export class MacroSemantic {
 						}
 					}
 					else if (symbol.type === nodes.NodeType.Label) {
-						this.build(candidate, candidate.type, TokenTypes.label);
+						this.build(symbol, candidate.type, TokenTypes.label);
 					}
 				}
 				else if (!candidate.symbol) {
