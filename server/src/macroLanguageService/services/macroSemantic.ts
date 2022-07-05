@@ -15,13 +15,17 @@ export class MacroSemantic {
 	private builder:SemanticTokensBuilder;
 	private document: TextDocument;
 	private customKeywords:CustomKeywords[];
-
-	constructor() {}
+	private prevLine = -1;
+	private prevChar = -1;
 	
+	constructor() {}
+    
 	public doSemanticHighlighting(document: TextDocument, macroFile: nodes.MacroFile, settings: LanguageSettings, range:Range | undefined) : SemanticTokens {
 		this.builder = new SemanticTokensBuilder();
 		this.document = document;
 		this.customKeywords = settings.keywords;
+		this.prevLine = -1;
+		this.prevChar = -1;
 
 		try {
 			let start:number;
@@ -39,64 +43,62 @@ export class MacroSemantic {
 						return false;
 					} 
 				}
-				
+                
 				if (candidate.symbol) {
 					const symbol = candidate.symbol;
 					if (symbol.type === nodes.NodeType.Symbol) {
 						switch (symbol.valueType) {
 							case nodes.NodeType.Numeric:
 								if (symbol.attrib === nodes.ValueAttribute.Constant) {
-									this.build(symbol, candidate.type, TokenTypes.constant);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.constant);
 								}
 								else if (symbol.attrib !== nodes.ValueAttribute.Program) {
-									this.build(symbol, candidate.type, TokenTypes.number);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.number);
 								}
 								break;
 							case nodes.NodeType.Code:
-								this.build(symbol, symbol.type, TokenTypes.code);
-								break;							
+								this.build(symbol, nodes.NodeType.Symbol, TokenTypes.code);
+								break;                          
 							case nodes.NodeType.Parameter:
-								this.build(symbol, symbol.type, TokenTypes.parameter);
+								this.build(symbol, nodes.NodeType.Symbol, TokenTypes.parameter);
 								break;
 							case nodes.NodeType.Statement:
 								if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-									this.build(symbol, symbol.type, TokenTypes.code);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.code);
 								}
 								else {
-									this.build(symbol, symbol.type, TokenTypes.parameter);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.parameter);
 								}
 								break;
 							case nodes.NodeType.Address:
 								if (symbol.attrib === nodes.ValueAttribute.GCode || symbol.attrib === nodes.ValueAttribute.MCode) {
-									this.build(symbol, symbol.type, TokenTypes.code);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.code);
 								}
 								else if (symbol.attrib === nodes.ValueAttribute.Parameter) {
-									this.build(symbol, symbol.type, TokenTypes.parameter);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.parameter);
 								}
 								else {
-									this.build(symbol, symbol.type, TokenTypes.address);
+									this.build(symbol, nodes.NodeType.Symbol, TokenTypes.address);
 								}
 								break;
 							case nodes.NodeType.SequenceNumber:
-								this.build(symbol, symbol.type, TokenTypes.label);
-								break;					
+								this.build(symbol, nodes.NodeType.Symbol, TokenTypes.label);
+								break;                  
 							case nodes.NodeType.Variable:
-								this.build(symbol, symbol.type, TokenTypes.macrovar);
-								break;	
-							default:
-								this.build(symbol, symbol.type);
+								this.build(symbol, nodes.NodeType.Symbol, TokenTypes.macrovar);
+								break;  
 						}
 					}
 					else if (symbol.type === nodes.NodeType.Label) {
-						this.build(candidate, candidate.type, TokenTypes.label);
+						this.build(symbol, nodes.NodeType.Label, TokenTypes.label);
 					}
 				}
 				else if (!candidate.symbol) {
 					if (candidate.type === nodes.NodeType.Variable) {
-						this.build((<nodes.Variable>candidate)?.body, candidate.type);
+						this.build((<nodes.Variable>candidate)?.body, nodes.NodeType.Variable);
 					}
 					else if (candidate.type === nodes.NodeType.Code) {
-						this.build(candidate, candidate.type);
+						this.build(candidate, nodes.NodeType.Code);
 					}
 				}
 				return true;
@@ -124,7 +126,11 @@ export class MacroSemantic {
 
 		if (token) {
 			if (node.type === nodes.NodeType.Symbol || node.type === nodes.NodeType.Label) {
-				this.builder.push(pos.line, pos.character, node.getText().length, token, 0);
+				if (this.prevLine !== pos.line || this.prevChar !== pos.character) {
+					this.prevLine = pos.line;
+					this.prevChar = pos.character;
+					this.builder.push(pos.line, pos.character, node.getText().length, token, 0);	
+				}
 			}
 			else {
 				this.builder.push(pos.line, pos.character, node.length, token, 0);
