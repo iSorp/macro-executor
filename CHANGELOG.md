@@ -1,4 +1,7 @@
-## 0.4.0  (-)
+## 0.4.1  (July 5, 2022)
+- Fix a bug when using custom keywords for semantic highlighting
+
+## 0.4.0  (July 1, 2022)
 - Function call hierarchy
 - Formatting provider
 - Prepare rename provider for better rename experience
