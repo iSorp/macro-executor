@@ -573,7 +573,8 @@ export class DefReference extends Reference {
 	}
 
 	public getNonSymbolText(): string {
-		return this.definition?.value?.getText();
+		return this.definition?.value?.getText() ?? ''
+		;
 	}
 }
 
