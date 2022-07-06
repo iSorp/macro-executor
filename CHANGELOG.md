@@ -1,3 +1,6 @@
+## 0.4.2  (July 6, 2022)
+- Fix a bug if an undefined symbol crashes the validator
+
 ## 0.4.1  (July 5, 2022)
 - Fix a bug when using custom keywords for semantic highlighting
 
