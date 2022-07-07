@@ -13,7 +13,7 @@ import {
 	NcCodeDescription, 
 	SymbolText, 
 	LanguageSettings, 
-	MacroFileType 
+	MacroFileInfo 
 } from '../macroLanguageTypes';
 import { MarkupKind } from 'vscode-languageserver';
 
@@ -36,7 +36,7 @@ export class MacroHover {
 			const offset = document.offsetAt(position);
 			const nodepath = nodes.getNodePath(macroFile, offset);
 		
-			let defFile:MacroFileType = null;
+			let defFile:MacroFileInfo = null;
 
 			const location = navigation.findDefinition(document, position, macroFile);
 			if (location) {
@@ -49,7 +49,7 @@ export class MacroHover {
 				if (location && defFile) {
 					if (node.type === nodes.NodeType.Label) {
 						let text:string[] = [];
-						const detail = this.getMarkedStringForDefinition(node, <nodes.Node>defFile!.macrofile, defFile!.document, location);
+						const detail = this.getMarkedStringForDefinition(node, <nodes.MacroFile>defFile!.macrofile, defFile!.document, location);
 						const comment = getComment(defFile.document.offsetAt(location.range.start), defFile.document.getText()).trim();
 						const custom = this.getCustomKeywordDescription(node.getText(), node.type);
 						if (detail) {
@@ -76,7 +76,7 @@ export class MacroHover {
 					}
 					else if (node.type === nodes.NodeType.Symbol) {
 						let text:string[] = [];
-						const detail = this.getMarkedStringForDefinition(node, <nodes.Node>defFile!.macrofile, defFile!.document, location);
+						const detail = this.getMarkedStringForDefinition(node, <nodes.MacroFile>defFile!.macrofile, defFile!.document, location);
 						const comment = getComment(defFile.document.offsetAt(location.range.start), defFile.document.getText()).trim();
 						const custom = this.getCustomKeywordDescription(node.getText(), node.type);
 						if (detail) {

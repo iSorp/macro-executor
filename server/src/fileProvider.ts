@@ -6,16 +6,13 @@
 
 import * as path from 'path';
 import { readFileSync } from 'fs';
-
 import { 
-	Macrofile
-} from './macroLanguageService/macroLanguageService';
-
-import { 
-	MacroFileType, 
+	MacroFileInfo, 
 	MacroFileProvider, 
 	FileProviderParams,
-	ALL_FILES
+	ALL_FILES,
+	MacroFileType,
+	Macrofile
 } from './macroLanguageService/macroLanguageTypes';
 import { Parser } from './macroLanguageService/parser/macroParser';
 import * as glob  from 'glob';  
@@ -30,32 +27,32 @@ import {
 
 import { URI, Utils } from 'vscode-uri';
 
-export const parsedDocuments: Map<string, MacroFileType> = new Map<string, MacroFileType>();
+export const parsedDocuments: Map<string, MacroFileInfo> = new Map<string, MacroFileInfo>();
 
 export class FileProvider implements MacroFileProvider {
 
 	constructor(private workspaceFolder:string, private documents: TextDocuments<TextDocument>, private connection?:any) {}
 
-	public get(file: string): MacroFileType | undefined {
+	public get(file: string): MacroFileInfo | undefined {
 	
-		let uri = this.resolveReference(file);
+		const uri = this.resolveReference(file);
 		if (uri) {
 			
 			let doc = getParsedDocument(this.documents, uri, (document => {
-				let parser = new Parser(this);
+				const parser = new Parser(this);
 				return parser.parseMacroFile(document);
 			}));
 			if (!doc) {		
 				try {
 					const file = readFileSync(URI.parse(uri).fsPath, 'utf-8');
-					let document = TextDocument.create(uri!, 'macro', 1, file.toString());
+					const document = TextDocument.create(uri!, 'macro', 1, file.toString());
 					try {
-						
-						let macrofile = new Parser(this).parseMacroFile(document);
+						const macrofile = new Parser(this).parseMacroFile(document);
 						doc = {
 							macrofile: macrofile,
 							document: document,
-							version: 1
+							version: 1,
+							type: getMacroFileType(document.uri)
 						};
 						parsedDocuments.set(uri, doc);
 					}
@@ -74,7 +71,7 @@ export class FileProvider implements MacroFileProvider {
 	}
 	
 	public getAll(param?:FileProviderParams) {
-		let types:MacroFileType[] = [];
+		let types:MacroFileInfo[] = [];
 	
 		try {
 			const dir = URI.parse(this.workspaceFolder).fsPath;
@@ -122,7 +119,19 @@ export class FileProvider implements MacroFileProvider {
 	}
 }
 
-export function getParsedDocument(documents: TextDocuments<TextDocument>, uri: string, parser:((document:TextDocument) => Macrofile), parse:boolean=false) : MacroFileType | undefined {
+export function getMacroFileType(uri: string) : MacroFileType {
+	var fileExt = uri.split('.').pop().toLocaleLowerCase();
+	switch(fileExt) {
+		case 'def':
+			return MacroFileType.DEF;
+		case 'lnk':
+			return MacroFileType.LNK;
+		default:
+			return MacroFileType.SRC;
+	}
+} 
+
+export function getParsedDocument(documents: TextDocuments<TextDocument>, uri: string, parser:((document:TextDocument) => Macrofile), parse:boolean=false) : MacroFileInfo | undefined {
 	let document = documents.get(uri);
 	if (document) {
 		let parsed = parsedDocuments.get(uri);
@@ -131,7 +140,8 @@ export function getParsedDocument(documents: TextDocuments<TextDocument>, uri: s
 				parsedDocuments.set(uri , {
 					macrofile: parser(document),
 					document: document,
-					version: document.version
+					version: document.version,
+					type: getMacroFileType(document.uri)
 				});
 			}
 		}
@@ -139,7 +149,8 @@ export function getParsedDocument(documents: TextDocuments<TextDocument>, uri: s
 			parsedDocuments.set(uri, {
 				macrofile: parser(document),
 				document: document,
-				version: document.version
+				version: document.version,
+				type: getMacroFileType(document.uri)
 			});
 		}	
 	}
