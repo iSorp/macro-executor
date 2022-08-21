@@ -104,7 +104,8 @@ connection.onInitialize((params: InitializeParams) => {
 				commands: [
 					'macro.codelens.references',
 					'macro.action.refactorsequeces',
-					'macro.action.addsequeces'
+					'macro.action.addsequeces',
+					'macro.action.validate',
 				]
 			},
 			semanticTokensProvider: {
@@ -276,15 +277,22 @@ connection.onExecuteCommand(params => {
 	if (!params.arguments) { 
 		return;
 	}
-
+	
+	if (params.command === 'macro.action.validate') { 
+		const workspaceUri = params.arguments[0];	
+		validateWorkspace(workspaceUri, true);
+		return;	
+	}
+	
 	const textDocument 	= documents.get(params.arguments[0]);
-	const position 		= params.arguments[1];
-	const start 		= params.arguments[2];
-	const inc 			= params.arguments[3];
 
-	return execute(textDocument.uri, (service, repo, settings) => {
+	return execute(textDocument.uri, (service, repo, settings) => {		
 		if (params.command === 'macro.action.refactorsequeces' || params.command === 'macro.action.addsequeces') {
 		
+			const position 		= params.arguments[1];
+			const start 		= params.arguments[2];
+			const inc 			= params.arguments[3];
+			
 			let localsettings:LanguageSettings = {}; 
 			Object.assign(localsettings, settings);
 
@@ -429,8 +437,11 @@ function validateTextDocument(doc: MacroFileInfo | undefined) {
 	});
 }
 
-function validateWorkspace(uri:string) {
-	if (workspaceValidation) {
+function validateWorkspace(uri:string, forceValidation: boolean = false) {
+	if (workspaceValidation || forceValidation) {
+		if (forceValidation) {
+			parsedDocuments.clear();
+		}
 		const fp = new FileProvider(uri, documents);
 		for (const element of fp.getAll()){
 			validateTextDocument(element);

@@ -1,6 +1,6 @@
 ## 0.4.3  (-, 2022)
 - Definition file dependency validation
-- Validation commands
+- Validation command
 
 ## 0.4.2  (July 6, 2022)
 - Fix a bug if an undefined symbol crashes the validator

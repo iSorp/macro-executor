@@ -105,8 +105,8 @@
 				"category": "Macro"
 			},
 			{
-				"command": "macro.validate.workspace",
-				"title": "%macro.validate.workspace%",
+				"command": "macro.action.validate",
+				"title": "%macro.action.validate%",
 				"category": "Macro"
 			}
 		],
@@ -419,14 +419,6 @@
 					"default": 10,
 					"description": "%macro.sequence.increment.description%"
 				},
-				"macro.codelens.enable": {
-					"scope": "resource",
-					"type": "boolean",
-					"default": true,
-					"description": "%macro.codelens.enable.description%",
-					"markdownDeprecationMessage": "**Deprecated**: Please use `#editor.codeLens#` instead.",
-					"deprecationMessage": "Deprecated: Please use editor.codeLens instead."
-				},
 				"macro.validate.enable": {
 					"scope": "resource",
 					"type": "boolean",
@@ -438,6 +430,12 @@
 					"type": "boolean",
 					"default": true,
 					"description": "%macro.validate.workspace.description%"
+				},
+				"macro.validate.onBuild": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": false,
+					"description": "%macro.validate.onBuild.description%"
 				},
 				"macro.build.compiler": {
 					"type": "string",
