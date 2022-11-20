@@ -8,7 +8,8 @@ import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
 	Position, Range, SymbolInformation, SymbolKind, TextEdit,
 	MacroCodeLensCommand, TextDocument, MacroFileProvider, 
-	WorkspaceEdit, MacroCodeLensType, MacroFileType, SRC_FILES, ALL_FILES
+	WorkspaceEdit, MacroCodeLensType, MacroFileInfo, 
+	SRC_FILES, ALL_FILES
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols } from '../parser/macroSymbolScope';
@@ -36,7 +37,7 @@ export class MacroNavigation {
 
 	constructor(private fileProvider: MacroFileProvider){}
     
-	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.Node): Location | null {
+	public findDefinition(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location | null {
 
 		const includes = this.getIncludeUris(macroFile);
 		includes.push(document.uri);
@@ -54,7 +55,7 @@ export class MacroNavigation {
 				continue;
 			}
 
-			const symbols = new Symbols(<nodes.Node>type.macrofile);
+			const symbols = new Symbols(<nodes.MacroFile>type.macrofile);
 			const symbol = symbols.findSymbolFromNode(node);
 			if (!symbol) {
 				continue;
@@ -86,7 +87,7 @@ export class MacroNavigation {
 		const origin = this.fileProvider.get(includeUri);
 		const symbolContext = new Symbols(<nodes.MacroFile>origin.macrofile);
 
-		let files:MacroFileType[] = [];
+		let files:MacroFileInfo[] = [];
 		switch (node.type) {
 			case nodes.NodeType.Variable:
 			case nodes.NodeType.Code:
@@ -298,18 +299,18 @@ export class MacroNavigation {
 			let types = this.fileProvider.getAll({glob:SRC_FILES});
 			for (const type of types) {
 
-				if (((<nodes.Node>type.macrofile).type === nodes.NodeType.DefFile)) {
+				if (((<nodes.MacroFile>type.macrofile).type === nodes.NodeType.DefFile)) {
 					continue;
 				}
 
-				if ((<nodes.Node>type.macrofile).type === nodes.NodeType.MacroFile) {
-					const includes = this.getIncludeUris(<nodes.Node>type.macrofile);
+				if ((<nodes.MacroFile>type.macrofile).type === nodes.NodeType.MacroFile) {
+					const includes = this.getIncludeUris(<nodes.MacroFile>type.macrofile);
 					if (includes.filter(uri => uri === document.uri).length <= 0) {
 						continue;
 					}
 				}
 
-				(<nodes.Node>type.macrofile).accept(candidate => {
+				(<nodes.MacroFile>type.macrofile).accept(candidate => {
 					if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
 						return false;
 					}
@@ -428,7 +429,7 @@ export class MacroNavigation {
 		return Range.create(document.positionAt(node.offset), document.positionAt(node.end));
 	}
     
-	private findReferencesInternal(files:MacroFileType[], node:nodes.Node, symbolContext:Symbols, implType:nodes.ReferenceType | undefined = undefined):Location[] {
+	private findReferencesInternal(files:MacroFileInfo[], node:nodes.Node, symbolContext:Symbols, implType:nodes.ReferenceType | undefined = undefined):Location[] {
 		let locations:Location[] = [];
 
 		for (const type of files) {
@@ -474,7 +475,7 @@ export class MacroNavigation {
 		return locations;
 	}
 
-	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.Node): string | null {
+	private findIncludeUri(document: TextDocument, node: nodes.Node, macroFile: nodes.MacroFile): string | null {
 		const includes = this.getIncludeUris(macroFile);
 		includes.push(document.uri);
     
@@ -484,7 +485,7 @@ export class MacroNavigation {
 				continue;
 			}
 
-			const symbols = new Symbols(<nodes.Node>type.macrofile);
+			const symbols = new Symbols(<nodes.MacroFile>type.macrofile);
 			const symbol = symbols.findSymbolFromNode(node);
 			if (!symbol) {
 				continue;

@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Macrofile } from './macroLanguageService';
 import { Location  } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -65,15 +64,24 @@ export interface LanguageServiceOptions {
 	fileProvider: MacroFileProvider;
 }
 
-export interface MacroFileType {
-
-	macrofile: Macrofile;
-
-	document: TextDocument;
-
-	version: number;
+export enum MacroFileType {
+	SRC,
+	DEF,
+	LNK
 }
 
+export type Macrofile = {};
+
+export interface MacroFileInfo {
+	macrofile: Macrofile;
+	document: TextDocument;
+	version: number;
+	type: MacroFileType;
+}
+
+export type MacroFileInclude = {
+	getIncludes() : string[] | null;
+};
 
 export interface FileProviderParams {
 	uris?:string[],
@@ -81,9 +89,9 @@ export interface FileProviderParams {
 }
 
 export interface MacroFileProvider {
-	get(string, workspaceFolder?: string) : MacroFileType | undefined;
-	getAll(param?: FileProviderParams, base?: string, workspaceFolder?: string) : MacroFileType[]
-	resolveReference(ref: string, workspaceFolder?: string): string | undefined
+	get(string, workspaceFolder?: string) : MacroFileInfo | undefined;
+	getAll(param?: FileProviderParams, base?: string, workspaceFolder?: string) : MacroFileInfo[];
+	resolveReference(ref: string, workspaceFolder?: string): string | undefined;
 }
 
 export interface MacroCodeLensType {

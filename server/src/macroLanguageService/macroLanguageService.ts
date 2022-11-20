@@ -20,11 +20,8 @@ import {
 	Location, TextDocument, CompletionList, CodeLens, 
 	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens,
 	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall,
-	FormattingOptions, TextEdit
+	FormattingOptions, TextEdit, Macrofile
 } from './macroLanguageTypes';
-
-export type Macrofile = {};
-export * from './macroLanguageTypes';
 
 export interface LanguageService {
 	doValidation(document: TextDocument, file: Macrofile, documentSettings: LanguageSettings): Diagnostic[];

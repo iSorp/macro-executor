@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { type } from 'os';
 import { integer } from 'vscode-languageserver';
+import { MacroFileInclude, } from '../macroLanguageTypes';
 
 export enum ReferenceType {
 	Undefined 	= 1 << 0,
@@ -491,6 +491,7 @@ export enum NodeType {
 	Undefined,
 	MacroFile,
 	DefFile,
+	LnkFile,
 	SymbolRoot,
 	Include,
 	StringLiteral,
@@ -578,7 +579,7 @@ export class DefReference extends Reference {
 	}
 }
 
-export class MacroFile extends Node {
+export class MacroFile extends Node implements MacroFileInclude {
 
 	constructor(offset: number, length: number) {
 		super(offset, length);
@@ -586,6 +587,10 @@ export class MacroFile extends Node {
 
 	public get type(): NodeType {
 		return NodeType.MacroFile;
+	}
+	
+	public getIncludes() : string[] | null{
+		return this.getData(Data.Includes);
 	}
 }
 
