@@ -7,17 +7,19 @@
 import * as assert from 'assert';
 import { Position } from 'vscode-languageserver-textdocument';
 import {
-	TextDocument, 
 	LanguageService, 
 	getMacroLanguageService, 
+} from '../macroLanguageService';
+import {
+	TextDocument, 
 	MacroFileProvider,
 	Location,
-} from '../macroLanguageService';
-import { 
-	MacroFileType, 
+	MacroFileType,
+	MacroFileInfo, 
 	FileProviderParams,
 	Range
 } from '../macroLanguageTypes';
+
 import { 
 	Parser, 
 } from '../parser/macroParser';
@@ -31,18 +33,19 @@ class FileProviderMock implements MacroFileProvider {
 
 	constructor() {}
 
-	public get(file: string): MacroFileType | undefined {
+	public get(file: string): MacroFileInfo | undefined {
 		const document = documents.get(file);
 		const macroFile =  new Parser(this).parseMacroFile(document);
 		return {
 			document: document,
 			macrofile: macroFile,
-			version: 1
+			version: 1,
+			type: this.getMacroFileType(file)
 		};
 	}
 	
 	public getAll(param?:FileProviderParams) {
-		let types:MacroFileType[] = [];
+		let types:MacroFileInfo[] = [];
 		for (const file of documents.keys()) {
 			let type = this.get(file);
 			if (type){
@@ -55,6 +58,18 @@ class FileProviderMock implements MacroFileProvider {
 	public resolveReference(ref: string, base?: string): string | undefined {
 		return undefined;
 	}
+	
+	public getMacroFileType(file: string) : MacroFileType {
+		var fileExt = file.split('.').pop().toLocaleLowerCase();
+		switch(fileExt) {
+			case 'def':
+				return MacroFileType.DEF;
+			case 'lnk':
+				return MacroFileType.LNK;
+			default:
+				return MacroFileType.SRC;
+		}
+	} 
 }
 
 

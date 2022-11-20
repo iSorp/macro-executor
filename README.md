@@ -247,9 +247,9 @@ This extension contributes the following settings:
 * `macro.lint`: Lint settings and rule configuration
 * `macro.sequence.base`: Sequences start number for refactoring
 * `macro.sequence.increment`: Sequences increment for refactoring
-* `macro.codelens.enable`: Enables or disables the CodeLens function. **Deprecated**: Please use `editor.codeLens` instead.
 * `macro.validate.enable`: Enables or disables the validation
 * `macro.validate.workspace`: Enables or disables the workspace validation
+* `macro.validate.onBuild`: Enables or disables the workspace validation when building the project
 
 Build settings:
 * `macro.build.compiler`: Selection of the macro compiler

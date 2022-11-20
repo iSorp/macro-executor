@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import CompositeDisposable from './compositeDisposable';
-import { WorkspaceFolder } from 'vscode-languageclient';
+import { pickFolder } from '../extension';
 
 const COMPILER = ['MCOMPI', 'MCOMP0', 'MCOMP30I', 'MCOMP15', 'MCOMP15I'];
 
@@ -119,23 +119,6 @@ function setExportPath () {
 	});
 }
 
-function pickFolder(cb:(workspace:vscode.WorkspaceFolder) => void) {
-	const folders = vscode.workspace.workspaceFolders;
-	if (folders.length === 1) {
-		cb(folders[0]);
-		return;
-	}
-	vscode.window.showWorkspaceFolderPick({placeHolder:'', ignoreFocusOut:true}).then(selected => {
-		if (selected) {
-			cb(selected);
-		}
-	});
-	if (folders.length === 1) {
-		cb(folders[0]);
-		return;
-	}
-}
-
 class ProjectService {
 
 	private getRelativePath(p:string, workspacePath:string, includeWsFolder:boolean = false) : string {
@@ -169,9 +152,15 @@ class ProjectService {
 	}
 
 	public async build() {
+	
 		pickFolder(async workspace => {
+			
 			const config = vscode.workspace.getConfiguration('macro', workspace);
 
+			if (config.validate.onBuild) {
+				vscode.commands.executeCommand('macro.action.validate', workspace.uri.toString());	
+			}
+			
 			const makeFile 	= config.build.makeFile;
 			const exportPath= config.project.exportPath;
 			const compiler 	= config.build.compiler;

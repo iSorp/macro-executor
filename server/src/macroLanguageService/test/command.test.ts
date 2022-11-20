@@ -6,14 +6,15 @@
 
 import * as assert from 'assert';
 import {
+	getMacroLanguageService, LanguageService
+} from '../macroLanguageService';
+import {
 	TextDocument, 
-	LanguageService, 
-	getMacroLanguageService, 
 	LanguageSettings,
 	Range, 
 	Position,
 	TextDocumentEdit
-} from '../macroLanguageService';
+} from '../macroLanguageTypes';
 
 let settings:LanguageSettings = {
 	sequence: {
