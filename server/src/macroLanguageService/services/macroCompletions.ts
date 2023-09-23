@@ -240,7 +240,7 @@ export class MacroCompletion {
 						case nodes.NodeType.Numeric:
 							sort = Sort.Value;
 							kind = CompletionItemKind.Value;
-						break;
+							break;
 						case nodes.NodeType.Statement:
 						case nodes.NodeType.Code:
 							sort = Sort.Nc;
@@ -364,6 +364,9 @@ export class MacroCompletion {
 					if (nnode) {
 						const number = nnode.getText().toLocaleLowerCase().split('n').pop();
 						seq = Math.max(seq, Number(number) + this.inc);
+						if(Number.isNaN(seq)) {
+							seq = 0;
+						}
 						return false;
 					}
 				}
