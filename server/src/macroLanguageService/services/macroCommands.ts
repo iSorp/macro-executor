@@ -84,6 +84,7 @@ export class MacroCommand {
 	public doCreateSequences(document: TextDocument, position: Position, macroFile: nodes.MacroFile, settings: LanguageSettings) : TextDocumentEdit | null {
 		let edit:TextDocumentEdit | null = null;
 		const node = nodes.getNodeAtOffset(macroFile, document.offsetAt(position));
+
 		if (node) {
 			const func = <nodes.Program>node.findAParent(nodes.NodeType.Program);
 			const inc = settings?.sequence?.increment ? Number(settings?.sequence?.increment) : 10;

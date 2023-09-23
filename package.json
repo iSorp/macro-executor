@@ -634,7 +634,8 @@
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh",
 		"unit-test": "npm run compile && mocha",
-		"deploy": "vsce publish --yarn"
+		"deploy": "vsce publish --yarn",
+		"start": "node ./node_modules/.bin/ts-node -- ./server.ts"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.2.0",
