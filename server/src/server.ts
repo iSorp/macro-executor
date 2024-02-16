@@ -279,8 +279,19 @@ connection.onExecuteCommand(params => {
 	}
 	
 	if (params.command === 'macro.action.validate') { 
-		const workspaceUri = params.arguments[0];	
-		validateWorkspace(workspaceUri, true);
+	
+		const workspaceUri = params.arguments[0];
+		
+		getSettings(workspaceUri).then(settings => {
+			
+			if (!settings.validate?.enable) {
+				connection.window.showInformationMessage(localize('message.validationdisabled', 'The validation is disabled'));
+				return;
+			}
+			
+			validateWorkspace(workspaceUri, true);
+		});
+		
 		return;	
 	}
 	

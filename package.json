@@ -429,13 +429,13 @@
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"description": "%macro.validate.workspace.description%"
+					"markdownDescription": "%macro.validate.workspace.description%"
 				},
 				"macro.validate.onBuild": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": false,
-					"description": "%macro.validate.onBuild.description%"
+					"markdownDescription": "%macro.validate.onBuild.description%"
 				},
 				"macro.build.compiler": {
 					"type": "string",
