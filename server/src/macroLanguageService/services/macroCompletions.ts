@@ -362,7 +362,7 @@ export class MacroCompletion {
 				if (candidate.type === nodes.NodeType.SequenceNumber) {
 					const nnode = (<nodes.SequenceNumber>candidate).getNumber();
 					if (nnode) {
-						const number = nnode.getText().toLocaleLowerCase().split('n').pop();
+						const number = nnode.getNonSymbolText().toLocaleLowerCase().split('n').pop();
 						seq = Math.max(seq, Number(number) + this.inc);
 						if(Number.isNaN(seq)) {
 							seq = 0;
