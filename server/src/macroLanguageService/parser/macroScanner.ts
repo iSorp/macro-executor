@@ -17,6 +17,7 @@ export enum TokenType {
 	String,
 	BadString,
 	UnquotedString,
+	Dot,
 	Comma,
 	BracketL,
 	BracketR,
@@ -181,6 +182,7 @@ export const _SUB = 'O'.charCodeAt(0);
 const staticTokenTable: { [code: number]: TokenType; } = {};
 staticTokenTable[_BRR] = TokenType.BracketR;
 staticTokenTable[_BRL] = TokenType.BracketL;
+staticTokenTable[_DOT] = TokenType.Dot;
 staticTokenTable[_CMA] = TokenType.Comma;
 staticTokenTable[_AMD] = TokenType.Ampersand;
 

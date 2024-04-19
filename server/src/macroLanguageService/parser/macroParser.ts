@@ -1902,6 +1902,7 @@ export class Parser {
 	public _parseBinaryOperator(): nodes.Node | null {
 		if (this.peekKeyword('and') || this.peekKeyword('or')
 			|| this.peekKeyword('xor') || this.peekKeyword('mod')
+			|| this.peekKeyword('.')
 			|| this.peekDelim('/') || this.peekDelim('*')
 			|| this.peekDelim('+') || this.peekDelim('-')
 		) {
