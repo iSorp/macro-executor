@@ -1,3 +1,8 @@
+## 0.4.3  (April 20, 2024)
+- Fix N-Nummer completition
+- Fix Addres syntax
+- Update dependencies
+
 ## 0.4.2  (July 6, 2022)
 - Fix a bug if an undefined symbol crashes the validator
 
