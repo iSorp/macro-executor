@@ -1394,24 +1394,15 @@ export class Parser {
 	public _parseBinaryExpr(preparsedLeft?: nodes.BinaryExpression, preparsedOper?: nodes.Node): nodes.BinaryExpression | null {
 
 		let node = this.create(nodes.BinaryExpression);
-
 		node.setOperator(this._parseUnaryOperator());
-		if (this.hasKeywords('#','[')) {
-			this.accept(TokenType.Hash);
-		}
+
 		if (!this.peek(TokenType.BracketL)) {
 			if (!node.setLeft((preparsedLeft || this._parseTerm()))) {
 				//return this.finish(node, ParseError.TermExpected);
 				return null;
 			}
-
-
 			if (!node.setOperator(preparsedOper || this._parseBinaryOperator())) {
 				return this.finish(node);
-			}
-
-			if (this.hasKeywords('#','[')) {
-				this.accept(TokenType.Hash);
 			}
 			if (!this.peek(TokenType.BracketL)){
 				if (!node.setRight(this._parseTerm())) {
@@ -1902,7 +1893,8 @@ export class Parser {
 	public _parseBinaryOperator(): nodes.Node | null {
 		if (this.peekKeyword('and') || this.peekKeyword('or')
 			|| this.peekKeyword('xor') || this.peekKeyword('mod')
-			|| this.peekKeyword('.')
+			|| this.peekAnyKeyword('.','[')
+			|| this.peekAnyKeyword('#','[')
 			|| this.peekDelim('/') || this.peekDelim('*')
 			|| this.peekDelim('+') || this.peekDelim('-')
 		) {
