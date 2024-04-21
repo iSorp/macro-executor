@@ -1893,8 +1893,8 @@ export class Parser {
 	public _parseBinaryOperator(): nodes.Node | null {
 		if (this.peekKeyword('and') || this.peekKeyword('or')
 			|| this.peekKeyword('xor') || this.peekKeyword('mod')
-			|| this.peekAnyKeyword('.','[')
-			|| this.peekAnyKeyword('#','[')
+			|| this.peekRegExp(TokenType.Dot,(/(\.{1}\t* *\[{1})*/))
+			|| this.peekRegExp(TokenType.Hash,(/(\#{1}\t* *\[{1})*/))
 			|| this.peekDelim('/') || this.peekDelim('*')
 			|| this.peekDelim('+') || this.peekDelim('-')
 		) {
