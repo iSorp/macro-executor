@@ -364,9 +364,6 @@ export class MacroCompletion {
 					if (nnode) {
 						const number = nnode.getNonSymbolText().toLocaleLowerCase().split('n').pop();
 						seq = Math.max(seq, Number(number) + this.inc);
-						if(Number.isNaN(seq)) {
-							seq = 0;
-						}
 						return false;
 					}
 				}
