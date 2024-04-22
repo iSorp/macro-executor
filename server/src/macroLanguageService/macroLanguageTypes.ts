@@ -13,12 +13,8 @@ export { DocumentFormattingOptions, FormattingOptions, TextEdit } from 'vscode-l
 export { SemanticTokensBuilder } from 'vscode-languageserver/lib/common/semanticTokens';
 export { NodeType } from './parser/macroNodes';
 export * from './languageFacts/builtinData';
-export { 
-	SemanticTokenModifiers,
-	SemanticTokenTypes,
+export {
 	SemanticTokensParams,
-	SemanticTokensLegend,
-	SemanticTokens,
 	SemanticTokensClientCapabilities
 } from 'vscode-languageserver-protocol/lib/common/protocol.semanticTokens';
 
@@ -43,13 +39,13 @@ export interface LanguageSettings {
 	keywords?: CustomKeywords[];
 	callFunctions?: string[];
 }
-export type LintSettings = { 
+export type LintSettings = {
 	rules : {
 		[key: string]: any 	// e.g rule.duplicateInclude: 'ignore' | 'warning' | 'error'
 	}
 };
 
-export type CustomKeywords = { 
+export type CustomKeywords = {
 	symbol: string;
 	scope:string;
 	description:any;
@@ -90,7 +86,7 @@ export interface MacroCodeLensType {
 	title: string;
 	locations? : Location[] | undefined;
 	type?: MacroCodeLensCommand;
-}	
+}
 
 export enum MacroCodeLensCommand {
 	References
@@ -127,6 +123,6 @@ export type FunctionSignatureParam = {
 
 export type FunctionSignature = {
 	description?:string,
-	delimiter?:string, 
+	delimiter?:string,
 	param:FunctionSignatureParam[]
 }

@@ -14,7 +14,7 @@
 	},
 	"dependencies": {
 		"rxjs": "^7.8.1",
-		"vscode-languageclient": "7.0.0"
+		"vscode-languageclient": "9.0.1"
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.88.0",
