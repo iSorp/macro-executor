@@ -20,13 +20,15 @@ import {
 } from './macroLanguageService/macroLanguageService';
 
 import { 
-	MacroFileType, 
+	MacroFileInfo, 
 	MacroCodeLensType, 
 	MacroCodeLensCommand ,
 	LanguageSettings, 
 	TokenTypes,
 	TokenModifiers,
-	SemanticTokensLegend
+	SemanticTokensLegend,
+	MacroFileInclude,
+	MacroFileType
 } from './macroLanguageService/macroLanguageTypes';
 
 import {
@@ -102,7 +104,8 @@ connection.onInitialize((params: InitializeParams) => {
 				commands: [
 					'macro.codelens.references',
 					'macro.action.refactorsequeces',
-					'macro.action.addsequeces'
+					'macro.action.addsequeces',
+					'macro.action.validate',
 				]
 			},
 			semanticTokensProvider: {
@@ -137,7 +140,7 @@ connection.onInitialized(async () => {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			for (const added of _event.added) {
 				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri, documents)}));
-				validateWorkspace(added.uri, true);
+				validateWorkspace(added.uri);
 			}
 			for (const removed of _event.removed) {
 				documentSettings.clear();
@@ -191,7 +194,7 @@ connection.onDidChangeWatchedFiles(handler => {
 			parsedDocuments.clear();
 			documentSettings.clear();
 			getSettings(file.uri).then(settings => {
-				validateWorkspace(file.uri, true);
+				validateWorkspace(file.uri);
 			});
 		} 
 		else if (file.type === FileChangeType.Changed) {
@@ -205,7 +208,7 @@ connection.onDidChangeWatchedFiles(handler => {
 			parsedDocuments.clear();
 			documentSettings.clear();
 			getSettings(file.uri).then(settings => {
-				validateWorkspace(file.uri, true);
+				validateWorkspace(file.uri);
 			});
 		} 
 	}
@@ -274,15 +277,33 @@ connection.onExecuteCommand(params => {
 	if (!params.arguments) { 
 		return;
 	}
-
+	
+	if (params.command === 'macro.action.validate') { 
+	
+		const workspaceUri = params.arguments[0];
+		
+		getSettings(workspaceUri).then(settings => {
+			
+			if (!settings.validate?.enable) {
+				connection.window.showInformationMessage(localize('message.validationdisabled', 'The validation is disabled'));
+				return;
+			}
+			
+			validateWorkspace(workspaceUri, true);
+		});
+		
+		return;	
+	}
+	
 	const textDocument 	= documents.get(params.arguments[0]);
-	const position 		= params.arguments[1];
-	const start 		= params.arguments[2];
-	const inc 			= params.arguments[3];
 
-	return execute(textDocument.uri, (service, repo, settings) => {
+	return execute(textDocument.uri, (service, repo, settings) => {		
 		if (params.command === 'macro.action.refactorsequeces' || params.command === 'macro.action.addsequeces') {
 		
+			const position 		= params.arguments[1];
+			const start 		= params.arguments[2];
+			const inc 			= params.arguments[3];
+			
 			let localsettings:LanguageSettings = {}; 
 			Object.assign(localsettings, settings);
 
@@ -356,11 +377,19 @@ connection.languages.callHierarchy.onOutgoingCalls((params) => {
 
 documents.onDidChangeContent(event => {
 	return execute(event.document.uri, (service, repo, settings) => {
-		validateTextDocument(getParsedDocument(documents, event.document.uri, service.parseMacroFile));
+		const macroFile = getParsedDocument(documents, event.document.uri, service.parseMacroFile);
+		validateTextDocument(macroFile);
 
-		// TODO validate only related files
-		if (event.document.uri.split('.').pop()?.toLocaleLowerCase() === 'def') {
-			validateWorkspace(settings.workspaceFolder.uri, false);	
+		if (workspaceValidation && macroFile.type === MacroFileType.DEF) {
+			const fp = new FileProvider(settings.workspaceFolder.uri, documents);
+			for (const element of fp.getAll()) {
+				if (element.type === MacroFileType.SRC) {					
+					if ((<MacroFileInclude>element.macrofile).getIncludes()?.some(a =>  fp.resolveReference(a) === event.document.uri)) {
+						parsedDocuments.delete(element.document.uri);
+						validateTextDocument(fp.get(element.document.uri));	
+					}	
+				}
+			}	
 		}
 	});
 });
@@ -368,7 +397,7 @@ documents.onDidChangeContent(event => {
 documents.listen(connection);
 connection.listen();
 
-async function execute<T>(uri:string, runService:(service:LanguageService, repo:MacroFileType, settings:TextDocumentSettings) => T) : Promise<T> {
+async function execute<T>(uri:string, runService:(service:LanguageService, repo:MacroFileInfo, settings:TextDocumentSettings) => T) : Promise<T> {
 	return getSettings(uri).then(settings => {
 		let service: LanguageService;
 		if (settings.workspaceFolder) {
@@ -404,7 +433,7 @@ function getSettings(uri: string): Promise<TextDocumentSettings> {
 	return resultPromise;
 }
 
-function validateTextDocument(doc: MacroFileType | undefined) {
+function validateTextDocument(doc: MacroFileInfo | undefined) {
 	execute(doc.document.uri, (service, repo, settings) => {
 		try {
 			const entries = service.doValidation(doc.document, doc.macrofile, settings);
@@ -419,25 +448,22 @@ function validateTextDocument(doc: MacroFileType | undefined) {
 	});
 }
 
-function validateWorkspace(uri:string, allFiles:boolean) {
-	if (allFiles && workspaceValidation) {
+function validateWorkspace(uri:string, forceValidation: boolean = false) {
+	if (workspaceValidation || forceValidation) {
+		if (forceValidation) {
+			parsedDocuments.clear();
+		}
 		const fp = new FileProvider(uri, documents);
 		for (const element of fp.getAll()){
 			validateTextDocument(element);
 		}
 	} 
-	else {
-		for (const document of documents.all()) {
-			const service = languageServices.get(uri);
-			validateTextDocument(getParsedDocument(documents, document.uri, service.parseMacroFile,true));
-		}
-	}
 }
 
 function validate() {
 	connection.workspace.getWorkspaceFolders().then(workspaces => {
 		for (const ws of workspaces) {
-			validateWorkspace(ws.uri, true);
+			validateWorkspace(ws.uri);
 		}
 	});
 }

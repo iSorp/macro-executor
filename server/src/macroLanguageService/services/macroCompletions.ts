@@ -23,7 +23,7 @@ import {
 	functionSignatures,
 	MarkupKind,
 	CustomKeywords,
-	SymbolText, 
+	SymbolText
 } from '../macroLanguageTypes';
 import { getComment } from '../parser/macroScanner';
 import { SignatureHelp, ParameterInformation, SignatureInformation } from 'vscode-languageserver';
@@ -111,7 +111,7 @@ export class MacroCompletion {
 			const uris = this.getIncludeUris(this.macroFile);
 			const types = this.fileProvider?.getAll({uris:uris});
 			for (const type of types) {
-				const symbols = new Symbols(<nodes.Node>type.macrofile, type.document.uri);
+				const symbols = new Symbols(<nodes.MacroFile>type.macrofile, type.document.uri);
 				this.symbolContext.getScope().addChild(symbols.getScope());
 			}
 		}
@@ -240,7 +240,7 @@ export class MacroCompletion {
 						case nodes.NodeType.Numeric:
 							sort = Sort.Value;
 							kind = CompletionItemKind.Value;
-						break;
+							break;
 						case nodes.NodeType.Statement:
 						case nodes.NodeType.Code:
 							sort = Sort.Nc;

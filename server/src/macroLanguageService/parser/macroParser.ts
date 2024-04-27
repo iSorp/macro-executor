@@ -9,8 +9,12 @@ import * as nodes from './macroNodes';
 import { ParseError, MacroIssueType } from './macroErrors';
 import {
 	TextDocument, MacroFileProvider, FunctionSignature,
-	functionSignatures
+	functionSignatures, Macrofile, MacroFileType
 } from '../macroLanguageTypes';
+
+import {
+	getMacroFileType
+} from '../../fileProvider';
 
 interface IMark {
 	prevParsedToken?: IParsedToken;
@@ -426,7 +430,7 @@ export class Parser {
 		let definition = this.fileProvider?.get(path);
 		if (definition) {
 			this.includes.push(definition.document.uri);
-			(<nodes.Node>definition?.macrofile).accept(candidate => {
+			(<nodes.MacroFile>definition?.macrofile).accept(candidate => {
 				let found = false;
 				if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
 					this._visitDefinitions(candidate);
@@ -455,7 +459,7 @@ export class Parser {
 
 
 	// #region Global scope
-	public parseMacroFile(textDocument: TextDocument): nodes.MacroFile {
+	public parseMacroFile(textDocument: TextDocument): Macrofile {
 		this.definitionMap.clear();
 		this.symbolNodeList = [];
 		this.includes = [];
@@ -468,16 +472,14 @@ export class Parser {
 			}
 			return text.substring(offset, offset+length);
 		};
-
-		let type = textDocument.uri.split('.').pop()?.toLocaleLowerCase() ;
-		if (type === 'def'){
-			return this.internalParse(text, this._parseDefFile, this.textProvider);
-		}
-		else if (type === 'lnk'){
-			return this.internalParse(text, this._parseLnkFile, this.textProvider);
-		}
-		else  {
-			return this.internalParse(text, this._parseMacroFile, this.textProvider);
+		
+		switch(getMacroFileType(textDocument.uri)) {
+			case MacroFileType.DEF:
+				return this.internalParse(text, this._parseDefFile, this.textProvider);
+			case MacroFileType.LNK:
+				return this.internalParse(text, this._parseLnkFile, this.textProvider);
+			default:
+				return this.internalParse(text, this._parseMacroFile, this.textProvider);		
 		}
 	}
 
@@ -500,7 +502,7 @@ export class Parser {
 		return node;
 	}
 
-	public _parseDefFile(): nodes.MacroFile {
+	public _parseDefFile(): nodes.Node {
 
 		const node = this.createNode(nodes.NodeType.DefFile);
 		let hasMatch = false;
@@ -538,8 +540,8 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public _parseLnkFile(): nodes.MacroFile {
-		const node = this.createNode(nodes.NodeType.DefFile);
+	public _parseLnkFile(): nodes.Node {
+		const node = this.createNode(nodes.NodeType.LnkFile);
 		let hasMatch = false;
 		do {
 			if (this.peek(TokenType.EOF)) {
@@ -611,7 +613,7 @@ export class Parser {
 
 		}
 
-		node.addChild(this._parseString());
+		node?.addChild(this._parseString());
 
 		// check new line after statement
 		if (this._needsLineBreakAfter(node)) {

@@ -8,7 +8,7 @@ import * as nodes from '../parser/macroNodes';
 
 import { 
 	TextDocument, 
-	MacroFileProvider, 
+	MacroFileProvider
 } from '../macroLanguageTypes';
 import { 
 	LintConfiguration, 
@@ -134,7 +134,7 @@ export class LintVisitor implements nodes.IVisitor {
 			let declaration = this.fileProvider?.get(uri.getText());
 			
 			if (declaration) {
-				(<nodes.Node>declaration?.macrofile).accept(candidate => {
+				(<nodes.MacroFile>declaration?.macrofile).accept(candidate => {
 					let found = false;
 					if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
 						this.visitDefinition(candidate, false);

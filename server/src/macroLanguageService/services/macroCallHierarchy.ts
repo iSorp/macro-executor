@@ -9,7 +9,7 @@ import * as path from 'path';
 import {
 	MacroFileProvider, TextDocument, Position, Range, 
 	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall,
-	SymbolKind, LanguageSettings, SRC_FILES, Location, MacroFileType
+	SymbolKind, LanguageSettings, Location
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { MacroNavigation } from './macroNavigation';
@@ -97,7 +97,7 @@ export class MacroCallHierarchy {
 		return [...items.values()];
 	}
 
-	public doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.Node, settings: LanguageSettings): CallHierarchyOutgoingCall[] | null {
+	public doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macroFile: nodes.MacroFile, settings: LanguageSettings): CallHierarchyOutgoingCall[] | null {
 
 		const items: Map<string, CallHierarchyOutgoingCall> = new Map<string, CallHierarchyOutgoingCall>();
 

@@ -1,4 +1,5 @@
 {
 	"message.refactorsequeces.success": "重排顺序号完成",
-	"message.addsequeces.success": "添加顺序号完成"
+	"message.addsequeces.success": "添加顺序号完成",
+	"message.validationdisabled" : "项目文件夹验证未启用"
 }
