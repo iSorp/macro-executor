@@ -123,11 +123,6 @@ suite('Parser', () => {
 		assertError('#100< ', parser, parser._parseVariable.bind(parser), ParseError.RightAngleBracketExpected);
 	});
 
-	/*test('Label', function () {
-		let parser = new Parser(null);
-		assertNode('TEST', parser, parser._parseLabel.bind(parser));
-	});*/
-
 	test('String', function () {
 		let parser = new Parser(null);
 		assertNode('( )', parser, parser._parseString.bind(parser));
@@ -143,6 +138,7 @@ suite('Parser', () => {
 
 	test('Numeric', function () {
 		let parser = new Parser(null);
+		assertNode('.100', parser, parser._parseNumber.bind(parser));
 		assertNode('100', parser, parser._parseNumber.bind(parser));
 		assertNode('100.', parser, parser._parseNumber.bind(parser));
 		assertNode('100.0', parser, parser._parseNumber.bind(parser));
@@ -296,6 +292,7 @@ suite('Parser', () => {
 		assertError('O 100 \n IF [1] THEN \n ENDIF N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n N100 G01 #1=1 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n / N100 G01 #1=1 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 \n #1=100.0. ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 	});
 
 	test('Functions', function () {

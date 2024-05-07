@@ -32,7 +32,7 @@ export enum TokenType {
 	Fcmd,
 	KeyWord,
 	Comment,
-	Ampersand,		
+	Ampersand,	
 	Delim,
 	EOF,
 }
@@ -297,6 +297,10 @@ export class Scanner {
 			return this.finishToken(offset, TokenType.Number);
 		}
 
+		if (this.stream.advanceIfChar(_DOT)) {
+			return this.finishToken(offset, TokenType.Delim);
+		}
+		
 		if (!this.scanTextAsSymbol) {
 			
 			const keyword:TokenType = this._keyword();
@@ -742,6 +746,20 @@ export class Scanner {
 	private _number() : boolean {
 		const pos = this.stream.pos();
 		const ch = this.stream.peekChar();
+		if (ch >= _0 && ch <= _9)  {
+			this.stream.advance(1);
+			while (this._numberChar()) {
+				// loop
+			}
+			return true;
+		}
+		this.stream.goBackTo(pos);
+		return false;
+	}
+	
+	/*private _number() : boolean {
+		const pos = this.stream.pos();
+		const ch = this.stream.peekChar();
 		if (ch >= _0 && ch <= _9 || ch === _DOT)  {
 			this.stream.advance(1);
 			while (this._numberChar()) {
@@ -755,7 +773,7 @@ export class Scanner {
 		}
 		this.stream.goBackTo(pos);
 		return false;
-	}
+	}*/
 
 	private _numberChar(): boolean {
 		const ch = this.stream.peekChar();
@@ -780,6 +798,7 @@ export class Scanner {
 				ch === _POS || 
 				ch === _NEG ||
 				ch === _CAR ||
+				ch === _DOT ||
 				ch === _LFD ||
 				ch === _NWL ||
 				this.stream.eos()) {
