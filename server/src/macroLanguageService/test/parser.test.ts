@@ -104,6 +104,8 @@ suite('Parser', () => {
 		assertNode('R100', parser, parser._parseAddress.bind(parser));
 		assertNode('R100.0', parser, parser._parseAddress.bind(parser));
 		assertNode('R100.[1]', parser, parser._parseAddress.bind(parser));
+		assertNode('R[100].2', parser, parser._parseAddress.bind(parser));
+		//assertNode('@SYM 2\nO100\nR[100].SYM', parser, parser._parseAddress.bind(parser));
 		assertNode('R1.#[1+[1]]', parser, parser._parseAddress.bind(parser));
 		assertNode('R#1', parser, parser._parseAddress.bind(parser));
 		assertNode('R 1 . 1', parser, parser._parseAddress.bind(parser));
@@ -174,7 +176,7 @@ suite('Parser', () => {
 	test('Macro statement', function () {
 		let parser = new Parser(null);
 		assertNode('#1 = 1', parser, parser._parseMacroStatement.bind(parser));
-
+		assertNode('#1 = R[100].2', parser, parser._parseMacroStatement.bind(parser));
 		assertError('#1 ', parser, parser._parseMacroStatement.bind(parser), ParseError.EqualExpected);
 		assertError('#1 = ', parser, parser._parseMacroStatement.bind(parser), ParseError.TermExpected);
 	});
