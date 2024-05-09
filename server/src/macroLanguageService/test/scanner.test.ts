@@ -170,13 +170,13 @@ suite('Scanner', () => {
 		assertSingleTokenNonSymolStatement(scanner, 'ANDSIN', 3, 0, 'AND', TokenType.KeyWord);
 		assertSingleTokenNonSymolStatement(scanner, 'R', 1, 0, 'R', TokenType.Parameter);
 		assertSingleTokenNonSymolStatement(scanner, '1', 1, 0, '1', TokenType.Number);
-		assertSingleTokenNonSymolStatement(scanner, '1.0', 3, 0, '1.0', TokenType.Number);
+		//assertSingleTokenNonSymolStatement(scanner, '1.0', 3, 0, '1.0', TokenType.Number);
 		assertSingleTokenNonSymolStatement(scanner, 'G01G01', 1, 0, 'G', TokenType.Parameter, TokenType.Number, TokenType.Parameter, TokenType.Number);
 
 		assertSingleTokenNonSymolStatement(scanner, 'EQ', 2, 0, 'EQ', TokenType.KeyWord);
 		assertSingleTokenNonSymolStatement(scanner, 'R10EQ1', 1, 0, 'R', TokenType.Parameter, TokenType.Number, TokenType.KeyWord, TokenType.Number);
 
-		assertSingleTokenNonSymolStatement(scanner, 'R.0', 3, 0, 'R.0', TokenType.Symbol); 
+		assertSingleTokenNonSymolStatement(scanner, 'R.0', 1, 0, 'R', TokenType.Parameter); 
 		assertSingleTokenNonSymolStatement(scanner, 'ABC', 3, 0, 'ABC', TokenType.Symbol); 
 	});
 

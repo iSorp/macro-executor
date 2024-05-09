@@ -1046,8 +1046,7 @@ export class Parser {
 		}
 
 		return this._parseUnknownSymbol(this._parseNcCode()
-			|| this._parseNcParam()
-			|| this._parseNumber());
+			|| this._parseNcParam());
 	}
 
 	public _parseNcCode(): nodes.Node {
@@ -1504,7 +1503,7 @@ export class Parser {
 		if (this.peek(TokenType.Number)) {
 			
 			while(this.accept(TokenType.Number)){}
-			this.acceptKeyword('.');
+			this.acceptDelim('.');
 			
 			if (this.peek(TokenType.Hash)) {
 				if (node.addChild(this._parseVariable())){
@@ -1530,7 +1529,8 @@ export class Parser {
 			if (node.addChild(this._parseBinaryExpr())){
 				return this.finish(node);
 			}
-		}
+		} 
+
 		this.restoreAtMark(mark);
 
 		return null;
@@ -1864,29 +1864,47 @@ export class Parser {
 
 	public _parseNumber(integer = false, signed = false, ...referenceTypes: nodes.ReferenceType[]) : nodes.Numeric | null {
 
-		if (!this.peek(TokenType.Number) && !signed || signed && !this.peek(TokenType.Number) && !this.peekDelim('+') && !this.peekDelim('-')) {
-			return null;
-		}
-
+		if (!this.peekDelim('.')) {
+			if (!this.peek(TokenType.Number) && !signed || signed && !this.peek(TokenType.Number) && !this.peekDelim('+') && !this.peekDelim('-')) {
+				return null;
+			}	
+		} 
+		
 		const node = this.create(nodes.Numeric);
+		node.addReferenceType(...referenceTypes);
 		const mark = this.mark();
 		if (this.acceptDelim('+') || this.acceptDelim('-')) {
-			if (!this.peek(TokenType.Number)) {
+			if (!this.peek(TokenType.Number) && !this.peekDelim('.')) {
 				this.restoreAtMark(mark);
 				return null;
 			}
 		}
-
-		if (integer && this.peekRegExp(TokenType.Number, /\d*\.\d*/)) {
-			this.markError(node, ParseError.IntegerExpected);
+		
+		// Form of: +.123 or -.123
+		if (this.acceptDelim('.')) {
+			if (this.peek(TokenType.BracketL)) {
+				this.restoreAtMark(mark);
+				return null;
+			}
+			
+			if (integer) {
+				this.markError(node, ParseError.IntegerExpected);	
+			}
+			else if (!this.accept(TokenType.Number)) {
+				this.markError(node, ParseError.NumberExpected);
+			}
+			
+			// consume all other numbers
+			while (this.accept(TokenType.Number)) {}
+			return this.finish(node);
 		}
 
-		node.addReferenceType(...referenceTypes);
-
-		this.consumeToken();
-
-		node.addChild(this._parseNumber(integer, signed, ...referenceTypes));
-
+		while (this.accept(TokenType.Number)) {}
+		if (this.acceptDelim('.') && integer) {
+			this.markError(node, ParseError.IntegerExpected);	
+		}
+		while (this.accept(TokenType.Number)) {}
+		
 		return this.finish(node);
 	}
 	//#endregion
