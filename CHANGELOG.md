@@ -2,6 +2,7 @@
 - Definition file dependency validation
 - Validation command
 - Fix number parsing [#38](https://github.com/iSorp/macro-executor/issues/38)
+- Fix address parsing [#32](https://github.com/iSorp/macro-executor/issues/32)
 
 ## 0.4.2  (July 6, 2022)
 - Fix a bug if an undefined symbol crashes the validator

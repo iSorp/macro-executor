@@ -1525,12 +1525,43 @@ export class Parser {
 				return this.finish(node);
 			}
 		}
-		else if (this.peek(TokenType.BracketL)) {
-			if (node.addChild(this._parseBinaryExpr())){
+		else if (this.peek(TokenType.BracketL))
+		{
+			if (node.addChild(this._parseBinaryExpr()))
+			{
+				const mark2 = this.mark();
+				this.acceptDelim('.');
+				
+				if (this.peek(TokenType.Hash)) {
+					if (node.addChild(this._parseVariable())){
+						return this.finish(node);
+					}
+				}
+				else if (this.peek(TokenType.BracketL)) {
+					if (node.addChild(this._parseBinaryExpr())){
+						return this.finish(node);
+					}
+				}
+				else if (this.peek(TokenType.Number)) 
+				{
+					this.restoreAtMark(mark2);
+					this.scanner.ignoreWhitespace = false;
+					this.acceptDelim('.');
+					this.scanner.ignoreWhitespace = true;
+					if (!this.peek(TokenType.Whitespace) && this.symbol !== undefined)
+					{
+						// error because R[1].SYMBOL ist only valid with space R[1]. SYMBOL
+						this.markError(node, ParseError.InvalidStatement);
+					}
+					while(this.accept(TokenType.Whitespace)){}
+					node.addChild(this._parseNumber(true, false));
+					
+					//this.consumeToken();
+				}
 				return this.finish(node);
 			}
-		} 
-
+		}
+		
 		this.restoreAtMark(mark);
 
 		return null;
