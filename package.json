@@ -643,7 +643,7 @@
 		"del": "^6.1.0",
 		"eslint": "^8.16.0 ",
 		"event-stream": "^4.0.1",
-		"gulp": "^4.0.2",
+		"gulp": "^5.0.0",
 		"gulp-filter": "^7.0.0",
 		"gulp-sourcemaps": "^3.0.0",
 		"gulp-typescript": "^6.0.0-alpha.1",
