@@ -6,17 +6,14 @@
 
 import * as assert from 'assert';
 import { Position } from 'vscode-languageserver-textdocument';
+import { FileProviderMock, documents } from './fileProviderMock';
 import {
 	LanguageService, 
 	getMacroLanguageService, 
 } from '../macroLanguageService';
 import {
 	TextDocument, 
-	MacroFileProvider,
 	Location,
-	MacroFileType,
-	MacroFileInfo, 
-	FileProviderParams,
 	Range
 } from '../macroLanguageTypes';
 
@@ -26,52 +23,6 @@ import {
 
 declare type locationFunction = (document, position, macroFile) => Location | null;
 declare type locationsFunction = (document, position, macroFile) => Location[];
-
-const documents: Map<string, TextDocument> = new Map<string, TextDocument>();
-
-class FileProviderMock implements MacroFileProvider {
-
-	constructor() {}
-
-	public get(file: string): MacroFileInfo | undefined {
-		const document = documents.get(file);
-		const macroFile =  new Parser(this).parseMacroFile(document);
-		return {
-			document: document,
-			macrofile: macroFile,
-			version: 1,
-			type: this.getMacroFileType(file)
-		};
-	}
-	
-	public getAll(param?:FileProviderParams) {
-		let types:MacroFileInfo[] = [];
-		for (const file of documents.keys()) {
-			let type = this.get(file);
-			if (type){
-				types.push(type);
-			}
-		}
-		return types;
-	}
-
-	public resolveReference(ref: string, base?: string): string | undefined {
-		return undefined;
-	}
-	
-	public getMacroFileType(file: string) : MacroFileType {
-		var fileExt = file.split('.').pop().toLocaleLowerCase();
-		switch(fileExt) {
-			case 'def':
-				return MacroFileType.DEF;
-			case 'lnk':
-				return MacroFileType.LNK;
-			default:
-				return MacroFileType.SRC;
-		}
-	} 
-}
-
 
 function assertLocation(service: LanguageService, input: string, position:Position, location:Location, f:locationFunction) {
 	
