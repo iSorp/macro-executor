@@ -3,10 +3,10 @@ const ts = require('gulp-typescript');
 const typescript = require('typescript');
 const sourcemaps = require('gulp-sourcemaps');
 const del = require('del');
-const runSequence = require('run-sequence');
 const es = require('event-stream');
-const vsce = require('vsce');
+const vsce = require('@vscode/vsce');
 const nls = require('vscode-nls-dev');
+const sourceMap = require('source-map');
 
 const clientProject = ts.createProject('./client/tsconfig.json', { typescript });
 const serverProject = ts.createProject('./server/tsconfig.json', { typescript });
@@ -20,6 +20,10 @@ const languages = [
 	{ id: 'de',		folderName: 'deu' }, 
 	{ id: 'zh-cn', 	folderName: 'chs', transifexId: 'zh-hans' }
 ];
+
+sourceMap.SourceMapConsumer.initialize({
+	'lib/mappings.wasm': require.resolve('source-map/lib/mappings.wasm')
+});
 
 const cleanTask = function() {
 	return del(['client/out/**', 'server/out/**', 'package.nls.*.json', 'macro-executor*.vsix']);
