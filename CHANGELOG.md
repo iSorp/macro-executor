@@ -1,6 +1,7 @@
-## 0.4.3  (-, 2022)
+## 1.0.0  (October, 2024)
 - Definition file dependency validation
 - Validation command
+- Version numbering changed
 - Fix number parsing [#38](https://github.com/iSorp/macro-executor/issues/38)
 - Fix address parsing [#32](https://github.com/iSorp/macro-executor/issues/32)
 
