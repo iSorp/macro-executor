@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -433,6 +433,20 @@
 					"type": "boolean",
 					"default": false,
 					"markdownDescription": "%macro.validate.onBuild.description%"
+				},
+				"macro.fileEncoding": {
+					"scope": "resource",
+					"type": "string",
+					"default": "utf8",
+					"enum": [
+						"utf8",
+						"cp950",
+						"big5",
+						"utf16le",
+						"utf16be",
+						"auto"
+					],
+					"description": "%macro.fileEncoding.description%"
 				},
 				"macro.build.compiler": {
 					"type": "string",

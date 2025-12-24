@@ -15,6 +15,7 @@
 	"macro.validate.enable.description": "Aktiviert oder deaktiviert alle Überprüfungen",
 	"macro.validate.workspace.description": "Aktiviert oder deaktiviert die Überprüfung des gesamten Arbeitsbereichs. Gilt nur wenn `#macro.validate.enable#` auf `true` gesetzt ist.",
 	"macro.validate.onBuild.description": "Aktiviert oder deaktiviert die Überprüfung des gesamten Arbeitsbereichs beim Erstellen des Projekts. Gilt nur wenn `#macro.validate.enable#` auf `true` gesetzt ist.",
+	"macro.fileEncoding.description": "Bevorzugte Kodierung für von Datenträger gelesene Makrodateien (z.B. windows-1252 für de-de).",
 	"macro.build.compiler.description": "Auswahl des Macro-Compilers",
 	"macro.build.controlType.description": "Auswahl des Steuerungstyps",
 	"macro.build.compilerParams.description": "Zusätzliche Compilerparameter: -NR, -L1, -L2, -L3, -PR",
