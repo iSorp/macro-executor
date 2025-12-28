@@ -75,6 +75,7 @@ suite('Parser', () => {
 		let parser = new Parser(null);
 		assertNode('O 1000\n', parser, parser._parseProgram.bind(parser));
 		assertNode('O test\n', parser, parser._parseProgram.bind(parser));
+		assertNode('O 1000 GOTO1\nN1\n', parser, parser._parseProgram.bind(parser));
 		assertError('O ', parser, parser._parseProgram.bind(parser), ParseError.FunctionIdentExpected);
 	});
 
@@ -289,7 +290,10 @@ suite('Parser', () => {
 		let parser = new Parser(null);
 		assertError('@var1  1 10 ', parser, parser._parseMacroFile.bind(parser), ParseError.InvalidStatement);
 		assertError('>var2  1 10 ', parser, parser._parseMacroFile.bind(parser), ParseError.InvalidStatement);
-		assertError('O 100 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		//assertError('O 100 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 @1 1 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 >1 1 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
+		assertError('O 100 $INCLUDE test.def ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n #100 = 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n IF [1] THEN #1 = 1 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
 		assertError('O 100 \n IF [1] GOTO 10 N10 ', parser, parser._parseMacroFile.bind(parser), ParseError.NewLineExpected);
