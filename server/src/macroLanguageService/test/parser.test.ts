@@ -206,7 +206,7 @@ suite('Parser', () => {
 	test('WHILE statement', function () {
 		let parser = new Parser(null);
 		assertNode('WHILE [1] DO 1\nEND 1', parser, parser._parseWhileStatement.bind(parser, ()=> {}));
-	
+		
 		assertError('WHILE ', parser, parser._parseWhileStatement.bind(parser), ParseError.LeftSquareBracketExpected);
 		assertError('WHILE [ ', parser, parser._parseWhileStatement.bind(parser), ParseError.ExpressionExpected);
 		assertError('WHILE [1 ', parser, parser._parseWhileStatement.bind(parser), ParseError.RightSquareBracketExpected);
@@ -214,6 +214,11 @@ suite('Parser', () => {
 		assertError('WHILE [1] DO ', parser, parser._parseWhileStatement.bind(parser), ParseError.LabelExpected);
 		assertError('WHILE [1] DO 1\n ', parser, parser._parseWhileStatement.bind(parser, ()=> {}), ParseError.EndExpected);
 		assertError('WHILE [1] DO 1\n END', parser, parser._parseWhileStatement.bind(parser, ()=> {}), ParseError.LabelExpected);
+		
+		assertNode('DO 1\nEND 1', parser, parser._parseWhileStatement.bind(parser, ()=> {}));
+		assertError('DO ', parser, parser._parseWhileStatement.bind(parser), ParseError.LabelExpected);
+		assertError('DO 1\n ', parser, parser._parseWhileStatement.bind(parser, ()=> {}), ParseError.EndExpected);
+		assertError('DO 1\n END', parser, parser._parseWhileStatement.bind(parser, ()=> {}), ParseError.LabelExpected);
 	});
 	
 	test('Binary expression', function () {

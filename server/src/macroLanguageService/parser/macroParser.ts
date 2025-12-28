@@ -1305,17 +1305,18 @@ export class Parser {
 	}
 
 	public _parseWhileStatement(parseStatement: () => nodes.Node | null): nodes.Node | null {
-		if (!this.peekKeyword('while')) {
+		if (!this.peekKeyword('while') && !this.peekKeyword('do')) {
 			return null;
 		}
 
 		const node = <nodes.WhileStatement>this.create(nodes.WhileStatement);
-		this.consumeToken(); // while
 
-		if (!node.setConditional(this._parseConditionalExpression())) {
-			this.markError(node, ParseError.ExpressionExpected, [], [TokenType.KeyWord, TokenType.Symbol, TokenType.NewLine]);
+		if (this.acceptKeyword('while')) {
+			if (!node.setConditional(this._parseConditionalExpression())) {
+				this.markError(node, ParseError.ExpressionExpected, [], [TokenType.KeyWord, TokenType.Symbol, TokenType.NewLine]);
+			}
 		}
-
+		
 		if (!this.acceptKeyword('do')) {
 			this.markError(node, ParseError.DoExpected, [], [TokenType.Symbol, TokenType.NewLine]);
 		}
