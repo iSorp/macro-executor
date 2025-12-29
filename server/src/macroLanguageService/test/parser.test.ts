@@ -110,7 +110,13 @@ suite('Parser', () => {
 		assertNode('R1.#[1+[1]]', parser, parser._parseAddress.bind(parser));
 		assertNode('R#1', parser, parser._parseAddress.bind(parser));
 		assertNode('R 1 . 1', parser, parser._parseAddress.bind(parser));
-		assertError('R#1.1', parser, parser._parseAddress.bind(parser), ParseError.IntegerExpected);
+		assertNode('R#1.1', parser, parser._parseAddress.bind(parser));
+		assertNode('R#1.#1', parser, parser._parseAddress.bind(parser));
+		assertNode('R#[1].1', parser, parser._parseAddress.bind(parser));
+		assertNode('R#[1].[1]', parser, parser._parseAddress.bind(parser));
+		assertNode('R#[1].#[1]', parser, parser._parseAddress.bind(parser));
+		assertNode('R[1].#[1]', parser, parser._parseAddress.bind(parser));
+		assertError('R#1.', parser, parser._parseAddress.bind(parser), ParseError.AddressExpected);
 	});
 
 	test('Variable', function () {

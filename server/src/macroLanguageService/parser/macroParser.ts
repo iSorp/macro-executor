@@ -811,7 +811,7 @@ export class Parser {
 			this.symbol.attrib = nodes.ValueAttribute.Program;
 		}
 
-		if (!node.setIdentifier(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Program)))) {
+		if (!node.setIdentifier(this._parseUnknownSymbol(this._parseNumber(true, false, false, nodes.ReferenceType.Program)))) {
 			this.markError(node, ParseError.FunctionIdentExpected, [], [TokenType.NewLine]);
 		}
 
@@ -952,7 +952,7 @@ export class Parser {
 		const node = this.create(nodes.SequenceNumber);
 		this.accept(TokenType.Sequence);
 
-		if (!node.setNumber(this._parseNumber(true, false, nodes.ReferenceType.JumpLabel, nodes.ReferenceType.Sequence))) {
+		if (!node.setNumber(this._parseNumber(true, false, false, nodes.ReferenceType.JumpLabel, nodes.ReferenceType.Sequence))) {
 			this.finish(node, ParseError.NumberExpected, [], [TokenType.NewLine]);
 		}
  		return this.finish(node);
@@ -1300,7 +1300,7 @@ export class Parser {
 			}
 		}
 		else {
-			if (!node.setLabel(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber(true, false, nodes.ReferenceType.Sequence))))
+			if (!node.setLabel(this._parseUnknownSymbol(this._parseVariable() || this._parseNumber(true, false, false, nodes.ReferenceType.Sequence))))
 			{
 				this.markError(node, ParseError.LabelExpected, [], [TokenType.NewLine]);
 			}
@@ -1478,7 +1478,7 @@ export class Parser {
 			return this.finish(node);
 		}
 
-		if (!node.setBody(this._parseUnknownSymbol(this._parseNumber(true, false, nodes.ReferenceType.Variable)))) {
+		if (!node.setBody(this._parseUnknownSymbol(this._parseNumber(true, false, true, nodes.ReferenceType.Variable)))) {
 			return this.finish(node, ParseError.IdentifierExpected);
 		}
 
@@ -1500,7 +1500,7 @@ export class Parser {
 			return null;
 		}
 
-		// Address e.g: R100, R100.1, R1.#[1], R#1, R[1]
+		// Address e.g: R100, R100.1, R1.#[1], R#1, R[1] R#1.#2
 		const node = <nodes.Address>this.create(nodes.Address);
 		const mark = this.mark();
 
@@ -1528,6 +1528,13 @@ export class Parser {
 		}
 		else if (this.peek(TokenType.Hash)) {
 			if (node.addChild(this._parseVariable())){
+				
+				if(this.acceptDelim('.')){
+					if (!node.addChild(this._parseNumber(true) || this._parseVariable() || this._parseBinaryExpr())){
+						return this.finish(node, ParseError.AddressExpected);
+					}
+				}
+				
 				return this.finish(node);
 			}
 		}
@@ -1899,7 +1906,7 @@ export class Parser {
 		return this.finish(node);
 	}
 
-	public _parseNumber(integer = false, signed = false, ...referenceTypes: nodes.ReferenceType[]) : nodes.Numeric | null {
+	public _parseNumber(integer = false, signed = false, ignoreDot = false, ...referenceTypes: nodes.ReferenceType[]) : nodes.Numeric | null {
 
 		if (!this.peekDelim('.')) {
 			if (!this.peek(TokenType.Number) && !signed || signed && !this.peek(TokenType.Number) && !this.peekDelim('+') && !this.peekDelim('-')) {
@@ -1937,11 +1944,14 @@ export class Parser {
 		}
 
 		while (this.accept(TokenType.Number)) {}
-		if (this.acceptDelim('.') && integer) {
-			this.markError(node, ParseError.IntegerExpected);	
+		if (!ignoreDot) {
+			if (this.acceptDelim('.') && integer) {
+				this.markError(node, ParseError.IntegerExpected);	
+			}
+			
+			while (this.accept(TokenType.Number)) {}
 		}
-		while (this.accept(TokenType.Number)) {}
-		
+
 		return this.finish(node);
 	}
 	//#endregion
