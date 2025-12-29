@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -434,6 +434,20 @@
 					"default": false,
 					"markdownDescription": "%macro.validate.onBuild.description%"
 				},
+				"macro.fileEncoding": {
+					"scope": "resource",
+					"type": "string",
+					"default": "utf8",
+					"enum": [
+						"utf8",
+						"cp950",
+						"big5",
+						"utf16le",
+						"utf16be",
+						"auto"
+					],
+					"description": "%macro.fileEncoding.description%"
+				},
 				"macro.build.compiler": {
 					"type": "string",
 					"scope": "resource",
@@ -638,7 +652,7 @@
 		"@types/node": "^22.5.2",
 		"@typescript-eslint/eslint-plugin": "^7.14.0",
 		"@typescript-eslint/parser": "^7.14.0",
-		"@vscode/vsce": "^3.0.0",
+		"@vscode/vsce": "^3.7.1",
 		"del": "^5.1.0",
 		"eslint": "^8.57.0",
 		"event-stream": "^4.0.1",

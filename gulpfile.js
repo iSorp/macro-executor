@@ -18,7 +18,8 @@ const serverOutDest = 'server/out';
 
 const languages = [
 	{ id: 'de',		folderName: 'deu' }, 
-	{ id: 'zh-cn', 	folderName: 'chs', transifexId: 'zh-hans' }
+	{ id: 'zh-cn', 	folderName: 'chs', transifexId: 'zh-hans' },
+	{ id: 'zh-tw', 	folderName: 'cht', transifexId: 'zh-hant' }
 ];
 
 sourceMap.SourceMapConsumer.initialize({
@@ -29,20 +30,20 @@ const cleanTask = function() {
 	return del(['client/out/**', 'server/out/**', 'package.nls.*.json', 'macro-executor*.vsix']);
 };
 
-const internalCompileTask = function() {
-	let ret = doCompile(false, clientProject, clientOutDest);
-	if (ret){
-		ret = doCompile(false, serverProject, serverOutDest);
-	}
-	return ret;
+const compileClientTask = function() {
+	return doCompile(false, clientProject, clientOutDest);
 };
 
-const internalNlsCompileTask = function() {
-	let ret = doCompile(true, clientProject, clientOutDest);
-	if (ret){
-		ret = doCompile(true, serverProject, serverOutDest);
-	}
-	return ret;
+const compileServerTask = function() {
+	return doCompile(false, serverProject, serverOutDest);
+};
+
+const compileClientNlsTask = function() {
+	return doCompile(true, clientProject, clientOutDest);
+};
+
+const compileServerNlsTask = function() {
+	return doCompile(true, serverProject, serverOutDest);
 };
 
 const addI18nTask = function() {
@@ -51,7 +52,7 @@ const addI18nTask = function() {
 		.pipe(gulp.dest('.'));
 };
 
-const buildTask = gulp.series(cleanTask, internalNlsCompileTask, addI18nTask);
+const buildTask = gulp.series(cleanTask, compileClientNlsTask, compileServerNlsTask, addI18nTask);
 
 const doCompile = function (buildNls, project, out) {
 	var r = project.src()
@@ -86,7 +87,7 @@ gulp.task('default', buildTask);
 
 gulp.task('clean', cleanTask);
 
-gulp.task('compile', gulp.series(cleanTask, internalCompileTask));
+gulp.task('compile', gulp.series(cleanTask, compileClientTask, compileServerTask));
 
 gulp.task('build', buildTask);
 

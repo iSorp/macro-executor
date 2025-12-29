@@ -22,6 +22,8 @@ const MAX_IF_DEPTH = 10;
 
 export class LintVisitor implements nodes.IVisitor {
 
+	private static readonly MAX_INCLUDE_DEPTH = 8;
+
 	static entries(macrofile: nodes.Node, document: TextDocument, fileProvider: MacroFileProvider, settings: LintConfiguration): nodes.IMarker[] {
 		const visitor = new LintVisitor(fileProvider, settings);
 		macrofile.acceptVisitor(visitor);
@@ -131,23 +133,45 @@ export class LintVisitor implements nodes.IVisitor {
 		}
 		else {
 			this.imports.push(uri.getText());
-			let declaration = this.fileProvider?.get(uri.getText());
-			
-			if (declaration) {
-				(<nodes.MacroFile>declaration?.macrofile).accept(candidate => {
-					let found = false;
-					if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
-						this.visitDefinition(candidate, false);
-						found = true;
-					}
-					return !found;
-				});
-			}
-			else {
+			const visited = new Set<string>();
+			const ok = this.collectIncludedDefinitions(uri.getText(), 0, visited);
+			if (!ok) {
 				this.addEntry(node, Rules.IncludeNotFound);
 			}
 		}
 		return false;
+	}
+
+	private collectIncludedDefinitions(path: string, depth: number, visitedUris: Set<string>): boolean {
+		if (depth > LintVisitor.MAX_INCLUDE_DEPTH) {
+			return true;
+		}
+		const declaration = this.fileProvider?.get(path);
+		if (!declaration) {
+			return false;
+		}
+		const uri = declaration.document.uri;
+		if (visitedUris.has(uri)) {
+			return true;
+		}
+		visitedUris.add(uri);
+
+		(<nodes.Node>declaration.macrofile).accept(candidate => {
+			if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
+				this.visitDefinition(candidate, false);
+				return false;
+			}
+			if (candidate.type === nodes.NodeType.Include) {
+				const includePathNode = candidate.getChild(0);
+				const includePath = includePathNode?.getText();
+				if (includePath && includePath.split('.').pop()?.toLocaleLowerCase() === 'def') {
+					this.collectIncludedDefinitions(includePath, depth + 1, visitedUris);
+				}
+				return false;
+			}
+			return true;
+		});
+		return true;
 	}
 
 	private visitGlobalScope(node: nodes.Node) : boolean {

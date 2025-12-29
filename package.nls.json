@@ -15,6 +15,7 @@
 	"macro.validate.enable.description": "Enables or disables the validation",
 	"macro.validate.workspace.description": "Enables or disables the workspace validation. Only applies when `#macro.validate.enable#` is set to `true`.",
 	"macro.validate.onBuild.description": "Enables or disables the workspace validation when building the project. Only applies when `#macro.validate.enable#` is set to `true`.",
+	"macro.fileEncoding.description": "Preferred encoding for macro files read from disk (e.g. cp950 for zh-tw).",
 	"macro.build.compiler.description": "Selection of the macro compiler",
 	"macro.build.controlType.description": "Selection of the control type",
 	"macro.build.compilerParams.description": "Additional compiler parameters: -NR, -L1, -L2, -L3, -PR",
