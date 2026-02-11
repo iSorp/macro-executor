@@ -235,9 +235,12 @@ export class LintVisitor implements nodes.IVisitor {
 	}
 	
 	private visitStatement(node: nodes.NcStatement): boolean {
-		for (const child of node.getChildren()) {
+		for (const [index, child] of node.getChildren().entries()) {
 			if (child.getNonSymbolText().toLocaleLowerCase() === 'g10') {
-				this.inDataInput = node;
+				const nextChild = node.getChild(index + 1);
+				if (nextChild?.getNonSymbolText() == 'L52') {
+					this.inDataInput = node;
+				}
 			}
 			else if (child.getNonSymbolText().toLocaleLowerCase() === 'g11') {
 				this.inDataInput = null;
