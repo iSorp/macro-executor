@@ -14,6 +14,7 @@
 @CONDITIONALS 3  /*
 @STATEMENTS   4  /*
 @ARRAY        5  /*
+@CNC_PARAMETER 6  /*
 @i 200  /*
 @k 200  /*
 @j 200  /*
@@ -119,3 +120,16 @@ O STATEMENTS
   #1 = [#_SYSVAR] 
  /*
 RETURN  /*
+
+
+O CNC_PARAMETER
+
+/* Closed by G11
+G10L52 
+N6202 R 00000100
+G11  
+
+/* Single line
+N10 G10 L2 P2 X1
+
+RETURN
