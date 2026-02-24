@@ -34,6 +34,7 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 * English `en`
 * Deutsch `de`
 * 中文 `zh-cn`
+* 中文 `zh-tw`
 
 ## Required file extensions
 * Macro files `.src`
@@ -250,6 +251,7 @@ This extension contributes the following settings:
 * `macro.validate.enable`: Enables or disables the validation
 * `macro.validate.workspace`: Enables or disables the workspace validation
 * `macro.validate.onBuild`: Enables or disables the workspace validation when building the project
+* `macro.fileEncoding`: Encoding used when reading macro files from disk (use `cp950` for zh-tw sources)
 
 Build settings:
 * `macro.build.compiler`: Selection of the macro compiler

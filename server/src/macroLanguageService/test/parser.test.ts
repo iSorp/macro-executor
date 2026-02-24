@@ -9,6 +9,8 @@ import { Parser } from '../parser/macroParser';
 import * as nodes from '../parser/macroNodes';
 import { TokenType } from '../parser/macroScanner';
 import { ParseError } from '../parser/macroErrors';
+import { TextDocument } from '../macroLanguageTypes';
+import { FileProviderMock, documents } from './fileProviderMock';
 
 export function assertNode(text: string, parser: Parser, f: (...args: any[]) => nodes.Node | null): nodes.Node {
 	let node = parser.internalParse(text, f)!;
@@ -57,6 +59,27 @@ suite('Parser', () => {
 		assertNode('$INCLUDE test/test.def', parser, parser._parseIncludes.bind(parser));
 		assertNode('$INCLUDE test\\test.def', parser, parser._parseIncludes.bind(parser));
 		assertError('$INCLUDE ', parser, parser._parseIncludes.bind(parser), ParseError.DefinitionExpected);
+	});
+
+	test('Nested includes resolve definitions', function () {
+		documents.clear();
+		documents.set('b.def', TextDocument.create('b.def', 'macro', 1, '@A 123\n'));
+		documents.set('a.def', TextDocument.create('a.def', 'macro', 1, '$INCLUDE b.def\n'));
+		documents.set('main.src', TextDocument.create('main.src', 'macro', 1, '$INCLUDE a.def\nO 100\n#1 = A\n'));
+
+		const fp = new FileProviderMock();
+		const parser = new Parser(fp);
+		const macrofile = parser.parseMacroFile(documents.get('main.src')!);
+
+		let hasExpandedNumeric = false;
+		(<nodes.Node>macrofile).accept(candidate => {
+			if (candidate.type === nodes.NodeType.Numeric && candidate.getNonSymbolText() === '123') {
+				hasExpandedNumeric = true;
+				return false;
+			}
+			return true;
+		});
+		assert.ok(hasExpandedNumeric, 'Expected nested include symbol A to expand to numeric 123');
 	});
 
 	test('Symbol definition', function () {

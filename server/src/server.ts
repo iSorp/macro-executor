@@ -53,6 +53,7 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const documentSettings: Map<string, Promise<TextDocumentSettings>> = new Map<string, Promise<TextDocumentSettings>>();
 const languageServices: Map<string, LanguageService> = new Map<string, LanguageService>();
+const fileProviders: Map<string, FileProvider> = new Map<string, FileProvider>();
 const defaultLanguageService = getMacroLanguageService(null);
 
 let hasConfigurationCapability: boolean = false;
@@ -139,13 +140,15 @@ connection.onInitialized(async () => {
 			
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			for (const added of _event.added) {
-				languageServices.set(added.uri, getMacroLanguageService({fileProvider: new FileProvider(added.uri, documents)}));
+				const fileProvider = getFileProvider(added.uri);
+				languageServices.set(added.uri, getMacroLanguageService({fileProvider}));
 				validateWorkspace(added.uri);
 			}
 			for (const removed of _event.removed) {
 				documentSettings.clear();
 				parsedDocuments.clear();
 				languageServices.delete(removed.uri);
+				fileProviders.delete(removed.uri);
 			}
 		});
 	}
@@ -154,10 +157,11 @@ connection.onInitialized(async () => {
 	if (workspaces && workspaces.length > 0) {
 		
 		workspaces.forEach(workspace => {
-			languageServices.set(workspace.uri, getMacroLanguageService({fileProvider: new FileProvider(workspace.uri, documents)}));
+			const fileProvider = getFileProvider(workspace.uri);
+			languageServices.set(workspace.uri, getMacroLanguageService({fileProvider}));
 		});
 		
-		await getSettings(workspaces[0].uri);
+		await Promise.all(workspaces.map(workspace => getSettings(workspace.uri)));
 		validate();
 	}
 });
@@ -216,6 +220,11 @@ connection.onDidChangeWatchedFiles(handler => {
 
 connection.onDidChangeConfiguration(params => {
 	documentSettings.clear();
+	connection.workspace.getWorkspaceFolders().then(workspaces => {
+		workspaces?.forEach(workspace => {
+			getSettings(workspace.uri);
+		});
+	});
 	for (const document of documents.all()) {
 		execute(document.uri, (service, repo, settings) => {
 			validateTextDocument(repo);
@@ -381,7 +390,7 @@ documents.onDidChangeContent(event => {
 		validateTextDocument(macroFile);
 
 		if (workspaceValidation && macroFile.type === MacroFileType.DEF) {
-			const fp = new FileProvider(settings.workspaceFolder.uri, documents);
+			const fp = getFileProvider(settings.workspaceFolder.uri, settings);
 			for (const element of fp.getAll()) {
 				if (element.type === MacroFileType.SRC) {					
 					if ((<MacroFileInclude>element.macrofile).getIncludes()?.some(a =>  fp.resolveReference(a) === event.document.uri)) {
@@ -427,6 +436,9 @@ function getSettings(uri: string): Promise<TextDocumentSettings> {
 	resultPromise = connection.workspace.getConfiguration({ scopeUri: uri, section: '' }).then(configuration => {
 		const settings: TextDocumentSettings = Object.assign({},configuration);
 		workspaceValidation = settings.validate.workspace;
+		if (settings.workspaceFolder?.uri) {
+			getFileProvider(settings.workspaceFolder.uri, settings);
+		}
 		return settings;
 	});
 	documentSettings.set(uri, resultPromise);
@@ -453,7 +465,7 @@ function validateWorkspace(uri:string, forceValidation: boolean = false) {
 		if (forceValidation) {
 			parsedDocuments.clear();
 		}
-		const fp = new FileProvider(uri, documents);
+		const fp = getFileProvider(uri);
 		for (const element of fp.getAll()){
 			validateTextDocument(element);
 		}
@@ -482,4 +494,16 @@ function computeLegend(): SemanticTokensLegend {
 	}
 
 	return { tokenTypes, tokenModifiers };
+}
+
+function getFileProvider(workspaceUri: string, settings?: TextDocumentSettings): FileProvider {
+	let fileProvider = fileProviders.get(workspaceUri);
+	if (!fileProvider) {
+		fileProvider = new FileProvider(workspaceUri, documents, connection);
+		fileProviders.set(workspaceUri, fileProvider);
+	}
+	if (settings?.fileEncoding !== undefined) {
+		fileProvider.setEncoding(settings.fileEncoding);
+	}
+	return fileProvider;
 }

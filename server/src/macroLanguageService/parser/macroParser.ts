@@ -38,6 +38,8 @@ export interface IParsedToken {
 
 export class Parser {
 
+	private static readonly MAX_INCLUDE_DEPTH = 8;
+
 	private prevProgToken?: IParsedToken;
 	private progToken: IParsedToken;
 	private progString: string = '';
@@ -425,20 +427,46 @@ export class Parser {
 	}
 
 	//#region handle definitions
-	private resolveIncludes(path:string) {
+	private resolveIncludes(path: string): void {
+		this.resolveIncludesInternal(path, 0, new Set<string>());
+	}
 
-		let definition = this.fileProvider?.get(path);
-		if (definition) {
-			this.includes.push(definition.document.uri);
-			(<nodes.MacroFile>definition?.macrofile).accept(candidate => {
-				let found = false;
-				if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
-					this._visitDefinitions(candidate);
-					found = true;
-				}
-				return !found;
-			});
+	private resolveIncludesInternal(path: string, depth: number, visitedUris: Set<string>): void {
+		if (depth > Parser.MAX_INCLUDE_DEPTH) {
+			return;
 		}
+
+		const definition = this.fileProvider?.get(path);
+		if (!definition) {
+			return;
+		}
+
+		const uri = definition.document.uri;
+		if (visitedUris.has(uri)) {
+			return;
+		}
+		visitedUris.add(uri);
+
+		if (!this.includes.includes(uri)) {
+			this.includes.push(uri);
+		}
+
+		(<nodes.Node>definition.macrofile).accept(candidate => {
+			if (candidate.type === nodes.NodeType.SymbolDef || candidate.type === nodes.NodeType.LabelDef) {
+				this._visitDefinitions(candidate);
+				return false;
+			}
+
+			if (candidate.type === nodes.NodeType.Include) {
+				const includePathNode = candidate.getChild(0);
+				const includePath = includePathNode?.getText();
+				if (includePath && includePath.split('.').pop()?.toLocaleLowerCase() === 'def') {
+					this.resolveIncludesInternal(includePath, depth + 1, visitedUris);
+				}
+				return false;
+			}
+			return true;
+		});
 	}
 
 	private _visitDefinitions(node: nodes.Node) : boolean{
@@ -507,10 +535,10 @@ export class Parser {
 		const node = this.createNode(nodes.NodeType.DefFile);
 		let hasMatch = false;
 		do {
-			do {
+				do {
 				hasMatch = false;
 
-				const child = this._parseControlCommands('$nolist', '$list') || this._parseSymbolDefinition() || this._parseLabelDefinition();
+					const child = this._parseControlCommands('$nolist', '$list') || this._parseIncludes(false) || this._parseSymbolDefinition() || this._parseLabelDefinition();
 				if (child) {
 
 					child.addChild(this._parseString() || this._parseComment());
@@ -626,7 +654,7 @@ export class Parser {
 	/**
 	 * Parse includes starting with $
 	 */
-	public _parseIncludes() : nodes.Include | null {
+	public _parseIncludes(resolve: boolean = true) : nodes.Include | null {
 
 		if (!this.peekKeyword('$include')) {
 			return null;
@@ -648,7 +676,7 @@ export class Parser {
 
 		node.addChild(this.finish(path));
 
-		if (this.textProvider) {
+		if (resolve && this.textProvider) {
 			const pathstr = this.textProvider(path.offset, path.length);
 			if (pathstr.split('.').pop()?.toLocaleLowerCase() === 'def') {
 				this.resolveIncludes(pathstr);

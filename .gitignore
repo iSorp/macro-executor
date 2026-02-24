@@ -3,3 +3,6 @@ node_modules
 .vscode-test
 
 !i18n/*/*/out/
+.vscode/virtualTab.json
+*.vsix
+.gitignore

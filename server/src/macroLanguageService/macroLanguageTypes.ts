@@ -41,6 +41,7 @@ export interface LanguageSettings {
 	lint?: LintSettings;
 	keywords?: CustomKeywords[];
 	callFunctions?: string[];
+	fileEncoding?: string;
 }
 export type LintSettings = { 
 	rules : {

@@ -1,3 +1,6 @@
+## 1.0.1  (December 25, 2025)
+- Bump extension version to 1.0.1
+
 ## 1.0.0  (October, 2024)
 - Definition file dependency validation
 - Validation command

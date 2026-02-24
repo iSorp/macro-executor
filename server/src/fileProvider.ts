@@ -6,6 +6,7 @@
 
 import * as path from 'path';
 import { readFileSync } from 'fs';
+import { TextDecoder } from 'util';
 import { 
 	MacroFileInfo, 
 	MacroFileProvider, 
@@ -29,9 +30,88 @@ import { URI, Utils } from 'vscode-uri';
 
 export const parsedDocuments: Map<string, MacroFileInfo> = new Map<string, MacroFileInfo>();
 
+type FileEncoding = 'auto' | 'utf8' | 'utf16le' | 'utf16be' | 'big5' | 'cp950';
+
+const utf8Decoder = new TextDecoder('utf-8');
+const utf8FatalDecoder = new TextDecoder('utf-8', { fatal: true });
+const utf16leDecoder = new TextDecoder('utf-16le');
+const utf16beDecoder = new TextDecoder('utf-16be');
+const big5Decoder = new TextDecoder('big5');
+
+function normalizeEncoding(value?: string): FileEncoding {
+	const encoding = (value || '').trim().toLowerCase();
+	switch (encoding) {
+		case 'auto':
+			return 'auto';
+		case 'utf8':
+		case 'utf-8':
+			return 'utf8';
+		case 'utf16le':
+		case 'utf-16le':
+			return 'utf16le';
+		case 'utf16be':
+		case 'utf-16be':
+			return 'utf16be';
+		case 'big5':
+		case 'big5-hkscs':
+			return 'big5';
+		case 'cp950':
+			return 'cp950';
+		default:
+			return 'utf8';
+	}
+}
+
+function decodeWithBom(buffer: Buffer): string | undefined {
+	if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+		return utf8Decoder.decode(buffer.subarray(3));
+	}
+	if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe) {
+		return utf16leDecoder.decode(buffer.subarray(2));
+	}
+	if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
+		return utf16beDecoder.decode(buffer.subarray(2));
+	}
+	return undefined;
+}
+
+function decodeBuffer(buffer: Buffer, encoding: FileEncoding): string {
+	const bomDecoded = decodeWithBom(buffer);
+	if (bomDecoded !== undefined) {
+		return bomDecoded;
+	}
+	switch (encoding) {
+		case 'utf16le':
+			return utf16leDecoder.decode(buffer);
+		case 'utf16be':
+			return utf16beDecoder.decode(buffer);
+		case 'big5':
+		case 'cp950':
+			// TextDecoder lacks cp950, so use Big5 decoding.
+			return big5Decoder.decode(buffer);
+		case 'auto':
+			try {
+				return utf8FatalDecoder.decode(buffer);
+			} catch {
+				return big5Decoder.decode(buffer);
+			}
+		case 'utf8':
+		default:
+			return utf8Decoder.decode(buffer);
+	}
+}
+
 export class FileProvider implements MacroFileProvider {
 
-	constructor(private workspaceFolder:string, private documents: TextDocuments<TextDocument>, private connection?:any) {}
+	private encoding: FileEncoding;
+
+	constructor(private workspaceFolder:string, private documents: TextDocuments<TextDocument>, private connection?:any, encoding?: string) {
+		this.encoding = normalizeEncoding(encoding);
+	}
+
+	public setEncoding(encoding?: string): void {
+		this.encoding = normalizeEncoding(encoding);
+	}
 
 	public get(file: string): MacroFileInfo | undefined {
 	
@@ -44,8 +124,8 @@ export class FileProvider implements MacroFileProvider {
 			}));
 			if (!doc) {		
 				try {
-					const file = readFileSync(URI.parse(uri).fsPath, 'utf-8');
-					const document = TextDocument.create(uri!, 'macro', 1, file.toString());
+					const file = readFileSync(URI.parse(uri).fsPath);
+					const document = TextDocument.create(uri!, 'macro', 1, decodeBuffer(file, this.encoding));
 					try {
 						const macrofile = new Parser(this).parseMacroFile(document);
 						doc = {

@@ -26,6 +26,7 @@ interface ConfigurationSettings {
 	keywords: Object[],
 	workspaceFolder?: lc.WorkspaceFolder | undefined;
 	callFunctions?: string[];
+	fileEncoding?: string;
 }
 
 interface CodeLensReferenceArgument { 
@@ -139,6 +140,7 @@ export function activate(context: vscode.ExtensionContext) {
 							validate: config.get('validate'),
 							keywords: config.get('keywords'),
 							callFunctions: config.get('callFunctions'),
+							fileEncoding: config.get('fileEncoding'),
 						};
 		
 						if (workspaceFolder !== undefined) {

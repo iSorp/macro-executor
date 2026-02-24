@@ -15,6 +15,7 @@
     "macro.validate.enable.description": "代码校验",
     "macro.validate.workspace.description": "检查项目文件夹仅在 `#macro.validate.enable#` 设为`真`时有效",
 	"macro.validate.onBuild.description": "在编译项目的时候启用或者禁用检查项目文件夹。仅在 `#macro.validate.enable#` 设为`真`时有效",
+	"macro.fileEncoding.description": "从磁盘读取宏文件时使用的编码（例如 zh-cn 使用 gb18030）。",
     "macro.build.compiler.description": "选择宏编译器",
     "macro.build.controlType.description": "选择NC系统类型",
 	"macro.build.compilerParams.description": "附加其他编译参数 -NR -L1 -L2 -L3 -PR",
