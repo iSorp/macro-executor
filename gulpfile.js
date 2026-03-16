@@ -2,11 +2,11 @@ const gulp = require('gulp');
 const ts = require('gulp-typescript');
 const typescript = require('typescript');
 const sourcemaps = require('gulp-sourcemaps');
-const del = require('del');
 const es = require('event-stream');
 const vsce = require('@vscode/vsce');
 const nls = require('vscode-nls-dev');
 const sourceMap = require('source-map');
+const { deleteAsync } = require('del');
 
 const clientProject = ts.createProject('./client/tsconfig.json', { typescript });
 const serverProject = ts.createProject('./server/tsconfig.json', { typescript });
@@ -26,7 +26,7 @@ sourceMap.SourceMapConsumer.initialize({
 });
 
 const cleanTask = function() {
-	return del(['client/out/**', 'server/out/**', 'package.nls.*.json', 'macro-executor*.vsix']);
+	return deleteAsync(['client/out/**', 'server/out/**', 'package.nls.*.json', 'macro-executor*.vsix']);
 };
 
 const internalCompileTask = function() {

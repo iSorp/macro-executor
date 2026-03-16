@@ -10,17 +10,17 @@
 		"url": "https://github.com/iSorp/macro-executor.git"
 	},
 	"engines": {
-		"vscode": "^1.92.0"
+		"vscode": "^1.110.0"
 	},
 	"dependencies": {
-		"rxjs": "^7.5.2",
 		"@grpc/grpc-js": "^1.14.3",
 		"@vscode/debugadapter": "^1.68.0",
+		"rxjs": "^7.8.2",
 		"vscode-languageclient": "7.0.0"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.92.0",
-		"@vscode/test-electron": "^2.4.1"
+		"@types/vscode": "^1.109.0",
+		"@vscode/test-electron": "^2.5.2",
 		"grpc-tools": "^1.13.1",
 		"ts-proto": "^2.11.4"
 	}
