@@ -4,8 +4,8 @@ import * as lc from 'vscode-languageclient/node';
 import * as ls from 'vscode-languageserver-protocol';
 
 import registerCommands from './common/commands';
-
 import CompositeDisposable from './common/compositeDisposable';
+import { activateMacroDebug } from './debugger/activateDebug';
 
 let client: lc.LanguageClient;
 let disposables = new CompositeDisposable();
@@ -162,6 +162,8 @@ export function activate(context: vscode.ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
+
+	activateMacroDebug(client, context);
 
 	disposables.add(registerCommands());
 	context.subscriptions.push(disposables);

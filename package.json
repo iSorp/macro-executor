@@ -615,6 +615,89 @@
 					]
 				}
 			}
+		],
+		"debuggers": [
+			{
+				"type": "macro",
+				"label": "Macro Executor Debugger",
+				"program": "./client/out/debugger/debugAdapter.js",
+				"runtime": "node",
+				"languages": [
+					"macro"
+				],
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"grpcServer"
+						],
+						"properties": {
+							"grpcServer": {
+								"type": "string",
+								"description": "Grpc server endpoint",
+								"default": "${command:AskForGrpcServer}"
+							},
+							"workspace": {
+								"type": "string",
+								"description": "Workspace"
+							},
+							"cncNodeId": {
+								"type": "number",
+								"description": "CNC node id"
+							},
+							"cncNodeIpAddress": {
+								"type": "string",
+								"description": "CNC ip address"
+							},
+							"cncPaths": {
+								"description": "Paths connect to",
+								"type": "array",
+								"items": {
+									"type": "number"
+								}
+							},
+							"pollingRate": {
+								"type": "number",
+								"description": "Focas polling rate"
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "macro",
+						"request": "launch",
+						"name": "Macro Debug: Launch",
+						"grpcServer": "${command:AskForGrpcServer}",
+						"cncNodeId": 1,
+						"cncPaths": [
+							1
+						],
+						"pollingRate": 50
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "Macro Debug: Launch",
+						"description": "A new configuration for 'debugging' a macro cnc",
+						"body": {
+							"type": "macro",
+							"request": "launch",
+							"name": "Macro Debug: Launch",
+							"grpcServer": "localhost:9000",
+							"workspace": "${workspaceFolder}",
+							"cncNodeId": 1,
+							"cncNodeIpAddress": "",
+							"cncPaths": [
+								1
+							],
+							"pollingRate": "50"
+						}
+					}
+				],
+				"variables": {
+					"AskForGrpcServer": "extension.macro.getGrpcServer"
+				}
+			}
 		]
 	},
 	"scripts": {

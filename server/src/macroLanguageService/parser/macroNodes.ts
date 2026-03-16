@@ -594,9 +594,41 @@ export class MacroFile extends Node implements MacroFileInclude {
 	}
 }
 
+export class LinkFile extends Node {
+
+	public pcodeNumber?: Node;
+	public files?: Node[]
+
+	constructor(offset: number, length: number) {
+		super(offset, length);
+	}
+
+	public get type(): NodeType {
+		return NodeType.LnkFile;
+	}
+
+	public getFiles() : string[] | null{
+		return this.getData(Data.Files);
+	}
+
+	public setFiles(files:string[]) {
+		return this.setData(Data.Files, files);
+	}
+
+	public getPcodeNumber() : string | null{
+		return this.getData(Data.PcodeNumber);
+	}
+
+	public setPcodeNumber(pcodeNumber:string) {
+		return this.setData(Data.PcodeNumber, pcodeNumber);
+	}
+}
+
 export enum Data {
 	Path 		= 'path',		// Path for include node
 	Includes 	= 'includes',	// Data contains an array of all included uris
+	Files		= 'files',
+	PcodeNumber	= 'pcodeNumber',
 }
 
 export class Include extends Node {

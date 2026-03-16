@@ -8,8 +8,9 @@ import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
 	Position, Range, SymbolInformation, SymbolKind, TextEdit,
 	MacroCodeLensCommand, TextDocument, MacroFileProvider, 
-	WorkspaceEdit, MacroCodeLensType, MacroFileInfo, 
-	SRC_FILES, ALL_FILES
+	WorkspaceEdit, MacroCodeLensType, MacroFileInfo, ProgramDebugInfo,
+	SRC_FILES, ALL_FILES,
+	VariableInfo
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';
 import { Symbols } from '../parser/macroSymbolScope';
@@ -116,6 +117,132 @@ export class MacroNavigation {
 				return [];
 		}
 		return this.findReferencesInternal(files, node, symbolContext, implType);   
+	}
+
+	// Finds all variables declared in a program or across the entire file
+	public findVariableInfos(programNumber: number | null, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined): VariableInfo[] | null {
+
+		let result:VariableInfo[] = null; 
+		let parent:nodes.Node = null;
+
+		// Search the program node containing the programNumber 
+		if (programNumber) {
+			let program:nodes.Program = null;
+			let found = false;
+			macroFile.accept(candidate => {
+				if (candidate.type === nodes.NodeType.Program) {
+					program = <nodes.Program>candidate;
+					if (program.getIdentifier().getNonSymbolText() == String(programNumber)) {
+						found = true;
+						parent = program;
+						return !found;
+					}
+				}
+				return !found;
+			});
+
+			if (!program) {
+				return result;
+			}
+		}
+		else {
+			parent = macroFile;
+		}
+
+		// Search all variables either of the program or the file
+		const variables = new Map<string, VariableInfo>();
+		parent.accept(candidate => {
+			const text = candidate.getText();
+			if (candidate.type === nodes.NodeType.Assignment) {
+				return true;
+			}
+
+			if (candidate.type === nodes.NodeType.Variable) {
+				const node = <nodes.Variable>candidate;
+
+				// Currently only numberic variable bodies are allowed. Expression can't be resolved.
+				if (node.body.type === nodes.NodeType.Numeric) {
+				
+						const symbol = node.getText();
+						const address = node.getNonSymbolText();
+
+						if (!symbol || address.length < 2) {
+							return true;
+						}
+
+						variables.set(symbol, {
+							id: symbol,
+							address: address
+						});
+					}
+
+					return true;
+			}
+			else if (candidate.type === nodes.NodeType.Address) {
+				const node = <nodes.Address>candidate;
+				
+				// Currently only numberic variable bodies are allowed. Expression can't be resolved.
+				if (node.getChild(0)?.type !== nodes.NodeType.BinaryExpression) {
+					const symbol = node.getText();
+					const address = node.getNonSymbolText();
+
+					if (!symbol || address.length < 2) {
+						return true;
+					}
+
+					const parts = address.split('.');
+					const bit = parts.length > 1 ? parseInt(parts[1]) : null;
+					variables.set(symbol, {
+						id: symbol,
+						address: address,
+						size: bit !== null ? 1 : 8,
+					});							
+			}
+
+				return true;
+			}
+
+			return true;
+		});
+
+		return Array.from(variables.values());
+	}
+
+	public findProgramSequenceInfo(document: TextDocument, programNumber: number, sequenceNumber: number, macroFile: nodes.MacroFile, implType:nodes.ReferenceType | undefined = undefined): ProgramDebugInfo {
+
+		let result:ProgramDebugInfo = null; 
+		let found = false;
+		macroFile.accept(candidate => {
+			if (candidate.type === nodes.NodeType.Program) {
+				const program = <nodes.Program>candidate;
+				if (program.getIdentifier().getNonSymbolText() == String(programNumber)) {
+					result = { 
+						program: String(programNumber),
+						sequence: sequenceNumber,
+						line: document.positionAt(program.offset).line,
+						uri: document.uri
+					}
+
+					result.program = program.getIdentifier().getText();
+					program.accept(child => {
+						if (child.type == nodes.NodeType.SequenceNumber){
+							const sequence = <nodes.SequenceNumber>child;
+							if (sequence.value == sequenceNumber) {
+								result.line = document.positionAt(sequence.offset).line;
+								result.sequence = sequenceNumber;
+								found = true;
+								return false;
+							}
+						}
+						return true;
+					});
+				}
+				return false;
+			}
+			return true;
+		});
+
+		return result;
 	}
 
 	public findImplementations(document: TextDocument, position: Position, macroFile: nodes.MacroFile): Location[] {

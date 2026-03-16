@@ -11,8 +11,7 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 
 
 ## News
-- Document formatting
-- Function call hierarchy for incoming and outgoing calls
+- The fanuc macro executor extension supports now cnc debugging. See [Debug Adapter](#Debug-adapter)
 
 ***
        
@@ -29,6 +28,7 @@ Visual Studio Code extension with support for the Fanuc Macro Executor programmi
 * Sequence number refactoring
 * Function call hierarchy
 * Formatting provider
+* Debug adapter
 
 ## Supported display languages
 * English `en`
@@ -369,6 +369,40 @@ Below an example [task](https://code.visualstudio.com/Docs/editor/tasks) definit
 }
 ```
 
+## Debug adapter
+The extension includes a CNC debug adapter. This adapter connects to a gRPC server, which provides access to the FOCAS interface. The server can run locally or on a remote system (e.g. the machine PC).
+
+The debug adapter requires a launch.json configuration. In the example below, the adapter establishes a gRPC connection to a server specified in the launch configuration. Once connected, the server communicates with controller node 1 at 192.168.1.1 and polls FOCAS data every 50 ms.
+
+```
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "macro",
+            "request": "launch",
+            "name": "Macro Debug: Launch",
+            "grpcServer": "${command:AskForGrpcServer}",
+            "cncNodeId": 1,
+            "cncNodeIpAddress": "192.168.1.1",
+            "cncPaths": [
+                1, 2
+            ],
+            pollingRate: 50
+        }
+    ]
+}
+```
+
+### Launch.json
+* `grpcServer` : The gRPC server endpoint
+* `cncNodeId` : Controller node ID (use 9 for CNC Guide)
+* `cncNodeIpAddress` : Controller IP address. If omitted, the server connects via HSSB
+* `cncPaths` : Array of paths that will be available for debugging
+* `pollingRate` : The polling rate used to query the server for FOCAS data.
+
+### Debug server
+Is available here: TBD
 
 -----------------------------------------------------------------------------------------------------------
 

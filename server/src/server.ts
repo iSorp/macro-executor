@@ -7,6 +7,8 @@
 import * as nls from 'vscode-nls';
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
+import * as path from 'path';
+
 import { 
 	FileProvider,
 	getParsedDocument,
@@ -28,7 +30,14 @@ import {
 	TokenModifiers,
 	SemanticTokensLegend,
 	MacroFileInclude,
-	MacroFileType
+	MacroFileType,
+	ProgramDebugInfo,
+	VariableInfo,
+	LinkedFileInfo,
+	LinkedFileInfoParams,
+	AllVariableInfoParams,
+	ProgramVariableInfoParams,
+	ProgramSequenceInfoParams,
 } from './macroLanguageService/macroLanguageTypes';
 
 import {
@@ -374,6 +383,94 @@ connection.languages.callHierarchy.onOutgoingCalls((params) => {
 	return [];
 });
 
+
+connection.onRequest("macro/linkedFileInfoRequest", async (params: LinkedFileInfoParams) => {
+	
+	const linkedFileMap = new Map<number, string[]>();
+	let service: LanguageService;
+	if (params.workspaceFolderUri) {
+		service = languageServices.get(params.workspaceFolderUri);
+	}
+	else {
+		service = defaultLanguageService;	
+	}
+
+	validateWorkspace(params.workspaceFolderUri, true);
+	
+	for (const [key, info] of parsedDocuments) {
+		if (info.type !== MacroFileType.LNK) {
+			continue;
+		}
+		const repo = getParsedDocument(documents, info.document.uri, service.parseMacroFile);
+		if (!repo) {
+			continue;
+		}
+
+		const linkedFiles = service.findLinkedFiles(repo.document, repo.macrofile);
+
+		// Path number needs to be zero indexed
+		const pCodeNumber = service.findPcodeNumber(repo.document, repo.macrofile) ?? 1;
+
+		linkedFileMap.set(pCodeNumber, linkedFiles.map(a => path.basename(a)));
+	}
+
+	const response: LinkedFileInfo[] = Array.from(linkedFileMap, ([path, files]) => ({ path, files }));
+	return response
+});
+
+connection.onRequest("macro/programSequenceInfoRequest", async (params:ProgramSequenceInfoParams) => {
+
+	const { linkedFiles, programNumber, sequenceNumber } = params;
+	let programSequenceInfo: ProgramDebugInfo = null;
+
+	for (const [key, value] of parsedDocuments.entries()) {
+		await execute(value.document.uri, (service, repo, settings) => {
+			const basename = path.posix.parse(value.document.uri).name;
+			if (linkedFiles.includes(basename)){
+				programSequenceInfo = service.findProgramSequenceInfo(repo.document, programNumber, sequenceNumber, repo.macrofile);
+			}
+		});
+
+		if (programSequenceInfo) {
+			return programSequenceInfo;
+		}
+	}
+
+	return null;
+});
+
+connection.onRequest("macro/programVariableInfoRequest", async (params:ProgramVariableInfoParams) => {
+
+	const { programNumber, documentUri } = params;
+	let variableInfos: VariableInfo[];
+	await execute(documentUri, (service, repo, settings) => {
+		variableInfos = service.findVariableInfos(programNumber, repo.macrofile);	
+	});
+
+	return variableInfos;
+});
+
+connection.onRequest("macro/allVariableInfoRequest", async (params:AllVariableInfoParams) => {
+
+	const variableInfos = new Set<VariableInfo[]>();
+	for (const [key, value] of parsedDocuments.entries()) {
+		await execute(value.document.uri, (service, repo, settings) => {
+			const basename = path.posix.parse(value.document.uri).name;
+			if (params.linkedFiles.includes(basename)){
+				variableInfos.add(service.findVariableInfos(null, repo.macrofile));	
+			}
+		});
+	}
+
+	const mergedMap = new Map<string, VariableInfo>();
+	for (const arr of variableInfos) {
+		for (const v of arr) {
+			mergedMap.set(v.id, v);
+		}
+	}
+
+	return Array.from(mergedMap.values());
+});
 
 documents.onDidChangeContent(event => {
 	return execute(event.document.uri, (service, repo, settings) => {
