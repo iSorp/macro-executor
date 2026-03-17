@@ -1488,8 +1488,11 @@ export class Parser {
 		const node = <nodes.Variable>this.create(nodes.Variable);
 		this.consumeToken();
 
-		if (this.peek(TokenType.BracketL)) {
+		if (this.accept(TokenType.BracketL)) {
 			node.setBody(this._parseBinaryExpr());
+			if (!this.accept(TokenType.BracketR)) {
+				return this.finish(node, ParseError.LeftSquareBracketExpected);
+			}
 			return this.finish(node);
 		}
 
