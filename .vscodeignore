@@ -1,3 +1,6 @@
+node_modules/**
+**/node_modules/**
+
 .vscode/**/*
 **/*.ts
 **/*.map
@@ -10,6 +13,11 @@
 .eslintrc.json
 .mocharc.json
 .travis.yml
+
+client/src/**
+server/src/**
+shared/src/**
+**/*.tsbuildinfo
 
 gulpfile.js
 contributing.md

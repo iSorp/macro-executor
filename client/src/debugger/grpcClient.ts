@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) 2020 Simon Waelti
+* Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+
 import * as grpc from "@grpc/grpc-js";
 import { ControlServiceClient } from "./debugService";
 

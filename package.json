@@ -31,6 +31,12 @@
 		"vscode": "^1.92.0"
 	},
 	"main": "./client/out/extension",
+	"private": true,
+	"workspaces": [
+		"server",
+		"client",
+		"shared"
+	],
 	"contributes": {
 		"languages": [
 			{
@@ -715,6 +721,14 @@
 			}
 		]
 	},
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@macro/shared/*": [
+				"shared/src/*"
+			]
+		}
+	},
 	"scripts": {
 		"compile": "tsc -b",
 		"compile:client": "tsc -b ./client/tsconfig.json",
@@ -723,14 +737,15 @@
 		"lint": "npm run lint:client && npm run lint:server",
 		"lint:client": "eslint --config ./client/.eslintrc.json ./client/src/*.ts",
 		"lint:server": "eslint --config ./server/.eslintrc.json ./server/src/*.ts",
-		"clean": "rimraf client/out && rimraf server/out",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"lint:shared": "eslint --config ./shared/.eslintrc.json ./shared/src/*.ts",
+		"clean": "rimraf client/out && rimraf server/out && rimraf shared/out",
 		"test": "sh ./scripts/e2e.sh",
 		"unit-test": "npm run compile && mocha",
 		"deploy": "vsce publish --yarn"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@macro/shared": "*",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^25.3.5",
 		"@typescript-eslint/eslint-plugin": "^8.56.1",

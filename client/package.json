@@ -13,6 +13,7 @@
 		"vscode": "^1.110.0"
 	},
 	"dependencies": {
+		"@macro/shared": "1.0.0",
 		"@grpc/grpc-js": "^1.14.3",
 		"@vscode/debugadapter": "^1.68.0",
 		"rxjs": "^7.8.2",

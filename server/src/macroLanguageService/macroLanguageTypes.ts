@@ -23,6 +23,16 @@ export {
 
 export * from 'vscode-languageserver-types';
 
+export { 
+    VariableInfo,
+    LinkedFileInfo,
+    LinkedFileInfoParams,
+    AllVariableInfoParams,
+    ProgramVariableInfoParams,
+    ProgramDebugInfo,
+    ProgramSequenceInfoParams
+} from "@macro/shared";
+
 export const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}';
 export const SRC_FILES:string = '/**/*.[sS][rR][cC]';
 
@@ -137,41 +147,4 @@ export type FunctionSignature = {
 	description?:string,
 	delimiter?:string, 
 	param:FunctionSignatureParam[]
-}
-
-export interface ProgramDebugInfo {
-    program: string,
-    sequence: number,
-    line: number,
-    uri: string
-}
-
-export interface VariableInfo {
-    id: string,
-    address: string,
-	size?: number,
-}
-
-export interface LinkedFileInfo {
-    path: number;
-    files: string[];
-};
-
-export interface AllVariableInfoParams {
-    linkedFiles: string[];
-}
-
-export interface LinkedFileInfoParams {
-    workspaceFolderUri: string;
-}
-
-export interface ProgramVariableInfoParams {
-    programNumber: number;
-    documentUri: string;
-}
-
-export interface ProgramSequenceInfoParams {
-    programNumber: number;
-    sequenceNumber: number;
-    linkedFiles: string[];
 }

@@ -10,8 +10,6 @@ import {
     TerminatedEvent,
     StoppedEvent,
     ContinuedEvent,
-    InvalidatedEvent,
-    OutputEvent,
     ThreadEvent,
     Thread,
     StackFrame,
@@ -29,51 +27,23 @@ import {
     InitRequest
 } from './debugService';
 
+import { 
+    VariableInfo,
+    LinkedFileInfo,
+    LinkedFileInfoParams,
+    AllVariableInfoParams,
+    ProgramVariableInfoParams,
+    ProgramDebugInfo,
+    ProgramSequenceInfoParams
+} from "@macro/shared";
+
 import { createClient } from './grpcClient';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { LanguageClient } from 'vscode-languageclient/node';
 import * as vscode from 'vscode';
-import { log } from 'console';
 import { ClientReadableStream, ServiceError, status } from '@grpc/grpc-js';
 
 const path = require('path'); // CommonJS-Import
-
-interface ProgramDebugInfo {
-    program: string,
-    sequence: number,
-    line: number,
-    uri: string
-}
-
-interface VariableInfo {
-    id: string,
-    address: string,
-	size?: number,
-}
-
-interface LinkedFileInfo {
-    path: number;
-    files: string[];
-};
-
-interface AllVariableInfoParams {
-    linkedFiles: string[];
-}
-
-interface LinkedFileInfoParams {
-    workspaceFolderUri: string;
-}
-
-interface ProgramVariableInfoParams {
-    programNumber: number;
-    documentUri: string;
-}
-
-interface ProgramSequenceInfoParams {
-    programNumber: number;
-    sequenceNumber: number;
-    linkedFiles: string[];
-}
 
 type PathState = {
     state?: StateType;

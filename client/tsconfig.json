@@ -1,13 +1,21 @@
 {
 	"compilerOptions": {
+		"strict": false,
+		"composite": true,
 		"module": "commonjs",
-		"target": "es2019",
-		"lib": ["ES2019"],
+		"target": "ES2024",
+		"lib": ["ES2024"],
 		"outDir": "out",
 		"rootDir": "src",
 		"sourceMap": true,
-		"allowArbitraryExtensions": true
+		"allowArbitraryExtensions": true,
+		"paths": {
+			"@macro/shared": ["../shared/src/index.ts"],
+		}
 	},
+	"references": [
+		{ "path": "../shared" }
+	],
 	"include": ["src", "src/test"],
 	"exclude": ["node_modules", ".vscode-test"]
 }
