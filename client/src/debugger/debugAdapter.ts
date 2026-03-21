@@ -43,6 +43,7 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import * as vscode from 'vscode';
 import { ClientReadableStream, ServiceError, status } from '@grpc/grpc-js';
 
+const semver = require('semver')
 const path = require('path'); // CommonJS-Import
 
 type PathState = {
@@ -77,6 +78,9 @@ enum ScopeMask {
 }
 
 export default class MacroDebugSession extends LoggingDebugSession {
+
+    private supportedMinServerVersion:string = "1.0.0";
+    private supportedMaxServerVersion:string = "1.0.0";
 
     private grpcClient: ControlServiceClient;
     private paths: Map<number, PathState> = new Map();
@@ -175,7 +179,13 @@ export default class MacroDebugSession extends LoggingDebugSession {
                 this.sendErrorResponse(response, ErrorCodes.ConnectionFailed, "Failed to connect to CNC");
                 return;
             }
-         
+
+            const range = `${this.supportedMinServerVersion} - ${this.supportedMaxServerVersion}`;
+            if (!semver.satisfies(res.version, range)) {
+                this.sendErrorResponse(response, ErrorCodes.InvalidGrpcServer, "Invalid server version");
+                return;
+            }
+
             this.eventStream = this.grpcClient.subscribeEvents({});
             this.eventStream.on("data", (event: MachineEvent) => {
                 this.handleMachineEvent(event);

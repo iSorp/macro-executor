@@ -17,6 +17,7 @@
 		"@grpc/grpc-js": "^1.14.3",
 		"@vscode/debugadapter": "^1.68.0",
 		"rxjs": "^7.8.2",
+		"semver": "^7.7.4",
 		"vscode-languageclient": "7.0.0"
 	},
 	"devDependencies": {
