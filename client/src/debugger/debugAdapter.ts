@@ -194,6 +194,9 @@ export default class MacroDebugSession extends LoggingDebugSession {
             "cncNodeIpAddress": args.cncNodeIpAddress,
             "cncPaths": args.cncPaths,
             "pollingRate": args.pollingRate,
+            "cycleStopCommandAddress": args.cycleStopCommandAddress,
+            "singleBlockCommandAddress": args.singleBlockCommandAddress,
+            "singleBlockStatusAddress": args.singleBlockStatusAddress,
             "variables": variableInfos
         }
 

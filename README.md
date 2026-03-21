@@ -400,6 +400,9 @@ The debug adapter requires a launch.json configuration. In the example below, th
 * `cncNodeIpAddress` : Controller IP address. If omitted, the server connects via HSSB
 * `cncPaths` : Array of paths that will be available for debugging
 * `pollingRate` : The polling rate used to query the server for FOCAS data.
+* `cycleStopCommandAddress` : PMC address used to activate the cycle stop.
+* `singleBlockCommandAddress` : PMC address used to activate the single block.
+* `singleBlockStatusAddress` : Indicates whether the single block is active (true) or not (false).
 
 ### Debug server
 Is available here: TBD

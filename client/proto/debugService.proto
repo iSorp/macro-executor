@@ -42,7 +42,10 @@ message InitRequest {
   optional string cncNodeIpAddress = 2;
   repeated uint32 cncPaths = 3;
   optional uint32 pollingRate = 4;
-  repeated VariableDefinition variables = 5;;
+  optional string cycleStopCommandAddress = 5;
+  optional string singleBlockCommandAddress  = 6;
+  optional string singleBlockStatusAddress  = 7;
+  repeated VariableDefinition variables = 8;
 }
 
 message StateRequest {

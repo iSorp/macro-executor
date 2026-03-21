@@ -658,6 +658,18 @@
 							"pollingRate": {
 								"type": "number",
 								"description": "Focas polling rate"
+							},
+							"cycleStopCommandAddress": {
+								"type": "string",
+								"description": "PMC address used to activate the cycle stop."
+							},
+							"singleBlockCommandAddress": {
+								"type": "string",
+								"description": "PMC address used to activate the single block."
+							},
+							"singleBlockStatusAddress": {
+								"type": "string",
+								"description": "Indicates whether the single block is active (true) or not (false)."
 							}
 						}
 					}
@@ -672,7 +684,10 @@
 						"cncPaths": [
 							1
 						],
-						"pollingRate": 50
+						"pollingRate": 50,
+						"cycleStopCommandAddress": "R0.0",
+						"singleBlockCommandAddress": "R0.0", 
+						"singleBlockStatusAddress": "R0.0"
 					}
 				],
 				"configurationSnippets": [

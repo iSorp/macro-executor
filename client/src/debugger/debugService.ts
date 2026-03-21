@@ -88,6 +88,9 @@ export interface InitRequest {
   cncNodeIpAddress?: string | undefined;
   cncPaths: number[];
   pollingRate?: number | undefined;
+  cycleStopCommandAddress?: string | undefined;
+  singleBlockCommandAddress?: string | undefined;
+  singleBlockStatusAddress?: string | undefined;
   variables: VariableDefinition[];
 }
 
@@ -186,7 +189,16 @@ export const Empty: MessageFns<Empty> = {
 };
 
 function createBaseInitRequest(): InitRequest {
-  return { cncNodeId: undefined, cncNodeIpAddress: undefined, cncPaths: [], pollingRate: undefined, variables: [] };
+  return {
+    cncNodeId: undefined,
+    cncNodeIpAddress: undefined,
+    cncPaths: [],
+    pollingRate: undefined,
+    cycleStopCommandAddress: undefined,
+    singleBlockCommandAddress: undefined,
+    singleBlockStatusAddress: undefined,
+    variables: [],
+  };
 }
 
 export const InitRequest: MessageFns<InitRequest> = {
@@ -205,8 +217,17 @@ export const InitRequest: MessageFns<InitRequest> = {
     if (message.pollingRate !== undefined) {
       writer.uint32(32).uint32(message.pollingRate);
     }
+    if (message.cycleStopCommandAddress !== undefined) {
+      writer.uint32(42).string(message.cycleStopCommandAddress);
+    }
+    if (message.singleBlockCommandAddress !== undefined) {
+      writer.uint32(50).string(message.singleBlockCommandAddress);
+    }
+    if (message.singleBlockStatusAddress !== undefined) {
+      writer.uint32(58).string(message.singleBlockStatusAddress);
+    }
     for (const v of message.variables) {
-      VariableDefinition.encode(v!, writer.uint32(42).fork()).join();
+      VariableDefinition.encode(v!, writer.uint32(66).fork()).join();
     }
     return writer;
   },
@@ -265,6 +286,30 @@ export const InitRequest: MessageFns<InitRequest> = {
             break;
           }
 
+          message.cycleStopCommandAddress = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.singleBlockCommandAddress = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.singleBlockStatusAddress = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
           message.variables.push(VariableDefinition.decode(reader, reader.uint32()));
           continue;
         }
@@ -283,6 +328,15 @@ export const InitRequest: MessageFns<InitRequest> = {
       cncNodeIpAddress: isSet(object.cncNodeIpAddress) ? globalThis.String(object.cncNodeIpAddress) : undefined,
       cncPaths: globalThis.Array.isArray(object?.cncPaths) ? object.cncPaths.map((e: any) => globalThis.Number(e)) : [],
       pollingRate: isSet(object.pollingRate) ? globalThis.Number(object.pollingRate) : undefined,
+      cycleStopCommandAddress: isSet(object.cycleStopCommandAddress)
+        ? globalThis.String(object.cycleStopCommandAddress)
+        : undefined,
+      singleBlockCommandAddress: isSet(object.singleBlockCommandAddress)
+        ? globalThis.String(object.singleBlockCommandAddress)
+        : undefined,
+      singleBlockStatusAddress: isSet(object.singleBlockStatusAddress)
+        ? globalThis.String(object.singleBlockStatusAddress)
+        : undefined,
       variables: globalThis.Array.isArray(object?.variables)
         ? object.variables.map((e: any) => VariableDefinition.fromJSON(e))
         : [],
@@ -303,6 +357,15 @@ export const InitRequest: MessageFns<InitRequest> = {
     if (message.pollingRate !== undefined) {
       obj.pollingRate = Math.round(message.pollingRate);
     }
+    if (message.cycleStopCommandAddress !== undefined) {
+      obj.cycleStopCommandAddress = message.cycleStopCommandAddress;
+    }
+    if (message.singleBlockCommandAddress !== undefined) {
+      obj.singleBlockCommandAddress = message.singleBlockCommandAddress;
+    }
+    if (message.singleBlockStatusAddress !== undefined) {
+      obj.singleBlockStatusAddress = message.singleBlockStatusAddress;
+    }
     if (message.variables?.length) {
       obj.variables = message.variables.map((e) => VariableDefinition.toJSON(e));
     }
@@ -318,6 +381,9 @@ export const InitRequest: MessageFns<InitRequest> = {
     message.cncNodeIpAddress = object.cncNodeIpAddress ?? undefined;
     message.cncPaths = object.cncPaths?.map((e) => e) || [];
     message.pollingRate = object.pollingRate ?? undefined;
+    message.cycleStopCommandAddress = object.cycleStopCommandAddress ?? undefined;
+    message.singleBlockCommandAddress = object.singleBlockCommandAddress ?? undefined;
+    message.singleBlockStatusAddress = object.singleBlockStatusAddress ?? undefined;
     message.variables = object.variables?.map((e) => VariableDefinition.fromPartial(e)) || [];
     return message;
   },
