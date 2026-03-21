@@ -1,3 +1,6 @@
+## 1.1.0  (, 2026)
+- Debug adapter, Closes [#57](https://github.com/iSorp/macro-executor/issues/57) 
+
 ## 1.0.0  (October, 2024)
 - Definition file dependency validation
 - Validation command
