@@ -730,18 +730,18 @@
 		}
 	},
 	"scripts": {
-		"compile": "tsc -b",
-		"compile:client": "tsc -b ./client/tsconfig.json",
-		"compile:server": "tsc -b ./server/tsconfig.json",
-		"watch": "tsc -b -w",
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b && node ./esbuild.js",
+    	"watch": "tsc -b -w & node ./esbuild.js --watch",
+		"package": "vsce package",
+		"deploy": "vsce publish --yarn",
 		"lint": "npm run lint:client && npm run lint:server",
 		"lint:client": "eslint --config ./client/.eslintrc.json ./client/src/*.ts",
 		"lint:server": "eslint --config ./server/.eslintrc.json ./server/src/*.ts",
 		"lint:shared": "eslint --config ./shared/.eslintrc.json ./shared/src/*.ts",
 		"clean": "rimraf client/out && rimraf server/out && rimraf shared/out",
 		"test": "sh ./scripts/e2e.sh",
-		"unit-test": "npm run compile && mocha",
-		"deploy": "vsce publish --yarn"
+		"unit-test": "npm run compile && mocha"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -752,6 +752,7 @@
 		"@typescript-eslint/parser": "^8.56.1",
 		"@vscode/vsce": "^3.7.1",
 		"del": "^8.0.1",
+		"esbuild": "^0.28.0",
 		"eslint": "^10.0.3",
 		"event-stream": "^4.0.1",
 		"globals": "^17.4.0",

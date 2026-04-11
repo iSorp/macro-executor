@@ -396,6 +396,7 @@ The debug adapter requires a launch.json configuration. In the example below, th
 
 ### Launch.json
 * `grpcServer` : The gRPC server endpoint
+* `workspace`: Used for multi-root workspace projects. Set it to `${workspaceFolder}` to use the workspace associated with the current `launch.json`.
 * `cncNodeId` : Controller node ID (use 9 for CNC Guide)
 * `cncNodeIpAddress` : Controller IP address. If omitted, the server connects via HSSB
 * `cncPaths` : Array of paths that will be available for debugging
@@ -405,7 +406,7 @@ The debug adapter requires a launch.json configuration. In the example below, th
 * `singleBlockStatusAddress` : Indicates whether the single block is active (true) or not (false).
 
 ### Debug server
-Is available here: TBD
+[macro-executor-server](https://github.com/iSorp/macro-executor-server/releases)
 
 -----------------------------------------------------------------------------------------------------------
 
