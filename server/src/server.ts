@@ -15,7 +15,6 @@ import {
 	parsedDocuments
 } from './fileProvider';
 
-
 import { 
 	getMacroLanguageService, 
 	LanguageService, 
@@ -35,9 +34,11 @@ import {
 	VariableInfo,
 	LinkedFileInfo,
 	LinkedFileInfoParams,
+	VariableInfoParams,
 	AllVariableInfoParams,
 	ProgramVariableInfoParams,
 	ProgramSequenceInfoParams,
+	Position,
 } from './macroLanguageService/macroLanguageTypes';
 
 import {
@@ -395,6 +396,10 @@ connection.onRequest("macro/linkedFileInfoRequest", async (params: LinkedFileInf
 		service = defaultLanguageService;	
 	}
 
+	if (!service) {
+		return;
+	}
+
 	validateWorkspace(params.workspaceFolderUri, true);
 	
 	for (const [key, info] of parsedDocuments) {
@@ -439,12 +444,22 @@ connection.onRequest("macro/programSequenceInfoRequest", async (params:ProgramSe
 	return null;
 });
 
+connection.onRequest("macro/variableInfoRequest", async (params:VariableInfoParams) => {
+
+	let variableInfos: VariableInfo;
+	await execute(params.documentUri, (service, repo, settings) => {
+		variableInfos = service.findVariableInfos(repo.document, Position.create(params.position.line, params.position.character+1), repo.macrofile);	
+	});
+
+	return variableInfos;
+});
+
 connection.onRequest("macro/programVariableInfoRequest", async (params:ProgramVariableInfoParams) => {
 
 	const { programNumber, documentUri } = params;
 	let variableInfos: VariableInfo[];
 	await execute(documentUri, (service, repo, settings) => {
-		variableInfos = service.findVariableInfos(programNumber, repo.macrofile);	
+		variableInfos = service.findProgramVariableInfos(programNumber, repo.macrofile);	
 	});
 
 	return variableInfos;
@@ -456,8 +471,8 @@ connection.onRequest("macro/allVariableInfoRequest", async (params:AllVariableIn
 	for (const [key, value] of parsedDocuments.entries()) {
 		await execute(value.document.uri, (service, repo, settings) => {
 			const basename = path.posix.parse(value.document.uri).name;
-			if (params.linkedFiles.includes(basename)){
-				variableInfos.add(service.findVariableInfos(null, repo.macrofile));	
+			if (params.linkedFiles.includes(basename)) {
+				variableInfos.add(service.findAllVariableInfos(repo.macrofile));	
 			}
 		});
 	}

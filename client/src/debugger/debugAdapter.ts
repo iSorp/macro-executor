@@ -24,7 +24,9 @@ import {
     MachineState,
     StatusReply,
     StateType,
-    InitRequest
+    InitRequest,
+    VariablesReply,
+    VariableDefinition
 } from './debugService';
 
 import { 
@@ -32,6 +34,7 @@ import {
     LinkedFileInfo,
     LinkedFileInfoParams,
     AllVariableInfoParams,
+    VariableInfoParams,
     ProgramVariableInfoParams,
     ProgramDebugInfo,
     ProgramSequenceInfoParams
@@ -44,7 +47,7 @@ import * as vscode from 'vscode';
 import { ClientReadableStream, ServiceError, status } from '@grpc/grpc-js';
 
 const semver = require('semver')
-const path = require('path'); // CommonJS-Import
+const path = require('path');
 
 type PathState = {
     state?: StateType;
@@ -64,7 +67,8 @@ enum ErrorCodes {
     CycleStartFailed = 1004,
     CycleStopFailed = 1005,
     SingleBlockFailed = 1006,
-    VariablesFailed = 1007
+    VariablesFailed = 1007,
+    LanguageServerError = 1008
 }
 
 enum VariableType {
@@ -82,12 +86,12 @@ export default class MacroDebugSession extends LoggingDebugSession {
     private supportedMinServerVersion:string = "1.0.0";
     private supportedMaxServerVersion:string = "1.0.0";
 
-    private grpcClient: ControlServiceClient;
+    private grpcClient?: ControlServiceClient;
     private paths: Map<number, PathState> = new Map();
     private linkedFiles: Map<number, string[]> = new Map();
     private cncEventQueue: MachineEvent[] = [];
     private processingQueue = false;
-    private eventStream: ClientReadableStream<MachineEvent>;
+    private eventStream?: ClientReadableStream<MachineEvent>;
 
     constructor(private languageClient:LanguageClient) {
         const logFile = path.resolve(__dirname, 'dap.log'); 
@@ -119,6 +123,14 @@ export default class MacroDebugSession extends LoggingDebugSession {
         );
     }
 
+    private async sendVariableInfoRequest(params: VariableInfoParams) : Promise<VariableInfo> {
+
+        return await this.languageClient.sendRequest<VariableInfo>(
+            "macro/variableInfoRequest",
+            params
+        );
+    }
+
     private async sendAllVariableInfoRequest(params: AllVariableInfoParams) : Promise<VariableInfo[]> {
 
         return await this.languageClient.sendRequest<VariableInfo[]>(
@@ -146,7 +158,11 @@ export default class MacroDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: any) {
         console.log("Connecting to CNC at:", args.grpcServer);
 
-       let workspaceFolderUri = args.workspace;
+        let workspaceFolderUri;
+        if (args.workspace) {
+            workspaceFolderUri = vscode.Uri.file(args.workspace).toString();
+        }
+
         if (!workspaceFolderUri) {
             const folders = vscode.workspace.workspaceFolders;
             if (!folders || folders.length === 0) {
@@ -157,6 +173,11 @@ export default class MacroDebugSession extends LoggingDebugSession {
         }
 
         const fileInfo = await this.sendLinkedFileInfoRequest({ workspaceFolderUri: workspaceFolderUri });
+        if (!fileInfo) {
+            console.log("no linker files found");
+            this.sendErrorResponse(response, ErrorCodes.LanguageServerError, "No linker files found");
+        }
+
         const variableInfos = await this.sendAllVariableInfoRequest({linkedFiles: fileInfo.flatMap(a => a.files)});
         
         this.linkedFiles = new Map(fileInfo.map(item => [item.path, item.files]));
@@ -174,7 +195,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
             "variables": variableInfos
         }
 
-        this.grpcClient.connect(initRequest, (err: ServiceError, res: ConnectReply) => {
+        this.grpcClient.connect(initRequest, (err: ServiceError | null, res: ConnectReply) => {
             if (err) {
                 this.sendErrorResponse(response, ErrorCodes.ConnectionFailed, "Failed to connect to CNC");
                 return;
@@ -186,12 +207,12 @@ export default class MacroDebugSession extends LoggingDebugSession {
                 return;
             }
 
-            this.eventStream = this.grpcClient.subscribeEvents({});
-            this.eventStream.on("data", (event: MachineEvent) => {
+            this.eventStream = this.grpcClient?.subscribeEvents({});
+            this.eventStream?.on("data", (event: MachineEvent) => {
                 this.handleMachineEvent(event);
             });
 
-            this.eventStream.on("error", (err: any) => {
+            this.eventStream?.on("error", (err: any) => {
                 if (err.code === status.CANCELLED) {
                     return;
                 }
@@ -200,7 +221,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
                 this.sendEvent(new TerminatedEvent());
             });
 
-            this.eventStream.on("end", () => {
+            this.eventStream?.on("end", () => {
                 console.log("gRPC stream closed");
             });
 
@@ -210,13 +231,13 @@ export default class MacroDebugSession extends LoggingDebugSession {
     }
 
     protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments, request?: DebugProtocol.Request) {
-        this.grpcClient.connectControl({}, (err: ServiceError, res: ConnectReply) => {
-            if (res.state.success === true) {
+        this.grpcClient?.connectControl({}, (err: ServiceError | null, res: ConnectReply) => {
+            if (res.state?.success === true) {
                 console.log("Connected to CNC:", res);
                 this.sendResponse(response);
             }
             else {
-                this.sendErrorResponse(response, ErrorCodes.ConnectionFailed, res.state.message);
+                this.sendErrorResponse(response, ErrorCodes.ConnectionFailed, res.state?.message);
             }
         });
     }
@@ -224,11 +245,10 @@ export default class MacroDebugSession extends LoggingDebugSession {
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
         console.log("Disconnecting");
 
-        this.grpcClient?.disconnect({}, (err: ServiceError, res: StatusReply) => {
+        this.grpcClient?.disconnect({}, (err: ServiceError | null, res: StatusReply) => {
 
             if (this.eventStream) {
                 this.eventStream.cancel();
-                this.eventStream = null;
             }
 
             this.paths.clear();
@@ -246,7 +266,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
     }
 
     protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) {
-        this.grpcClient.cycleStart({}, (err: ServiceError, res: StatusReply) => {
+        this.grpcClient?.cycleStart({}, (err: ServiceError | null, res: StatusReply) => {
             if (err || !res.success) {
                 this.sendErrorResponse(response, ErrorCodes.CycleStartFailed, "CycleStart failed");
                 return;
@@ -257,7 +277,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
     }
 
     protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.Request) {
-        this.grpcClient.cycleStop({}, (err: ServiceError, res: StatusReply) => {
+        this.grpcClient?.cycleStop({}, (err: ServiceError | null, res: StatusReply) => {
             if (err || !res.success) {
                 this.sendErrorResponse(response, ErrorCodes.CycleStopFailed, "SingleBlock failed");
                 return;
@@ -268,7 +288,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
     }
 
     protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
-        this.grpcClient.singleBlock({}, (err: ServiceError, res: StatusReply) => {
+        this.grpcClient?.singleBlock({}, (err: ServiceError | null, res: StatusReply) => {
             if (err || !res.success) {
                 this.sendErrorResponse(response, ErrorCodes.SingleBlockFailed, "SingleBlock failed");
                 return;
@@ -290,22 +310,39 @@ export default class MacroDebugSession extends LoggingDebugSession {
         this.sendErrorResponse(response, ErrorCodes.NotImplemented, "Not implemented");
     }
 
+    protected exceptionInfoRequest(response: DebugProtocol.ExceptionInfoResponse, args: DebugProtocol.ExceptionInfoArguments) {
+        this.grpcClient?.getState({ pathNumber: args.threadId }, (err: ServiceError | null, res: MachineState) => {
+  
+            response.body = {
+                exceptionId: res.messageType ?? "0",
+                description: res.message,
+                breakMode: 'always',
+            };
+
+            this.sendResponse(response);
+        });
+	}
+
     protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments) {
 
         const pathState = this.paths.get(args.threadId)
+        if (!pathState) {
+            return;
+        }
+
         const files = this.linkedFiles.get(args.threadId);
         const result = await this.sendProgramSequenceInfoRequest({
-            programNumber: pathState.programNumber,
-            sequenceNumber: pathState.sequenceNumber,
-            linkedFiles: files
+            programNumber: pathState.programNumber ?? 0,
+            sequenceNumber: pathState.sequenceNumber ?? 0,
+            linkedFiles: files ?? []
         })
 
-        let frame: StackFrame = null;
+        let frame: StackFrame;
 
         if (result) {
             pathState.uri = result.uri;
             frame = new StackFrame(
-                1,
+                args.threadId,
                 `${result.program}  (N${result.sequence})`,
                 new Source(result.program, result.uri),
                 result.line + 1,
@@ -320,19 +357,6 @@ export default class MacroDebugSession extends LoggingDebugSession {
         this.sendResponse(response);
     }
 
-    protected exceptionInfoRequest(response: DebugProtocol.ExceptionInfoResponse, args: DebugProtocol.ExceptionInfoArguments) {
-        this.grpcClient.getState({ pathNumber: args.threadId }, (err: ServiceError, res: MachineState) => {
-  
-            response.body = {
-                exceptionId: res.messageType,
-                description: res.message,
-                breakMode: 'always',
-            };
-
-            this.sendResponse(response);
-        });
-	}
-
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments) {
 
         const scopes:Scope[] = [];
@@ -340,7 +364,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
         for (const [key, value] of states) {
             scopes.push({
                     name: `Path ${key}`,
-                    variablesReference: key,
+                    variablesReference: args.frameId,
                     expensive: false
                 });
         }
@@ -355,6 +379,12 @@ export default class MacroDebugSession extends LoggingDebugSession {
         const kind = ref & ScopeMask.Kind;
         const path = ref & ScopeMask.Path;
         const pathState = this.paths.get(path);
+
+        if (!pathState || !pathState.programNumber || !pathState.uri) {
+             console.log("Invalid arguments");
+            this.sendResponse(response);
+            return;
+        }
 
         if (kind === 0) {
 
@@ -371,18 +401,24 @@ export default class MacroDebugSession extends LoggingDebugSession {
         }
     
         if (pathState.variableDefs === null) {
-                return this.sendResponse(response);
+            return this.sendResponse(response);
         }
 
         const requestedVar = pathState.variableDefs
-            .filter(v => v.address.startsWith('#') === (kind === VariableType.Cnc))
+            ?.filter(v => v.address.startsWith('#') === (kind === VariableType.Cnc))
             .map(v => ({
                 id: v.id,
                 address: v.address,
                 size: v.size,
             }));
 
-        this.grpcClient.getVariables({path: path, variables: requestedVar}, (err: any, res: any) => {
+        if (!requestedVar) {
+            console.log("requestedVar not found");
+            this.sendResponse(response);
+            return
+        }
+
+        this.grpcClient?.getVariables({path: path, variables: requestedVar}, (err: any, res: VariablesReply) => {
             if (err) {
                 this.sendErrorResponse(response, ErrorCodes.VariablesFailed, "Variable request failed");
                 return;
@@ -393,7 +429,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
             if (res) {
                 const resArray = Array.isArray(res.variables) ? res.variables : [];
                 response.body = {
-                    variables: resArray.map((v, i) => ({
+                    variables: resArray.map(v => ({
                         name: v.id,
                         value: v.value,
                         variablesReference: 0
@@ -415,6 +451,50 @@ export default class MacroDebugSession extends LoggingDebugSession {
         this.sendResponse(response);
     }
 
+    protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
+
+        if (!args.source?.path || !args.line || !args.column || !args.frameId) {
+            console.log("Invalid arguments");
+            this.sendResponse(response);
+            return;
+        }
+
+        const uri = vscode.Uri.file(args.source.path).toString();
+        const variableDef = await this.sendVariableInfoRequest({ position: {line: args.line-1, character: args.column+1}, documentUri: uri});
+        if (!variableDef || variableDef.program != args.source.name) {
+            this.sendResponse(response);
+            return;
+        }
+
+        const variable:VariableDefinition[] = [{
+            id: variableDef.id,
+            address: variableDef.address
+        }]
+
+        this.grpcClient?.getVariables({path: args.frameId, variables: variable}, (err: any, res: VariablesReply) => {
+            if (err) {
+                this.sendErrorResponse(response, ErrorCodes.VariablesFailed, "Variable request failed");
+                return;
+            }
+            
+            console.log(res);
+            
+            const value = res.variables[0];
+            if (value) {
+                response.body = {
+                    result: `Value: ${res.variables[0].value}\nAddress: ${variableDef.address}\n(Hold Alt to switch to editor language hover)`,
+                    variablesReference: 0
+                };
+            } else {
+                response.body = {
+                    result: "<not found>\n(Hold Alt to switch to editor language hover)",
+                    variablesReference: 0
+                };
+            }
+
+            this.sendResponse(response);
+        });
+    }
 
     // Grpc server events
     private handleMachineEvent(event: MachineEvent) {

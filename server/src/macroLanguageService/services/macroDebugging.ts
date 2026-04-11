@@ -15,11 +15,13 @@ export class MacroDebugging {
 	public findProgramSequenceInfo(document: TextDocument, programNumber: number, sequenceNumber: number, macroFile: nodes.MacroFile): ProgramDebugInfo {
 
 		let result:ProgramDebugInfo = null; 
-		let found = false;
+		let seqFound = false;
+		let progFound = false;
 		macroFile.accept(candidate => {
 			if (candidate.type === nodes.NodeType.Program) {
 				const program = <nodes.Program>candidate;
 				if (program.getIdentifier().getNonSymbolText() == String(programNumber)) {
+					progFound = true;
 					result = { 
 						program: String(programNumber),
 						sequence: sequenceNumber,
@@ -34,16 +36,14 @@ export class MacroDebugging {
 							if (sequence.value == sequenceNumber) {
 								result.line = document.positionAt(sequence.offset).line;
 								result.sequence = sequenceNumber;
-								found = true;
-								return false;
+								seqFound = true;
 							}
 						}
-						return true;
+						return !seqFound;
 					});
 				}
-				return false;
 			}
-			return true;
+			return !progFound;
 		});
 
 		return result;
@@ -90,18 +90,18 @@ export class MacroDebugging {
 
 		let result:VariableInfo[] = null; 
 		let parent:nodes.Node = null;
-
+		let found = false;
+		
 		// Search the program node containing the programNumber 
 		if (programNumber) {
 			let program:nodes.Program = null;
-			let found = false;
+			
 			macroFile.accept(candidate => {
 				if (candidate.type === nodes.NodeType.Program) {
 					program = <nodes.Program>candidate;
 					if (program.getIdentifier().getNonSymbolText() == String(programNumber)) {
 						found = true;
 						parent = program;
-						return !found;
 					}
 				}
 				return !found;
@@ -117,6 +117,7 @@ export class MacroDebugging {
 
 		// Search all variables either of the program or the file
 		const variables = new Map<string, VariableInfo>();
+
 		parent.accept(candidate => {
 			if (candidate.type === nodes.NodeType.Assignment) {
 				return true;
@@ -124,24 +125,29 @@ export class MacroDebugging {
 
 			if (candidate.type === nodes.NodeType.Variable) {
 				const node = <nodes.Variable>candidate;
-
+				const symbol = node.getText();
+				let address:string = undefined;
+	
 				// Currently only numberic variable bodies are allowed. Expression can't be resolved.
 				if (node.body.type === nodes.NodeType.Numeric) {
-				
-						const symbol = node.getText();
-						const address = node.getNonSymbolText();
+					address = node.getNonSymbolText();
+				}
+				else if (node.body.type === nodes.NodeType.BinaryExpression && node.body.getChildren().length === 1) {
+					// Allow #[1000] #[var]
 
-						if (!symbol || address.length < 2) {
-							return true;
-						}
-
-						variables.set(symbol, {
-							id: symbol,
-							address: address
-						});
+					if (node.body.getChild(0).getChild(0).type === nodes.NodeType.Numeric) {
+						address = '#' + node.body.getChild(0).getChild(0).getNonSymbolText();
 					}
+				}
 
-					return true;
+				if (address?.length >= 2) {
+					variables.set(symbol, {
+						id: symbol,
+						address: address
+					});	
+
+					return false;			
+				}
 			}
 			else if (candidate.type === nodes.NodeType.Address) {
 				const node = <nodes.Address>candidate;
@@ -151,20 +157,18 @@ export class MacroDebugging {
 					const symbol = node.getText();
 					const address = node.getNonSymbolText();
 
-					if (!symbol || address.length < 2) {
-						return true;
+					if (symbol && address.length >= 2) {
+						const parts = address.split('.');
+						const bit = parts.length > 1 ? parseInt(parts[1]) : null;
+						variables.set(symbol, {
+							id: symbol,
+							address: address,
+							size: bit !== null ? 1 : 8,
+						});						
 					}
 
-					const parts = address.split('.');
-					const bit = parts.length > 1 ? parseInt(parts[1]) : null;
-					variables.set(symbol, {
-						id: symbol,
-						address: address,
-						size: bit !== null ? 1 : 8,
-					});							
-			}
-
-				return true;
+					return false;	
+				}
 			}
 
 			return true;
