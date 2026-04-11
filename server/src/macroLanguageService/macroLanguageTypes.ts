@@ -27,6 +27,7 @@ export {
     VariableInfo,
     LinkedFileInfo,
     LinkedFileInfoParams,
+	VariableInfoParams,
     AllVariableInfoParams,
     ProgramVariableInfoParams,
     ProgramDebugInfo,

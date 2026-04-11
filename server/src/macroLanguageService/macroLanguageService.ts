@@ -14,6 +14,7 @@ import { MacroCallHierarchy } from './services/macroCallHierarchy';
 import { MacroSemantic } from './services/macroSemantic';
 import { MacroDocumentFormatting } from './services/macroDocumentFormatting';
 import { MacroLinker } from './services/macroLinker';
+import { MacroDebugging } from './services/macroDebugging';
 
 import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
@@ -32,8 +33,6 @@ export interface LanguageService {
 	doSignature(document: TextDocument, position: Position, macroFile: Macrofile, documentSettings: LanguageSettings):SignatureHelp | null;
 	findDefinition(document: TextDocument, position: Position, macroFile: Macrofile): Location | null;
 	findReferences(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
-	findProgramSequenceInfo(document: TextDocument, program: number, sequence: number, macroFile: Macrofile): ProgramDebugInfo | null;
-	findVariableInfos(program: number | null, macroFile: Macrofile): VariableInfo[] | null;
 	findImplementations(document: TextDocument, position: Position, macroFile: Macrofile): Location[];
 	findDocumentLinks(document: TextDocument, macrofile: Macrofile): DocumentLink[];
 	findDocumentSymbols(document: TextDocument, macrofile: Macrofile): SymbolInformation[];
@@ -49,6 +48,10 @@ export interface LanguageService {
 	doDocumentFormatting(document: TextDocument, options: FormattingOptions, macrofile: Macrofile): TextEdit[] | null;
 	findPcodeNumber(document: TextDocument, macrofile: Macrofile): number;
 	findLinkedFiles(document: TextDocument, macrofile: Macrofile): string[]; 
+	findProgramSequenceInfo(document: TextDocument, program: number, sequence: number, macroFile: Macrofile): ProgramDebugInfo | null;
+	findAllVariableInfos(macroFile: Macrofile): VariableInfo[] | null;
+	findProgramVariableInfos(program: number | null, macroFile: Macrofile): VariableInfo[] | null;
+	findVariableInfos(document: TextDocument, position: Position, macroFile: Macrofile): VariableInfo | null;
 }
 
 function createFacade(parser: Parser,
@@ -60,7 +63,8 @@ function createFacade(parser: Parser,
 	semantic:MacroSemantic,
 	hierarchy:MacroCallHierarchy,
 	formatting:MacroDocumentFormatting,
-	linker:MacroLinker): LanguageService {
+	linker:MacroLinker,
+	debugging:MacroDebugging): LanguageService {
 	return {
 		doValidation: validation.doValidation.bind(validation),
 		parseMacroFile: parser.parseMacroFile.bind(parser),
@@ -69,8 +73,6 @@ function createFacade(parser: Parser,
 		doSignature: completion.doSignature.bind(completion),
 		findDefinition: navigation.findDefinition.bind(navigation),
 		findReferences: navigation.findReferences.bind(navigation),
-		findProgramSequenceInfo: navigation.findProgramSequenceInfo.bind(navigation),
-		findVariableInfos: navigation.findVariableInfos.bind(navigation),
 		findImplementations: navigation.findImplementations.bind(navigation),
 		findDocumentLinks: navigation.findDocumentLinks.bind(navigation),
 		findDocumentSymbols: navigation.findDocumentSymbols.bind(navigation),
@@ -85,7 +87,11 @@ function createFacade(parser: Parser,
 		doOutgoingCalls: hierarchy.doOutgoingCalls.bind(hierarchy),
 		doDocumentFormatting: formatting.doDocumentFormatting.bind(formatting),
 		findPcodeNumber: linker.findPcodeNumber.bind(linker),
-		findLinkedFiles: linker.findLinkedFiles.bind(linker)
+		findLinkedFiles: linker.findLinkedFiles.bind(linker),
+		findProgramSequenceInfo: debugging.findProgramSequenceInfo.bind(debugging),
+		findProgramVariableInfos: debugging.findProgramVariableInfos.bind(debugging),
+		findAllVariableInfos: debugging.findAllVariableInfos.bind(debugging),
+		findVariableInfos: debugging.findVariableInfos.bind(debugging),
 	};
 }
 
@@ -101,6 +107,7 @@ export function getMacroLanguageService(options: LanguageServiceOptions): Langua
 		new MacroSemantic(),
 		new MacroCallHierarchy(options && options.fileProvider),
 		new MacroDocumentFormatting(),
-		new MacroLinker()
+		new MacroLinker(),
+		new MacroDebugging()
 	);
 }

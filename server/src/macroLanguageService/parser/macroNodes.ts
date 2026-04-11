@@ -58,9 +58,9 @@ export function getNodeAtOffset(node: Node, offset: number, ignoreNode: NodeType
 	return candidate;
 }
 
-export function getNodePath(node: Node, offset: number): Node[] {
+export function getNodePath(node: Node, offset: number, ignoreNode: NodeType = null): Node[] {
 
-	let candidate = getNodeAtOffset(node, offset);
+	let candidate = getNodeAtOffset(node, offset, ignoreNode);
 	const path: Node[] = [];
 
 	while (candidate) {
