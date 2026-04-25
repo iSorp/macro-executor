@@ -186,7 +186,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
 
         const initRequest: InitRequest = {
             "cncNodeId": args.cncNodeId,
-            "cncNodeIpAddress": args.cncNodeIpAddress,
+            "cncNodeEndpoint": args.cncNodeEndpoint,
             "cncPaths": args.cncPaths,
             "pollingRate": args.pollingRate,
             "cycleStopCommandAddress": args.cycleStopCommandAddress,

@@ -39,7 +39,7 @@ message Empty {}
 
 message InitRequest {
   optional uint32 cncNodeId = 1;
-  optional string cncNodeIpAddress = 2;
+  optional string cncNodeEndpoint = 2;
   repeated uint32 cncPaths = 3;
   optional uint32 pollingRate = 4;
   optional string cycleStopCommandAddress = 5;

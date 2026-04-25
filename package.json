@@ -650,9 +650,9 @@
 								"type": "number",
 								"description": "CNC node id"
 							},
-							"cncNodeIpAddress": {
+							"cncNodeEndpoint": {
 								"type": "string",
-								"description": "CNC ip address"
+								"description": "CNC endpoint"
 							},
 							"cncPaths": {
 								"description": "Paths connect to",
@@ -692,7 +692,7 @@
 						],
 						"pollingRate": 50,
 						"cycleStopCommandAddress": "R0.0",
-						"singleBlockCommandAddress": "R0.0", 
+						"singleBlockCommandAddress": "R0.0",
 						"singleBlockStatusAddress": "R0.0"
 					}
 				],
@@ -707,7 +707,7 @@
 							"grpcServer": "localhost:9000",
 							"workspace": "${workspaceFolder}",
 							"cncNodeId": 1,
-							"cncNodeIpAddress": "",
+							"cncNodeEndpoint": "",
 							"cncPaths": [
 								1
 							],

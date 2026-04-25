@@ -384,7 +384,7 @@ The debug adapter requires a launch.json configuration. In the example below, th
             "name": "Macro Debug: Launch",
             "grpcServer": "${command:AskForGrpcServer}",
             "cncNodeId": 1,
-            "cncNodeIpAddress": "192.168.1.1",
+            "cncNodeEndpoint": "192.168.1.1:8193",
             "cncPaths": [
                 1, 2
             ],
@@ -398,7 +398,7 @@ The debug adapter requires a launch.json configuration. In the example below, th
 * `grpcServer` : The gRPC server endpoint
 * `workspace`: Used for multi-root workspace projects. Set it to `${workspaceFolder}` to use the workspace associated with the current `launch.json`.
 * `cncNodeId` : Controller node ID (use 9 for CNC Guide)
-* `cncNodeIpAddress` : Controller IP address. If omitted, the server connects via HSSB
+* `cncNodeEndpoint` : Controller IP address and port (optional, default 8193). If omitted, the server connects via HSSB
 * `cncPaths` : Array of paths that will be available for debugging
 * `pollingRate` : The polling rate used to query the server for FOCAS data.
 * `cycleStopCommandAddress` : PMC address used to activate the cycle stop.
