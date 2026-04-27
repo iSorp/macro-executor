@@ -4,11 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as nls from 'vscode-nls';
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 import * as path from 'path';
-
+import { localize } from './l10nService';
 import { 
 	FileProvider,
 	getParsedDocument,

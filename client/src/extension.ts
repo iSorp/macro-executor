@@ -40,13 +40,29 @@ export function activate(context: vscode.ExtensionContext) {
 		path.join('server', 'out', 'server.js')
 	);
 
-	let debugOptions = { execArgv: ['--nolazy', '--inspect=6011'], cwd: process.cwd() };
+	const l10nBundle = vscode.l10n.uri?.toString();
+
 	let serverOptions: lc.ServerOptions = {
-		run: { module: serverModule, transport: lc.TransportKind.ipc, options: { cwd: process.cwd() } },
+		run: {
+			module: serverModule,
+			transport: lc.TransportKind.ipc,
+			options: { 
+				cwd: process.cwd(),
+				env: { 
+                	L10N_BUNDLE: l10nBundle
+            	} 
+			} 
+		},
 		debug: {
 			module: serverModule,
 			transport: lc.TransportKind.ipc,
-			options: debugOptions
+			options: {
+				execArgv: ['--nolazy', '--inspect=6011'],
+				cwd: process.cwd(),
+				env: { 
+					L10N_BUNDLE: l10nBundle 
+				} 
+			}
 		}
 	};
 
