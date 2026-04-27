@@ -4,8 +4,8 @@ import * as lc from 'vscode-languageclient/node';
 import * as ls from 'vscode-languageserver-protocol';
 
 import registerCommands from './common/commands';
-
 import CompositeDisposable from './common/compositeDisposable';
+import { activateMacroDebug } from './debugger/activateDebug';
 
 let client: lc.LanguageClient;
 let disposables = new CompositeDisposable();
@@ -40,13 +40,29 @@ export function activate(context: vscode.ExtensionContext) {
 		path.join('server', 'out', 'server.js')
 	);
 
-	let debugOptions = { execArgv: ['--nolazy', '--inspect=6011'], cwd: process.cwd() };
+	const l10nBundle = vscode.l10n.uri?.toString();
+
 	let serverOptions: lc.ServerOptions = {
-		run: { module: serverModule, transport: lc.TransportKind.ipc, options: { cwd: process.cwd() } },
+		run: {
+			module: serverModule,
+			transport: lc.TransportKind.ipc,
+			options: { 
+				cwd: process.cwd(),
+				env: { 
+                	L10N_BUNDLE: l10nBundle
+            	} 
+			} 
+		},
 		debug: {
 			module: serverModule,
 			transport: lc.TransportKind.ipc,
-			options: debugOptions
+			options: {
+				execArgv: ['--nolazy', '--inspect=6011'],
+				cwd: process.cwd(),
+				env: { 
+					L10N_BUNDLE: l10nBundle 
+				} 
+			}
 		}
 	};
 
@@ -162,6 +178,8 @@ export function activate(context: vscode.ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
+
+	activateMacroDebug(client, context);
 
 	disposables.add(registerCommands());
 	context.subscriptions.push(disposables);

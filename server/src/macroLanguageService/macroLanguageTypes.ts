@@ -23,7 +23,18 @@ export {
 
 export * from 'vscode-languageserver-types';
 
-export const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF]}';
+export { 
+    VariableInfo,
+    LinkedFileInfo,
+    LinkedFileInfoParams,
+	VariableInfoParams,
+    AllVariableInfoParams,
+    ProgramVariableInfoParams,
+    ProgramDebugInfo,
+    ProgramSequenceInfoParams
+} from "@macro/shared";
+
+export const ALL_FILES:string = '/**/*.{[sS][rR][cC],[dD][eE][fF],[lL][nN][kK]}';
 export const SRC_FILES:string = '/**/*.[sS][rR][cC]';
 
 export interface LanguageSettings {

@@ -1,20 +1,20 @@
 {
 	"compilerOptions": {
+		"strict": false,
 		"module": "commonjs",
-		"target": "es2020",
-		"lib": ["es2020"],
+		"target": "ES2024",
+		"lib": ["ES2024"],
 		"outDir": "out",
-		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": true,
 	},
-	"include": [
-		"src"
-	],
+	"files": [],
+	"include": [],
 	"exclude": [
 		"node_modules",
 		".vscode-test"
 	],
 	"references": [
+		{ "path": "./shared" },
 		{ "path": "./client" },
 		{ "path": "./server" }
 	]

@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+option csharp_namespace = "Macro.Debug.Protobuf";
+
+package control;
+
+// CNC control + debugging service
+service ControlService {
+
+  // Establish connection
+  rpc Connect (InitRequest) returns (ConnectReply);
+
+  // Establish connection to the cnc
+  rpc ConnectControl (Empty) returns (ConnectReply);
+
+  // Terminates connection
+  rpc Disconnect (Empty) returns (StatusReply);
+
+  // Cycle start execution
+  rpc CycleStart (Empty) returns (StatusReply);
+
+  // Single block execution
+  rpc SingleBlock (Empty) returns (StatusReply);
+
+  // Cycle stop execution
+  rpc CycleStop (Empty) returns (StatusReply);
+
+  // Get current machine state
+  rpc GetState (StateRequest) returns (MachineState);
+
+  // Read variables (when paused)
+  rpc GetVariables (VariablesRequest) returns (VariablesReply);
+
+  // Stream runtime events
+  rpc SubscribeEvents (Empty) returns (stream MachineEvent);
+}
+
+message Empty {}
+
+message InitRequest {
+  optional uint32 cncNodeId = 1;
+  optional string cncNodeEndpoint = 2;
+  repeated uint32 cncPaths = 3;
+  optional uint32 pollingRate = 4;
+  optional string cycleStopCommandAddress = 5;
+  optional string singleBlockCommandAddress  = 6;
+  optional string singleBlockStatusAddress  = 7;
+  repeated VariableDefinition variables = 8;
+}
+
+message StateRequest {
+  uint32 pathNumber = 2;  
+}
+
+message ConnectReply {
+  StatusReply state = 1;
+  string controllerName = 2;
+  string version = 3;
+}
+
+message StatusReply {
+  bool success = 1;
+  string message = 2;
+}
+
+message MachineState {
+  uint32 pathNumber = 1;
+  StateType state = 2;
+  optional string messageType = 3;
+  optional string message = 4;
+}
+
+message MachineEvent {
+  StateType state = 1;
+  uint32 pathNumber = 2;   
+  uint32 sequenceNumber = 3;  
+  uint32 programNumber = 4;
+  optional string message = 5;
+}
+
+enum StateType {
+  CYCLE_RESET = 0;
+  CYCLE_STOPPED = 1;
+  CYCLE_HOLD = 2;
+  CYCLE_STARTED = 3;
+  DISCONNECT = 4;
+  ALARM = 5;
+}
+
+message VariablesRequest {
+  uint32 path = 1;
+  repeated VariableDefinition variables = 2;
+}
+
+message VariableDefinition {
+  string id = 1;
+  string address = 2;
+  optional uint32 size = 3;
+}
+message VariablesReply {
+  repeated VariableValue variables = 1;
+}
+
+message VariableValue {
+  string id = 1;
+  string address = 2;
+  string value = 3;
+}

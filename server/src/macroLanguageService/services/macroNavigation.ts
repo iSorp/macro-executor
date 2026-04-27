@@ -8,7 +8,7 @@ import {
 	DocumentHighlight, DocumentHighlightKind, DocumentLink, Location,
 	Position, Range, SymbolInformation, SymbolKind, TextEdit,
 	MacroCodeLensCommand, TextDocument, MacroFileProvider, 
-	WorkspaceEdit, MacroCodeLensType, MacroFileInfo, 
+	WorkspaceEdit, MacroCodeLensType, MacroFileInfo,
 	SRC_FILES, ALL_FILES
 } from '../macroLanguageTypes';
 import * as nodes from '../parser/macroNodes';

@@ -541,8 +541,8 @@ export class Parser {
 	}
 
 	public _parseLnkFile(): nodes.Node {
-		const node = this.createNode(nodes.NodeType.LnkFile);
-		let hasMatch = false;
+		const node = this.create(nodes.LinkFile);
+		
 		do {
 			if (this.peek(TokenType.EOF)) {
 				break;
@@ -551,7 +551,22 @@ export class Parser {
 			this.consumeToken();
 
 		} while (!this.peek(TokenType.EOF));
-		return this.finish(node);
+
+		this.finish(node);
+
+		const text = this.textProvider(node.offset, node.length);
+
+		const matches = [...text.matchAll(/^\s*FILE\s*=\s*([^\s]+)/gm)];
+		const linkedFiles = matches.map(match => match[1]);
+		node.setData(nodes.Data.Files, linkedFiles);
+
+		const p = text.match(/^\s*P-CODE_NUMBER\s*=\s*(\d+)/m);
+		if (p) {
+			const pCodeNumber = Number.parseInt(p[1]);
+			node.setData(nodes.Data.PcodeNumber, pCodeNumber);
+		}
+		
+		return node;
 	}
 
 	public _parseMacroFile(): nodes.MacroFile {
@@ -1473,8 +1488,11 @@ export class Parser {
 		const node = <nodes.Variable>this.create(nodes.Variable);
 		this.consumeToken();
 
-		if (this.peek(TokenType.BracketL)) {
+		if (this.accept(TokenType.BracketL)) {
 			node.setBody(this._parseBinaryExpr());
+			if (!this.accept(TokenType.BracketR)) {
+				return this.finish(node, ParseError.LeftSquareBracketExpected);
+			}
 			return this.finish(node);
 		}
 

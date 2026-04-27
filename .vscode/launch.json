@@ -22,6 +22,15 @@
 			"outFiles": ["${workspaceFolder}/server/out/**/*.js"]
 		},
 		{
+			"name": "Debug Macro Adapter",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}/client/out/debugger/adapter.js",
+			"cwd": "${workspaceFolder}",
+			"sourceMaps": true,
+			"outFiles": ["${workspaceFolder}/client/out/**/*.js"],
+		},
+		{
 			"name": "Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",

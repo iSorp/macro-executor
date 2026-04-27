@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",
@@ -30,7 +30,15 @@
 	"engines": {
 		"vscode": "^1.92.0"
 	},
+	"activationEvents": [],
 	"main": "./client/out/extension",
+	"l10n": "./l10n",
+	"private": true,
+	"workspaces": [
+		"server",
+		"client",
+		"shared"
+	],
 	"contributes": {
 		"languages": [
 			{
@@ -615,44 +623,153 @@
 					]
 				}
 			}
+		],
+		"debuggers": [
+			{
+				"type": "macro",
+				"label": "Macro Executor Debugger",
+				"program": "./client/out/debugger/debugAdapter.js",
+				"runtime": "node",
+				"languages": [
+					"macro"
+				],
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"grpcServer"
+						],
+						"properties": {
+							"grpcServer": {
+								"type": "string",
+								"description": "Grpc server endpoint",
+								"default": "${command:AskForGrpcServer}"
+							},
+							"workspace": {
+								"type": "string",
+								"description": "Workspace"
+							},
+							"cncNodeId": {
+								"type": "number",
+								"description": "CNC node id"
+							},
+							"cncNodeEndpoint": {
+								"type": "string",
+								"description": "CNC endpoint"
+							},
+							"cncPaths": {
+								"description": "Paths connect to",
+								"type": "array",
+								"items": {
+									"type": "number"
+								}
+							},
+							"pollingRate": {
+								"type": "number",
+								"description": "Focas polling rate"
+							},
+							"cycleStopCommandAddress": {
+								"type": "string",
+								"description": "PMC address used to activate the cycle stop."
+							},
+							"singleBlockCommandAddress": {
+								"type": "string",
+								"description": "PMC address used to activate the single block."
+							},
+							"singleBlockStatusAddress": {
+								"type": "string",
+								"description": "Indicates whether the single block is active (true) or not (false)."
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "macro",
+						"request": "launch",
+						"name": "Macro Debug: Launch",
+						"grpcServer": "${command:AskForGrpcServer}",
+						"cncNodeId": 1,
+						"cncPaths": [
+							1
+						],
+						"pollingRate": 50,
+						"cycleStopCommandAddress": "R0.0",
+						"singleBlockCommandAddress": "R0.0",
+						"singleBlockStatusAddress": "R0.0"
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "Macro Debug: Launch",
+						"description": "A new configuration for 'debugging' a macro cnc",
+						"body": {
+							"type": "macro",
+							"request": "launch",
+							"name": "Macro Debug: Launch",
+							"grpcServer": "localhost:9000",
+							"workspace": "${workspaceFolder}",
+							"cncNodeId": 1,
+							"cncNodeEndpoint": "",
+							"cncPaths": [
+								1
+							],
+							"pollingRate": "50"
+						}
+					}
+				],
+				"variables": {
+					"AskForGrpcServer": "extension.macro.getGrpcServer"
+				}
+			}
 		]
 	},
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@macro/shared/*": [
+				"shared/src/*"
+			]
+		}
+	},
 	"scripts": {
-		"compile": "tsc -b",
-		"compile:client": "tsc -b ./client/tsconfig.json",
-		"compile:server": "tsc -b ./server/tsconfig.json",
-		"watch": "tsc -b -w",
+		"vscode:prepublish": "npm run compile",
+		"esbuild": "node ./esbuild.js",
+		"compile": "tsc -b && node ./esbuild.js",
+		"watch": "tsc -b -w & node ./esbuild.js --watch",
+		"package": "vsce package",
+		"deploy": "vsce publish --yarn",
 		"lint": "npm run lint:client && npm run lint:server",
 		"lint:client": "eslint --config ./client/.eslintrc.json ./client/src/*.ts",
 		"lint:server": "eslint --config ./server/.eslintrc.json ./server/src/*.ts",
-		"clean": "rimraf client/out && rimraf server/out",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"lint:shared": "eslint --config ./shared/.eslintrc.json ./shared/src/*.ts",
+		"clean": "rimraf client/out && rimraf server/out && rimraf shared/out",
 		"test": "sh ./scripts/e2e.sh",
 		"unit-test": "npm run compile && mocha",
-		"deploy": "vsce publish --yarn"
+		"generate-proto": "protoc -I ./client/proto --ts_proto_out=./client/src/debugger --ts_proto_opt=outputServices=grpc-js,outputClientImpl=grpc-js,esModuleInterop=true,useOptionals=messages ./client/proto/debugService.proto"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.9.1",
-		"@types/glob": "^8.1.0",
-		"@types/mocha": "^10.0.7",
-		"@types/node": "^22.5.2",
-		"@typescript-eslint/eslint-plugin": "^7.14.0",
-		"@typescript-eslint/parser": "^7.14.0",
-		"@vscode/vsce": "^3.0.0",
-		"del": "^5.1.0",
-		"eslint": "^8.57.0",
+		"@eslint/js": "^10.0.1",
+		"@macro/shared": "*",
+		"@types/mocha": "^10.0.10",
+		"@types/node": "^25.3.5",
+		"@typescript-eslint/eslint-plugin": "^8.56.1",
+		"@typescript-eslint/parser": "^8.56.1",
+		"@vscode/l10n-dev": "^0.0.35",
+		"@vscode/vsce": "^3.7.1",
+		"del": "^8.0.1",
+		"esbuild": "^0.28.0",
+		"eslint": "^10.0.3",
 		"event-stream": "^4.0.1",
-		"globals": "^15.9.0",
-		"gulp": "^5.0.0",
-		"gulp-filter": "^9.0.1",
-		"gulp-sourcemaps": "^2.6.5",
-		"gulp-typescript": "^6.0.0-alpha.1",
+		"globals": "^17.4.0",
 		"intrinsic": "^2.0.1",
-		"mocha": "^10.7.3",
+		"mocha": "^7.2.0",
+		"rimraf": "^6.1.3",
 		"run-sequence": "^2.2.1",
 		"source-map": "^0.7.4",
-		"typescript": "^5.5.4",
-		"typescript-eslint": "^8.4.0",
-		"vscode-nls-dev": "^4.0.4"
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.56.1"
+	},
+	"dependencies": {
+		"@vscode/l10n": "^0.0.18"
 	}
 }

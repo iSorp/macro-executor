@@ -14,5 +14,9 @@
 		"quotes": ["error", "single", { "allowTemplateLiterals": true } ],
 		"eqeqeq": "error",
 		"indent": ["warn", "tab", { "SwitchCase": 1 } ]
-	}
+	},
+	"ignorePatterns": [
+        "out",
+        "node_modules"
+    ]
 }

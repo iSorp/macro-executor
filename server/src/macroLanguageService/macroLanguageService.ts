@@ -13,6 +13,8 @@ import { MacroCommand } from './services/macroCommands';
 import { MacroCallHierarchy } from './services/macroCallHierarchy';
 import { MacroSemantic } from './services/macroSemantic';
 import { MacroDocumentFormatting } from './services/macroDocumentFormatting';
+import { MacroLinker } from './services/macroLinker';
+import { MacroDebugging } from './services/macroDebugging';
 
 import {
 	LanguageSettings, LanguageServiceOptions, DocumentContext, 
@@ -20,7 +22,7 @@ import {
 	Location, TextDocument, CompletionList, CodeLens, 
 	TextDocumentEdit, WorkspaceEdit,SignatureHelp, Range, SemanticTokens,
 	CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall,
-	FormattingOptions, TextEdit, Macrofile
+	FormattingOptions, TextEdit, Macrofile, ProgramDebugInfo, VariableInfo
 } from './macroLanguageTypes';
 
 export interface LanguageService {
@@ -44,6 +46,12 @@ export interface LanguageService {
 	doIncomingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyIncomingCall[] | null;
 	doOutgoingCalls(document: TextDocument, item: CallHierarchyItem, macrofile: Macrofile, documentSettings: LanguageSettings): CallHierarchyOutgoingCall[] | null;
 	doDocumentFormatting(document: TextDocument, options: FormattingOptions, macrofile: Macrofile): TextEdit[] | null;
+	findPcodeNumber(document: TextDocument, macrofile: Macrofile): number;
+	findLinkedFiles(document: TextDocument, macrofile: Macrofile): string[]; 
+	findProgramSequenceInfo(document: TextDocument, program: number, sequence: number, macroFile: Macrofile): ProgramDebugInfo | null;
+	findAllVariableInfos(macroFile: Macrofile): VariableInfo[] | null;
+	findProgramVariableInfos(program: number | null, macroFile: Macrofile): VariableInfo[] | null;
+	findVariableInfos(document: TextDocument, position: Position, macroFile: Macrofile): VariableInfo | null;
 }
 
 function createFacade(parser: Parser,
@@ -54,7 +62,9 @@ function createFacade(parser: Parser,
 	command: MacroCommand,
 	semantic:MacroSemantic,
 	hierarchy:MacroCallHierarchy,
-	formatting:MacroDocumentFormatting): LanguageService {
+	formatting:MacroDocumentFormatting,
+	linker:MacroLinker,
+	debugging:MacroDebugging): LanguageService {
 	return {
 		doValidation: validation.doValidation.bind(validation),
 		parseMacroFile: parser.parseMacroFile.bind(parser),
@@ -75,7 +85,13 @@ function createFacade(parser: Parser,
 		doPrepareCallHierarchy: hierarchy.doPrepareCallHierarchy.bind(hierarchy),
 		doIncomingCalls: hierarchy.doIncomingCalls.bind(hierarchy),
 		doOutgoingCalls: hierarchy.doOutgoingCalls.bind(hierarchy),
-		doDocumentFormatting: formatting.doDocumentFormatting.bind(formatting)
+		doDocumentFormatting: formatting.doDocumentFormatting.bind(formatting),
+		findPcodeNumber: linker.findPcodeNumber.bind(linker),
+		findLinkedFiles: linker.findLinkedFiles.bind(linker),
+		findProgramSequenceInfo: debugging.findProgramSequenceInfo.bind(debugging),
+		findProgramVariableInfos: debugging.findProgramVariableInfos.bind(debugging),
+		findAllVariableInfos: debugging.findAllVariableInfos.bind(debugging),
+		findVariableInfos: debugging.findVariableInfos.bind(debugging),
 	};
 }
 
@@ -90,6 +106,8 @@ export function getMacroLanguageService(options: LanguageServiceOptions): Langua
 		new MacroCommand(options && options.fileProvider),
 		new MacroSemantic(),
 		new MacroCallHierarchy(options && options.fileProvider),
-		new MacroDocumentFormatting()
+		new MacroDocumentFormatting(),
+		new MacroLinker(),
+		new MacroDebugging()
 	);
 }
