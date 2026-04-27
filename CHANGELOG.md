@@ -1,5 +1,9 @@
-## 1.1.0  (, 2026)
+## 1.1.0  (April 27, 2026)
 - Debug adapter, Closes [#57](https://github.com/iSorp/macro-executor/issues/57) 
+- Fix sequence number or label not found after G10 [#55](https://github.com/iSorp/macro-executor/issues/55)
+- Fix P#.# error [#48](https://github.com/iSorp/macro-executor/issues/48)
+- Fix GOTO [#46](https://github.com/iSorp/macro-executor/issues/46)
+- Fix DOx (LOOP) ENDx [#45](https://github.com/iSorp/macro-executor/issues/45)
 
 ## 1.0.0  (October, 2024)
 - Definition file dependency validation
