@@ -1,3 +1,7 @@
+## 1.1.1  (April 30, 2026)
+- Debug adapter, fix debug variable scopes
+- Debug adapter, check for valid linker files 
+
 ## 1.1.0  (April 27, 2026)
 - Debug adapter, Closes [#57](https://github.com/iSorp/macro-executor/issues/57) 
 - Fix sequence number or label not found after G10 [#55](https://github.com/iSorp/macro-executor/issues/55)

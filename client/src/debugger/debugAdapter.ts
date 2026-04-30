@@ -173,7 +173,7 @@ export default class MacroDebugSession extends LoggingDebugSession {
         }
 
         const fileInfo = await this.sendLinkedFileInfoRequest({ workspaceFolderUri: workspaceFolderUri });
-        if (!fileInfo) {
+        if (!fileInfo || fileInfo.length <= 0) {
             console.log("no linker files found");
             this.sendErrorResponse(response, ErrorCodes.LanguageServerError, "No linker files found");
         }
@@ -359,17 +359,16 @@ export default class MacroDebugSession extends LoggingDebugSession {
 
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments) {
 
-        const scopes:Scope[] = [];
-        const states = Array.from(this.paths.entries()).sort((a, b) => a[0] - b[0]);
-        for (const [key, value] of states) {
-            scopes.push({
-                    name: `Path ${key}`,
+        response.body = {
+            scopes: [
+                {
+                    name: `Path ${args.frameId}`,
                     variablesReference: args.frameId,
                     expensive: false
-                });
-        }
-
-        response.body = { scopes: scopes };
+                }
+            ] 
+        };
+        
         this.sendResponse(response);
     }
 

@@ -405,6 +405,14 @@ The debug adapter requires a launch.json configuration. In the example below, th
 * `singleBlockCommandAddress` : PMC address used to activate the single block.
 * `singleBlockStatusAddress` : Indicates whether the single block is active (true) or not (false).
 
+
+
+### 🟨 Important
+The O-numbers and N-numbers of the active program are mapped to the source code. Therefore, each program must use unique N-numbers within the program.
+
+To differentiate source files across paths, the debug adapter reads the linker file content (P-CODE_NUMBER and FILE). If no linker file is found, the mapping will not work.
+
+
 ### Debug server
 [macro-executor-server](https://github.com/iSorp/macro-executor-server/releases)
 
