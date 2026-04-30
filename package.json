@@ -2,7 +2,7 @@
 	"name": "macro-executor",
 	"displayName": "Macro Executor Language",
 	"description": "Fanuc Macro-Executor Programming Language",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"author": "iSorp",
 	"publisher": "iSorp",
 	"license": "MIT",

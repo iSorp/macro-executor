@@ -408,7 +408,7 @@ The debug adapter requires a launch.json configuration. In the example below, th
 
 
 ### 🟨 Important
-The O-numbers and N-numbers of the active program are mapped to the source code. Therefore, each program must use unique N-numbers within the program.
+The O-numbers and N-numbers are mapped to the source code. Therefore, each program must use unique N-numbers within the program.
 
 To differentiate source files across paths, the debug adapter reads the linker file content (P-CODE_NUMBER and FILE). If no linker file is found, the mapping will not work.
 
